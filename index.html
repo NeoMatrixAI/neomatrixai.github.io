@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>One Click Crypto Trading</title>
-  <meta name="description" content="One click crypto trading for spot & futures. Simple. Fast. Strategy‑ready. Real‑time monitoring and minute‑level backtesting." />
+  <title>One Click Crypto Auto‑Trading</title>
+  <meta name="description" content="One click crypto auto‑trading for spot & futures. Bring your Python strategy, backtest with Zipline or our local engine, then go live — the same code, end to end." />
   <link rel="icon" type="image/x-icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
     a { color: var(--fg); text-decoration: none; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 32px 80px; }
 
     /* Top Nav */
     .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); z-index: 10; }
@@ -35,7 +35,7 @@
     .cta:hover { background: var(--fg); color: var(--bg); }
 
     /* Hero */
-    .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; padding: 16px 0 16px; align-items: center; }
+    .hero { display: grid; grid-template-columns: 1fr 1.15fr; gap: 36px; padding: 16px 0 16px; align-items: center; }
     .kicker { font-size: 40px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
     h1 { font-size: clamp(40px, 8vw, 96px); line-height: .95; margin: 10px 0 18px; letter-spacing: -0.02em; }
     .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 38ch; }
@@ -54,6 +54,30 @@
     /* Statement Blocks */
     .banner { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; margin-top: 14px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; color: var(--muted); }
+
+    /* Data Panel */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+    .stat { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(0,0,0,0.02); }
+    .stat-num { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .tab-btn {
+      border: 1px solid var(--line); background: transparent; color: var(--fg);
+      padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
+    }
+    .tab-btn:hover { border-color: var(--fg); }
+    .tab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .tab-panel { display: none; margin-top: 14px; }
+    .tab-panel.active { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .data-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
+    .data-item h4 { margin: 0 0 6px; font-size: 15px; }
+    .data-item p { margin: 0; font-size: 13.5px; color: #222; }
+    .data-item .tag { display: inline-block; font-size: 11px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+    @media (max-width: 980px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .tab-panel.active { grid-template-columns: 1fr; }
+    }
 
     /* Blog Links */
     .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
@@ -121,8 +145,8 @@
 
     <header class="hero">
       <div>
-        <h1>One click<br/>crypto trading</h1>
-        <p class="sub">Trade <strong>spot</strong> & <strong>futures</strong> in seconds. Use the latest strategies or plug in your own. Monitor live performance and backtest down to the minute.</p>
+        <h1>One click<br/>crypto auto‑trading</h1>
+        <p class="sub">Bring your <strong>Python strategy</strong>. Backtest it, then go live on <strong>spot</strong> & <strong>futures</strong> — with the <em>same code</em>, end to end.</p>
         <div class="hero-cta">
           <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Start in one click</a>
           <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy">See how it works</a>
@@ -134,27 +158,27 @@
           <div class="grid" id="features">
             <div class="card">
               <h3>Spot & Futures</h3>
-              <p>Simple order tickets, one confirm. Cross‑exchange ready.</p>
+              <p>Trade both markets from one strategy. Bitget live today, more exchanges rolling out.</p>
             </div>
             <div class="card">
-              <h3>Strategy Library</h3>
-              <p>Run curated, up‑to‑date strategies with a click.</p>
+              <h3>Your Strategy, Live</h3>
+              <p>Upload your own Python strategy. Validated, sandboxed, then deployed in one click.</p>
             </div>
             <div class="card">
-              <h3>Bring Your Own</h3>
-              <p>Connect your strategy instantly via API or webhook.</p>
+              <h3>One Code, Three Modes</h3>
+              <p>Zipline backtest, our local backtest, and live trading — 100% compatible, no rewrites.</p>
             </div>
             <div class="card">
-              <h3>Real‑Time Monitor</h3>
-              <p>Live fills, PnL, risk, and alerts—on one screen.</p>
+              <h3>Auto Rebalancing</h3>
+              <p>Schedule‑driven portfolio rebalancing, down to 1‑minute granularity.</p>
             </div>
             <div class="card">
-              <h3>Minute Backtests</h3>
-              <p>Validate ideas with minute‑level historical sims.</p>
+              <h3>CrashGuard</h3>
+              <p>Minute‑level position scaling between cycles. Your own logic, executed instantly on a crash.</p>
             </div>
             <div class="card">
-              <h3>Performance Stats</h3>
-              <p>Sharpe, win‑rate, drawdown, exposure—auto‑computed.</p>
+              <h3>Max‑Loss Auto‑Stop</h3>
+              <p>Set a loss limit. We liquidate and shut down the session automatically.</p>
             </div>
           </div>
         </div>
@@ -164,20 +188,160 @@
     <section class="banner" id="get-started">
       <div class="mono">/promise</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From idea to live in one click.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">No clutter. No jargon. Connect an exchange, pick a strategy (or your own), and trade. Everything else stays out of the way.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Write a strategy in Python. Backtest it on Zipline or our local engine. Deploy it live — same code, no rewrites. We handle execution, risk, monitoring, and recovery.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
         <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Setup Guide</a>
         <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy" target="_blank">Strategy Templates</a>
       </div>
     </section>
 
+    <section class="banner" id="workflow">
+      <div class="mono">/workflow</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Same code, three modes.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">One strategy file works across every stage — verified to behave identically from research to production.</p>
+      <div class="grid" style="margin-top:14px">
+        <div class="card">
+          <h3>1. Backtest</h3>
+          <p>Run on Zipline or our local backtest engine. Local results are cross‑validated against real live trades.</p>
+        </div>
+        <div class="card">
+          <h3>2. Pre‑flight Validate</h3>
+          <p>Upload your strategy. We run a 7‑step check — syntax, security, real‑data execution — before a single order ships.</p>
+        </div>
+        <div class="card">
+          <h3>3. Go Live</h3>
+          <p>Deploy in one click. Hot‑swap your strategy or config mid‑trade. Every fill is snapshot‑logged for audit.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="banner" id="data">
+      <div class="mono">/data</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Built on a deep market dataset.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Your strategies trade on a unified feed of crypto, derivatives, macro and on‑chain data — collected, reconciled, and served through our own API.</p>
+
+      <div class="stats-row">
+        <div class="stat"><div class="stat-num">1,300+</div><div class="stat-label">Crypto symbols</div></div>
+        <div class="stat"><div class="stat-num">3+ yrs</div><div class="stat-label">Minute‑level history</div></div>
+        <div class="stat"><div class="stat-num">2 → N</div><div class="stat-label">Exchanges (expanding)</div></div>
+        <div class="stat"><div class="stat-num">30+</div><div class="stat-label">REST endpoints</div></div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="crypto">Crypto Market</button>
+        <button class="tab-btn" data-tab="deriv">Derivatives & Sentiment</button>
+        <button class="tab-btn" data-tab="alt">Macro & On‑chain</button>
+        <button class="tab-btn" data-tab="stock">Equities</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-crypto">
+        <div class="data-item">
+          <h4>OHLCV Candles <span class="tag">1m · 5m · 15m · 1h · 1d</span></h4>
+          <p>Spot & futures across 1,300+ symbols. Minute‑level history back to 2023 on major pairs.</p>
+        </div>
+        <div class="data-item">
+          <h4>Real‑time Orderbook <span class="tag">Top 20 depth</span></h4>
+          <p>Minute‑snapshot depth from live WebSocket streams, normalized across exchanges.</p>
+        </div>
+        <div class="data-item">
+          <h4>Historical Depth Buckets <span class="tag">2023 →</span></h4>
+          <p>Cumulative ±%p liquidity buckets for backtests where raw orderbook history is unavailable.</p>
+        </div>
+        <div class="data-item">
+          <h4>Funding Rates <span class="tag">hourly · 8h cycles</span></h4>
+          <p>Per‑symbol settlement cycles tracked individually (BTC/ETH 8h, alts hourly).</p>
+        </div>
+        <div class="data-item">
+          <h4>Market Cap Rankings <span class="tag">daily · top 1000</span></h4>
+          <p>CoinMarketCap top‑1000 daily snapshots with stable IDs for clean joins and history.</p>
+        </div>
+        <div class="data-item">
+          <h4>Coin Mapping <span class="tag">cross‑exchange</span></h4>
+          <p>Symbol normalization across exchanges — one identifier, many venues.</p>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-deriv">
+        <div class="data-item">
+          <h4>Taker Buy / Sell Volume <span class="tag">since 2020</span></h4>
+          <p>Aggressor‑side flow imbalance — the cleanest read on intraday pressure.</p>
+        </div>
+        <div class="data-item">
+          <h4>Top Trader Position Ratio <span class="tag">long / short</span></h4>
+          <p>Where the largest accounts are net‑positioned, refreshed every 15 minutes.</p>
+        </div>
+        <div class="data-item">
+          <h4>Top Trader Account Ratio <span class="tag">long / short</span></h4>
+          <p>Account‑weighted long/short skew — different signal from position‑weighted.</p>
+        </div>
+        <div class="data-item">
+          <h4>Open Interest <span class="tag">notional</span></h4>
+          <p>Notional OI tracked per symbol for crowding, squeeze and rollover signals.</p>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-alt">
+        <div class="data-item">
+          <h4>Macro Rates & Indices <span class="tag">daily</span></h4>
+          <p>10Y Treasury (DGS10), VIX, DXY, S&P 500 — sourced from FRED & Yahoo with fallbacks.</p>
+        </div>
+        <div class="data-item">
+          <h4>BTC Spot ETF Flows <span class="tag">issuer‑level</span></h4>
+          <p>Daily inflow & AUM per issuer plus aggregate total — see institutional demand in real terms.</p>
+        </div>
+        <div class="data-item">
+          <h4>BTC Leveraged ETF <span class="tag">BITX</span></h4>
+          <p>AUM, price and shares outstanding — speculative leverage proxy since 2023.</p>
+        </div>
+        <div class="data-item">
+          <h4>On‑chain BTC <span class="tag">per‑minute</span></h4>
+          <p>Hashrate, difficulty, mempool size & median fee from blockchain.com and mempool.space.</p>
+        </div>
+        <div class="data-item">
+          <h4>Stablecoin Supply <span class="tag">USDT · USDC · DAI · USDe · FDUSD</span></h4>
+          <p>Per‑symbol market cap from DefiLlama — liquidity & risk‑on/off context.</p>
+        </div>
+        <div class="data-item">
+          <h4>DeFi TVL <span class="tag">total · per chain</span></h4>
+          <p>Total value locked across protocols and chains, daily.</p>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-stock">
+        <div class="data-item">
+          <h4>KOSPI / KOSDAQ OHLCV <span class="tag">daily</span></h4>
+          <p>Full Korean equity universe with corporate metadata, sectors and categories.</p>
+        </div>
+        <div class="data-item">
+          <h4>Corporate Actions <span class="tag">splits · dividends</span></h4>
+          <p>Stock splits and dividend history for adjusted‑price reconstruction.</p>
+        </div>
+        <div class="data-item">
+          <h4>Financial Statements <span class="tag">FnGuide</span></h4>
+          <p>Fundamentals sourced from FnGuide for valuation & cross‑asset strategies.</p>
+        </div>
+        <div class="data-item">
+          <h4>Market & Item Registry <span class="tag">KRX</span></h4>
+          <p>Listed‑instrument registry, sector mappings and tradeable universe snapshots.</p>
+        </div>
+      </div>
+
+      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">+ derivative & engineered features delivered alongside raw feeds. Multi‑symbol queries (up to 100 per request), dual‑collector architecture with auto‑recovery.</p>
+    </section>
+
     <section class="banner">
       <div class="mono">/spec</div>
       <ul style="margin:0; padding-left: 18px;">
-        <li>Secure API key vault & granular permissions</li>
-        <li>Portfolio‑level risk controls & position limits</li>
-        <li>Latency‑aware order routing</li>
-        <li>Exportable trade logs & analytics</li>
+        <li>Exchanges: <strong>Bitget</strong> live · <strong>Binance</strong> in progress · more coming</li>
+        <li>Markets: spot & futures (perpetuals) with cross/isolated margin</li>
+        <li>One strategy code → Zipline backtest, local backtest, and live — fully interchangeable</li>
+        <li>Local backtest engine cross‑checked against real live‑trading results</li>
+        <li>Live strategy & config hot‑swap — no downtime, no re‑deploy</li>
+        <li>Session snapshots: query the exact code, config, and modules used at any past fill</li>
+        <li>Two‑layer max‑loss auto‑liquidation & orphan‑session recovery</li>
+        <li>Real‑time Grafana dashboards: portfolio value, PnL, fills, leverage</li>
+        <li>Discord bot: live alerts, team management, secure API‑key request flow</li>
+        <li>Demo mode for risk‑free dry runs before going live</li>
       </ul>
     </section>
 
@@ -233,6 +397,14 @@
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+      });
+    });
   </script>
 </body>
 </html>
