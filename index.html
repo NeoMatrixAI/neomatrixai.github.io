@@ -107,7 +107,6 @@
       flex-shrink: 0;
       font-size: 24px;
     }
-    .blog-icon.medium { background: #000; color: #fff; }
     .blog-icon.x { background: #000; color: #fff; }
     .blog-icon.substack { background: #FF6719; color: #fff; }
     .blog-info h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
@@ -140,7 +139,10 @@
     <nav class="nav">
       <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:55px; margin-right:8px; vertical-align:middle;">
       <div class="brand-center">NeoMatrix AI</div>
-      <a class="cta" href="https://github.com/NeoMatrixAI" target="_blank" aria-label="Get started">Get Started →</a>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <a href="demo/portfolio.html" style="font-weight:600;">Live Demo</a>
+        <a class="cta" href="https://github.com/NeoMatrixAI" target="_blank" aria-label="Get started">Get Started →</a>
+      </div>
     </nav>
 
     <header class="hero">
@@ -184,6 +186,29 @@
         </div>
       </div>
     </header>
+
+    <section class="banner" id="demo">
+      <div class="mono">/demo</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">See the dashboards live.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">A working preview of what you get once you go live — portfolio overview, strategy grid, and per‑strategy drill‑down. <strong>Sample data, no signup.</strong></p>
+      <div class="blog-grid" style="margin-top:14px">
+        <a class="blog-card" href="demo/portfolio.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">📊</div>
+          <div class="blog-info"><h3>Portfolio Overview</h3><p>Aggregated PV, Sharpe & drawdown vs BTC / TOP5</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="demo/grid.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">▦</div>
+          <div class="blog-info"><h3>Strategy Grid</h3><p>Every strategy at a glance, with live sparklines</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="demo/strategy.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">🔎</div>
+          <div class="blog-info"><h3>Strategy Detail</h3><p>PV, positions & fills for a single strategy</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+      </div>
+    </section>
 
     <section class="banner" id="get-started">
       <div class="mono">/promise</div>
@@ -350,18 +375,6 @@
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Follow our journey</h2>
       <p style="margin:6px 0 0;color:#1a1a1a">Insights on crypto trading, AI strategies, and market analysis.</p>
       <div class="blog-grid">
-        <a class="blog-card" href="https://medium.com/@neo.matrix" target="_blank" rel="noopener">
-          <div class="blog-icon medium">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>Medium</h3>
-            <p>Research, white papers & architecture updates</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
         <a class="blog-card" href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">
           <div class="blog-icon x">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

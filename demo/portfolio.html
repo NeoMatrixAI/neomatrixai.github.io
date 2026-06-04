@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Demo — NeoMatrix AI</title>
+    <meta name="description" content="A sample multi-strategy portfolio dashboard. Illustrative data only — this is what your live portfolio overview looks like on NeoMatrix." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="demo_data.js"></script>
+    <style>
+        html, body {
+            margin: 0; padding: 0; min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: #6ea8ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar {
+            height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33;
+        }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .logo {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 13px; color: white;
+        }
+        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; font-size: 13px; }
+        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+
+        /* Demo banner */
+        .demo-banner {
+            background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 7px 16px;
+        }
+        .demo-banner strong { color: #fff; }
+
+        .container {
+            max-width: 1600px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .kpi-card {
+            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .kpi-card .kpi-label { font-size: 11px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 22px; font-weight: 700; color: #e8e9ea; }
+        .kpi-card .kpi-value.positive { color: #43e97b; }
+        .kpi-card .kpi-value.negative { color: #f5576c; }
+        .kpi-card .kpi-sub { font-size: 11px; color: #6b7280; }
+
+        .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+        .panel {
+            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        .panel .panel-hdr {
+            height: 32px; flex: 0 0 32px; display: flex; align-items: center;
+            padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33;
+            font-size: 12px; font-weight: 600; color: #a0a4ae;
+        }
+        .panel-chart { height: 340px; position: relative; }
+        .panel-chart .chart-wrap { flex: 1; padding: 8px 12px 12px; position: relative; }
+
+        .cards-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+        }
+        .card {
+            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px; cursor: pointer; transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #667eea; }
+        .card .card-label { font-size: 14px; font-weight: 600; color: #e8e9ea; margin-bottom: 6px; }
+        .card .card-env {
+            display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 11px; font-weight: 500; background: #1f3a2a; color: #73d391;
+        }
+        .card .card-metrics { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .card .card-metric { display: flex; justify-content: space-between; font-size: 12px; color: #8e94a1; }
+        .card .card-metric .val { color: #d8d9da; font-weight: 500; }
+
+        .section-title {
+            font-size: 14px; font-weight: 600; color: #e8e9ea;
+            padding: 8px 0 4px; border-bottom: 1px solid #2a2d33; margin-bottom: 0;
+        }
+
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .row-2col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <div class="logo">N</div>
+            <span class="title">Portfolio Overview</span>
+            <span class="count" id="stratCount"></span>
+        </div>
+        <div class="right">
+            <a href="grid.html">Strategy Grid &rarr;</a>
+            <a href="https://neomatrix.ai">&larr; neomatrix.ai</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> &mdash; This is an illustrative preview of the live portfolio dashboard. All numbers are synthetic. No real accounts or keys are involved.
+    </div>
+
+    <div class="container">
+        <div class="kpi-row">
+            <div class="kpi-card"><span class="kpi-label">Total Portfolio Value</span><span class="kpi-value" id="kpi-pv"></span><span class="kpi-sub" id="kpi-pv-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Total Unrealized PnL</span><span class="kpi-value" id="kpi-pnl"></span><span class="kpi-sub">Unrealized</span></div>
+            <div class="kpi-card"><span class="kpi-label">Total Margin Used</span><span class="kpi-value" id="kpi-margin"></span><span class="kpi-sub" id="kpi-margin-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Available Balance</span><span class="kpi-value" id="kpi-avail"></span><span class="kpi-sub">Cross available</span></div>
+        </div>
+        <div class="kpi-row">
+            <div class="kpi-card"><span class="kpi-label">ROE (Aggregated)</span><span class="kpi-value" id="kpi-roe"></span><span class="kpi-sub" id="kpi-roe-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Sharpe Ratio (Ann.)</span><span class="kpi-value" id="kpi-sharpe"></span><span class="kpi-sub" id="kpi-sharpe-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Volatility (Ann.)</span><span class="kpi-value" id="kpi-vol"></span><span class="kpi-sub" id="kpi-vol-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Max Drawdown</span><span class="kpi-value" id="kpi-mdd"></span><span class="kpi-sub" id="kpi-mdd-sub"></span></div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Aggregated Portfolio Value (USDT)</div>
+                <div class="chart-wrap"><canvas id="chartAggPV"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Drawdown &mdash; Portfolio vs BTC vs TOP5</div>
+                <div class="chart-wrap"><canvas id="chartAggDD"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Sharpe (30d rolling) &mdash; Portfolio vs BTC vs TOP5</div>
+                <div class="chart-wrap"><canvas id="chartAggSh"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Volatility (30d rolling) &mdash; Portfolio vs BTC vs TOP5</div>
+                <div class="chart-wrap"><canvas id="chartAggVol"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Strategy PnL Distribution</div>
+                <div class="chart-wrap"><canvas id="chartPnL"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Margin Breakdown (USDT)</div>
+                <div class="chart-wrap"><canvas id="chartMargin"></canvas></div>
+            </div>
+        </div>
+
+        <div class="section-title">Strategy Details</div>
+        <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+
+    <script>
+    (function () {
+        const D = DEMO.portfolio();
+        const strategies = D.strategies;
+
+        document.getElementById('stratCount').textContent = `— ${strategies.length} strategies`;
+
+        const fmtUsd = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const COLORS = ['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#43e97b','#fa709a','#fee140'];
+        const axis = (pct) => ({
+            x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' } },
+            y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : v }, grid: { color: '#2a2d33' } }
+        });
+        const legend = { labels: { color: '#d8d9da', font: { size: 11 } } };
+
+        // ── KPIs ──
+        const m = D.metrics;
+        document.getElementById('kpi-pv').textContent = `$${fmtUsd(m.pv)}`;
+        document.getElementById('kpi-pv-sub').textContent = `${strategies.length} strategies`;
+        const pnlEl = document.getElementById('kpi-pnl');
+        pnlEl.textContent = `${m.pnl >= 0 ? '+' : ''}$${fmtUsd(m.pnl)}`;
+        pnlEl.className = `kpi-value ${m.pnl >= 0 ? 'positive' : 'negative'}`;
+        document.getElementById('kpi-margin').textContent = `$${fmtUsd(m.margin)}`;
+        document.getElementById('kpi-margin-sub').textContent = `${(m.margin / m.pv * 100).toFixed(1)}% of PV`;
+        document.getElementById('kpi-avail').textContent = `$${fmtUsd(m.avail)}`;
+
+        const roeEl = document.getElementById('kpi-roe');
+        roeEl.textContent = `+${m.roe.toFixed(2)}%`;
+        roeEl.className = 'kpi-value positive';
+        document.getElementById('kpi-roe-sub').textContent = `Final $${fmtUsd(m.pv)} / Deposits $${fmtUsd(m.deposits)}`;
+        document.getElementById('kpi-sharpe').textContent = m.sharpe.toFixed(3);
+        document.getElementById('kpi-sharpe').className = 'kpi-value positive';
+        document.getElementById('kpi-sharpe-sub').textContent = `vs BTC ${m.bmSharpeBTC.toFixed(3)} / TOP5 ${m.bmSharpeTOP5.toFixed(3)}`;
+        document.getElementById('kpi-vol').textContent = `${m.vol.toFixed(2)}%`;
+        document.getElementById('kpi-vol-sub').textContent = `vs BTC ${m.bmVolBTC.toFixed(2)}% / TOP5 ${m.bmVolTOP5.toFixed(2)}%`;
+        const mddEl = document.getElementById('kpi-mdd');
+        mddEl.textContent = `${m.mdd.toFixed(2)}%`;
+        mddEl.className = 'kpi-value negative';
+        document.getElementById('kpi-mdd-sub').textContent = `vs BTC ${m.bmMddBTC.toFixed(2)}% / TOP5 ${m.bmMddTOP5.toFixed(2)}%`;
+
+        // ── Aggregated PV ──
+        new Chart(document.getElementById('chartAggPV'), {
+            type: 'line',
+            data: {
+                labels: D.dates,
+                datasets: [{
+                    label: 'Aggregated PV (USDT)', data: D.pv,
+                    borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)',
+                    fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1,
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend }, scales: { x: axis().x, y: { ticks: { color: '#8e94a1', callback: v => '$' + v }, grid: { color: '#2a2d33' } } } }
+        });
+
+        function line3(canvasId, port, btc, top5, pct) {
+            new Chart(document.getElementById(canvasId), {
+                type: 'line',
+                data: {
+                    labels: D.dates,
+                    datasets: [
+                        { label: 'Portfolio', data: port, borderColor: '#43e97b', fill: false, pointRadius: 0, borderWidth: 2, tension: 0.1 },
+                        { label: 'BTC', data: btc, borderColor: '#3b82f6', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                        { label: 'TOP5', data: top5, borderColor: '#f59e0b', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(pct) }
+            });
+        }
+        line3('chartAggDD', D.dd.port, D.dd.btc, D.dd.top5, true);
+        line3('chartAggSh', D.sharpe.port, D.sharpe.btc, D.sharpe.top5, false);
+        line3('chartAggVol', D.vol.port, D.vol.btc, D.vol.top5, true);
+
+        // ── PnL doughnut ──
+        new Chart(document.getElementById('chartPnL'), {
+            type: 'doughnut',
+            data: {
+                labels: strategies.map(s => s.label),
+                datasets: [{ data: strategies.map(s => Math.abs(s.pnl)), backgroundColor: COLORS.slice(0, strategies.length), borderColor: '#181b1f', borderWidth: 2 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#d8d9da', font: { size: 11 }, padding: 8 } },
+                    tooltip: { callbacks: { label: ctx => { const o = strategies[ctx.dataIndex].pnl; return `${ctx.label}: ${o >= 0 ? '+' : ''}${fmtUsd(o)} USDT`; } } } } }
+        });
+
+        // ── Margin bar ──
+        new Chart(document.getElementById('chartMargin'), {
+            type: 'bar',
+            data: { labels: strategies.map(s => s.label), datasets: [{ label: 'Margin (USDT)', data: strategies.map(s => s.margin), backgroundColor: COLORS.slice(0, strategies.length), borderRadius: 4 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                scales: { x: { ticks: { color: '#8e94a1' }, grid: { color: '#2a2d33' } }, y: { ticks: { color: '#d8d9da', font: { size: 11 } }, grid: { display: false } } } }
+        });
+
+        // ── Strategy cards ──
+        const grid = document.getElementById('cardsGrid');
+        strategies.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => { window.location.href = `strategy.html?s=${encodeURIComponent(s.id)}`; };
+            card.innerHTML = `
+                <div class="card-label">${s.label}</div>
+                <span class="card-env">${s.env} · ${s.type}</span>
+                <div class="card-metrics">
+                    <div class="card-metric"><span>Equity</span><span class="val">$${fmtUsd(s.equity)}</span></div>
+                    <div class="card-metric"><span>Unrealized PnL</span><span class="val" style="color:${s.pnl >= 0 ? '#43e97b' : '#f5576c'}">${s.pnl >= 0 ? '+' : ''}${fmtUsd(s.pnl)}</span></div>
+                    <div class="card-metric"><span>Margin</span><span class="val">$${fmtUsd(s.margin)}</span></div>
+                    <div class="card-metric"><span>Sharpe</span><span class="val">${s.sharpe.toFixed(3)}</span></div>
+                    <div class="card-metric"><span>Drawdown</span><span class="val">${s.mdd.toFixed(2)}%</span></div>
+                    <div class="card-metric"><span>Since</span><span class="val">${s.since}</span></div>
+                </div>`;
+            grid.appendChild(card);
+        });
+    })();
+    </script>
+</body>
+</html>

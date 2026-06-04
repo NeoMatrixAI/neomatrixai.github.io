@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strategy Grid Demo — NeoMatrix AI</title>
+    <meta name="description" content="A sample strategy grid. Illustrative data only — this is what your strategy thumbnails look like on NeoMatrix." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="demo_data.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da; }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: #6ea8ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .logo { width: 28px; height: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 13px; color: white; }
+        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; font-size: 13px; }
+        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .demo-banner strong { color: #fff; }
+
+        .container { max-width: 1600px; margin: 0 auto; padding: 16px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+        .tile { background: #111317; border: 1px solid #2a2d33; border-radius: 8px;
+            overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
+        .tile:hover { border-color: #667eea; transform: translateY(-2px); }
+        .tile-hdr { display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px 8px; }
+        .tile-hdr .name { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .tile-hdr .env { font-size: 10px; padding: 1px 6px; border-radius: 3px;
+            background: #1f3a2a; color: #73d391; font-weight: 500; }
+        .spark { height: 120px; padding: 0 8px; }
+        .tile-foot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+            border-top: 1px solid #2a2d33; }
+        .tile-foot .cell { padding: 10px 12px; text-align: center; border-right: 1px solid #2a2d33; }
+        .tile-foot .cell:last-child { border-right: none; }
+        .tile-foot .cell .lbl { font-size: 10px; color: #8e94a1; text-transform: uppercase; }
+        .tile-foot .cell .val { font-size: 16px; font-weight: 700; margin-top: 2px; }
+        .val.pos { color: #43e97b; } .val.neg { color: #f5576c; } .val.neu { color: #e8e9ea; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <div class="logo">N</div>
+            <span class="title">Strategy Grid</span>
+            <span class="count" id="cnt"></span>
+        </div>
+        <div class="right">
+            <a href="portfolio.html">&larr; Portfolio</a>
+            <a href="https://neomatrix.ai">neomatrix.ai</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> &mdash; Illustrative preview of the strategy grid. All numbers are synthetic.
+    </div>
+
+    <div class="container">
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <script>
+    (function () {
+        const G = DEMO.grid();
+        document.getElementById('cnt').textContent = `— ${G.strategies.length} strategies`;
+        const grid = document.getElementById('grid');
+        const fmt = v => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+        G.strategies.forEach((s, idx) => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.onclick = () => { window.location.href = `strategy.html?s=${encodeURIComponent(s.id)}`; };
+            const roeCls = s.roe >= 0 ? 'pos' : 'neg';
+            tile.innerHTML = `
+                <div class="tile-hdr">
+                    <span class="name">${s.label}</span>
+                    <span class="env">${s.env} · ${s.type}</span>
+                </div>
+                <div class="spark"><canvas id="spark-${idx}"></canvas></div>
+                <div class="tile-foot">
+                    <div class="cell"><div class="lbl">ROE</div><div class="val ${roeCls}">${s.roe >= 0 ? '+' : ''}${s.roe.toFixed(1)}%</div></div>
+                    <div class="cell"><div class="lbl">Sharpe</div><div class="val neu">${s.sharpe.toFixed(2)}</div></div>
+                    <div class="cell"><div class="lbl">MDD</div><div class="val neg">${s.mdd.toFixed(1)}%</div></div>
+                </div>`;
+            grid.appendChild(tile);
+
+            const up = s.roe >= 0;
+            new Chart(document.getElementById(`spark-${idx}`), {
+                type: 'line',
+                data: { labels: G.dates, datasets: [{
+                    data: s.pv, borderColor: up ? '#43e97b' : '#f5576c',
+                    backgroundColor: up ? 'rgba(67,233,123,0.10)' : 'rgba(245,87,108,0.10)',
+                    fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.15,
+                }] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false } } }
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

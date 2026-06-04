@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strategy Detail Demo — NeoMatrix AI</title>
+    <meta name="description" content="A sample single-strategy drill-down. Illustrative data only." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="demo_data.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da; }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: #6ea8ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .logo { width: 28px; height: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 13px; color: white; }
+        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .topbar .badge { margin-left: 8px; font-size: 10px; padding: 1px 7px; border-radius: 3px;
+            background: #1f3a2a; color: #73d391; font-weight: 500; }
+        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .topbar select { background: #111317; border: 1px solid #2a2d33; border-radius: 4px;
+            color: #d8d9da; padding: 4px 8px; font-size: 12px; font-family: inherit; }
+
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .demo-banner strong { color: #fff; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .kpi-card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+        .kpi-card .kpi-label { font-size: 11px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 22px; font-weight: 700; color: #e8e9ea; }
+        .kpi-card .kpi-value.positive { color: #43e97b; }
+        .kpi-card .kpi-value.negative { color: #f5576c; }
+        .kpi-card .kpi-sub { font-size: 11px; color: #6b7280; }
+
+        .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .panel { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            overflow: hidden; display: flex; flex-direction: column; }
+        .panel .panel-hdr { height: 32px; flex: 0 0 32px; display: flex; align-items: center;
+            padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33;
+            font-size: 12px; font-weight: 600; color: #a0a4ae; }
+        .panel-chart { height: 320px; position: relative; }
+        .panel-chart .chart-wrap { flex: 1; padding: 8px 12px 12px; position: relative; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        th, td { text-align: right; padding: 8px 12px; border-bottom: 1px solid #23262c; }
+        th:first-child, td:first-child { text-align: left; }
+        th { color: #8e94a1; font-weight: 500; font-size: 11px; text-transform: uppercase;
+            background: #16181c; position: sticky; top: 0; }
+        td.pos { color: #43e97b; } td.neg { color: #f5576c; }
+        .pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+        .pill.long { background: #1f3a2a; color: #73d391; }
+        .pill.short { background: #3a1f24; color: #f08a98; }
+        .pill.buy { background: #1f3a2a; color: #73d391; }
+        .pill.sell { background: #3a1f24; color: #f08a98; }
+        .tbl-wrap { max-height: 340px; overflow-y: auto; }
+        @media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } .row-2col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <div class="logo">N</div>
+            <span class="title" id="stratName">Strategy</span>
+            <span class="badge" id="stratEnv"></span>
+        </div>
+        <div class="right">
+            <select id="stratSelect"></select>
+            <a href="grid.html">Grid</a>
+            <a href="portfolio.html">Portfolio</a>
+            <a href="https://neomatrix.ai">neomatrix.ai</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> &mdash; Illustrative preview of a single-strategy drill-down. All fills, positions and balances are synthetic.
+    </div>
+
+    <div class="container">
+        <div class="kpi-row">
+            <div class="kpi-card"><span class="kpi-label">Equity</span><span class="kpi-value" id="k-eq"></span><span class="kpi-sub" id="k-eq-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Unrealized PnL</span><span class="kpi-value" id="k-pnl"></span><span class="kpi-sub">Open positions</span></div>
+            <div class="kpi-card"><span class="kpi-label">ROE</span><span class="kpi-value" id="k-roe"></span><span class="kpi-sub" id="k-roe-sub"></span></div>
+            <div class="kpi-card"><span class="kpi-label">Max Drawdown</span><span class="kpi-value" id="k-mdd"></span><span class="kpi-sub" id="k-sharpe-sub"></span></div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Portfolio Value (USDT)</div>
+                <div class="chart-wrap"><canvas id="chartPV"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Drawdown (%)</div>
+                <div class="chart-wrap"><canvas id="chartDD"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel">
+                <div class="panel-hdr">Open Positions</div>
+                <div class="tbl-wrap">
+                    <table id="posTable">
+                        <thead><tr><th>Symbol</th><th>Side</th><th>Notional</th><th>Lev</th><th>PnL</th><th>ROE</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-hdr">Recent Fills</div>
+                <div class="tbl-wrap">
+                    <table id="fillTable">
+                        <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Price</th><th>Qty</th><th>Value</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const fmt = (v, d = 2) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const params = new URLSearchParams(location.search);
+        const wanted = params.get('s') || 'mom-alpha';
+
+        // Strategy switcher
+        const sel = document.getElementById('stratSelect');
+        DEMO.roster().forEach(r => {
+            const o = document.createElement('option');
+            o.value = r.id; o.textContent = r.label;
+            if (r.id === wanted) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.onchange = () => { location.search = '?s=' + sel.value; };
+
+        const S = DEMO.strategy(wanted);
+        const m = S.metrics;
+
+        document.getElementById('stratName').textContent = S.meta.label;
+        document.getElementById('stratEnv').textContent = `${S.meta.env} · ${S.meta.type}`;
+
+        document.getElementById('k-eq').textContent = `$${fmt(m.equity)}`;
+        document.getElementById('k-eq-sub').textContent = `Margin $${fmt(m.margin)} · Avail $${fmt(m.available)}`;
+        const pnlEl = document.getElementById('k-pnl');
+        pnlEl.textContent = `${m.pnl >= 0 ? '+' : ''}$${fmt(m.pnl)}`;
+        pnlEl.className = `kpi-value ${m.pnl >= 0 ? 'positive' : 'negative'}`;
+        const roeEl = document.getElementById('k-roe');
+        roeEl.textContent = `${m.roe >= 0 ? '+' : ''}${fmt(m.roe)}%`;
+        roeEl.className = `kpi-value ${m.roe >= 0 ? 'positive' : 'negative'}`;
+        document.getElementById('k-roe-sub').textContent = `Since ${S.meta.since}`;
+        document.getElementById('k-mdd').textContent = `${fmt(m.mdd)}%`;
+        document.getElementById('k-mdd').className = 'kpi-value negative';
+        document.getElementById('k-sharpe-sub').textContent = `Sharpe ${m.sharpe.toFixed(3)} · Vol ${m.vol.toFixed(1)}%`;
+
+        const baseAxis = (pct) => ({
+            x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' } },
+            y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : '$' + v }, grid: { color: '#2a2d33' } }
+        });
+
+        new Chart(document.getElementById('chartPV'), {
+            type: 'line',
+            data: { labels: S.dates, datasets: [{ label: 'PV (USDT)', data: S.pv,
+                borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)',
+                fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }] },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#d8d9da' } } }, scales: baseAxis(false) }
+        });
+
+        new Chart(document.getElementById('chartDD'), {
+            type: 'line',
+            data: { labels: S.dates, datasets: [{ label: 'Drawdown (%)', data: S.dd,
+                borderColor: '#f5576c', backgroundColor: 'rgba(245,87,108,0.18)',
+                fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }] },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#d8d9da' } } }, scales: baseAxis(true) }
+        });
+
+        // Positions
+        const posBody = document.querySelector('#posTable tbody');
+        S.positions.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.symbol}</td>
+                <td><span class="pill ${p.side}">${p.side.toUpperCase()}</span></td>
+                <td>$${fmt(p.notional)}</td>
+                <td>${p.leverage}x</td>
+                <td class="${p.pnl >= 0 ? 'pos' : 'neg'}">${p.pnl >= 0 ? '+' : ''}${fmt(p.pnl)}</td>
+                <td class="${p.roe >= 0 ? 'pos' : 'neg'}">${p.roe >= 0 ? '+' : ''}${fmt(p.roe)}%</td>`;
+            posBody.appendChild(tr);
+        });
+
+        // Fills
+        const fillBody = document.querySelector('#fillTable tbody');
+        S.fills.forEach(f => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${f.time}</td>
+                <td>${f.symbol}</td>
+                <td><span class="pill ${f.side}">${f.side.toUpperCase()}</span></td>
+                <td>$${fmt(f.price, f.price > 100 ? 1 : 4)}</td>
+                <td>${fmt(f.qty, 4)}</td>
+                <td>$${fmt(f.value)}</td>`;
+            fillBody.appendChild(tr);
+        });
+    })();
+    </script>
+</body>
+</html>
