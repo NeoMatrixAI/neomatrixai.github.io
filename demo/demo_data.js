@@ -158,9 +158,18 @@ const DEMO = (function () {
 
     function grid() {
         const S = build();
+        // Benchmark (BTC) cumulative-return % over the same window — the real grid shows
+        // each strategy as "Portfolio Return vs Benchmark (%)".
+        const btcPV = benchCurve(9001, 1.0, 0.012, N_DAYS, 30000);
+        const btcRet = btcPV.map(v => (v / btcPV[0] - 1) * 100);
         return {
             dates: dateLabels(N_DAYS),
-            strategies: S.map(s => ({ id: s.id, label: s.label, type: s.type, env: s.env, pv: s.pv, roe: s.roe, sharpe: s.sharpe, mdd: s.mdd, equity: s.equity, pnl: s.pnl, since: s.since })),
+            benchmarkReturn: btcRet,
+            strategies: S.map(s => ({
+                id: s.id, label: s.label, type: s.type, env: s.env,
+                pv: s.pv, roe: s.roe, sharpe: s.sharpe, mdd: s.mdd, equity: s.equity, pnl: s.pnl, since: s.since,
+                returnPct: s.pv.map(v => (v / s.pv[0] - 1) * 100),
+            })),
         };
     }
 
@@ -203,5 +212,52 @@ const DEMO = (function () {
         };
     }
 
-    return { portfolio, grid, strategy, roster: () => ROSTER.map(r => ({ id: r.id, label: r.label })) };
+    // ── Synthetic OHLC candles for the Candlestick tab (per strategy, BTCUSDT 1m-ish) ──
+    function candles(id) {
+        const s = ROSTER.find(x => x.id === id) || ROSTER[0];
+        const rnd = mulberry32(s.seed + 71);
+        const out = [];
+        let price = PRICES.BTCUSDT * (0.96 + rnd() * 0.08);
+        const n = 120;
+        for (let i = 0; i < n; i++) {
+            const o = price;
+            const drift = (rnd() - 0.48) * 0.004;
+            const c = o * (1 + drift);
+            const hi = Math.max(o, c) * (1 + rnd() * 0.0025);
+            const lo = Math.min(o, c) * (1 - rnd() * 0.0025);
+            const v = 20 + rnd() * 180;
+            out.push({ i, o, h: hi, l: lo, c, v });
+            price = c;
+        }
+        return out;
+    }
+
+    // ── Synthetic structured trading-log lines for the Trading Logs tab ──
+    function logs(id) {
+        const s = ROSTER.find(x => x.id === id) || ROSTER[0];
+        const rnd = mulberry32(s.seed + 91);
+        const comps = ['Strategy', 'Main', 'Finwatcher', 'Scheduler'];
+        const msgs = [
+            'Rebalancing cycle started', 'Strategy executed: {n} target weights computed',
+            'order_queue: {n} orders inserted', 'Phase 1 complete: {n}/{n} orders filled',
+            'Phase 2 complete: SL/TP set on {n} symbols', 'Finwatcher cycle: PV recorded',
+            'Next rebalancing scheduled', 'CrashGuard check: no action', 'Position snapshot stored',
+        ];
+        const lvls = ['INFO', 'INFO', 'INFO', 'INFO', 'WARN'];
+        const out = [];
+        let t = END.getTime();
+        for (let i = 0; i < 40; i++) {
+            t -= (40 + rnd() * 220) * 1000;
+            const lvl = lvls[Math.floor(rnd() * lvls.length)];
+            const comp = comps[Math.floor(rnd() * comps.length)];
+            const msg = msgs[Math.floor(rnd() * msgs.length)].replace(/\{n\}/g, () => 1 + Math.floor(rnd() * 8));
+            out.push({
+                time: new Date(t).toISOString().substring(0, 19).replace('T', ' '),
+                level: lvl, component: comp, strategy: s.id, type: s.type, msg,
+            });
+        }
+        return out;
+    }
+
+    return { portfolio, grid, strategy, candles, logs, roster: () => ROSTER.map(r => ({ id: r.id, label: r.label })) };
 })();

@@ -4,110 +4,117 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Strategy Grid Demo — NeoMatrix AI</title>
-    <meta name="description" content="A sample strategy grid. Illustrative data only — this is what your strategy thumbnails look like on NeoMatrix." />
+    <meta name="description" content="A sample strategy grid. Illustrative data only — this mirrors the live strategy grid layout." />
     <link rel="icon" href="../favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="demo_data.js"></script>
     <style>
-        html, body { margin: 0; padding: 0; min-height: 100%;
+        html, body { margin: 0; padding: 0; height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #181b1f; color: #d8d9da; }
-        *, *::before, *::after { box-sizing: border-box; }
-        a { color: #6ea8ff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-
-        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
-        .topbar .left { display: flex; align-items: center; gap: 10px; }
-        .topbar .logo { width: 28px; height: 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 5px; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 13px; color: white; }
-        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
-        .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; font-size: 13px; }
-        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .topbar {
+            height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33;
+            font-size: 14px; font-weight: 600;
+        }
+        .topbar .left { display: flex; align-items: center; }
+        .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; }
+        .topbar a { color: #6ea8ff; text-decoration: none; font-size: 13px; }
+        .topbar a:hover { text-decoration: underline; }
+        .topbar .links { display: flex; gap: 16px; }
 
         .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
             border-bottom: 1px solid #3a3d55; color: #c9b8ff;
-            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+            font-size: 12.5px; text-align: center; padding: 6px 16px; }
         .demo-banner strong { color: #fff; }
 
-        .container { max-width: 1600px; margin: 0 auto; padding: 16px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
-        .tile { background: #111317; border: 1px solid #2a2d33; border-radius: 8px;
-            overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
-        .tile:hover { border-color: #667eea; transform: translateY(-2px); }
-        .tile-hdr { display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 14px 8px; }
-        .tile-hdr .name { font-size: 15px; font-weight: 600; color: #e8e9ea; }
-        .tile-hdr .env { font-size: 10px; padding: 1px 6px; border-radius: 3px;
-            background: #1f3a2a; color: #73d391; font-weight: 500; }
-        .spark { height: 120px; padding: 0 8px; }
-        .tile-foot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
-            border-top: 1px solid #2a2d33; }
-        .tile-foot .cell { padding: 10px 12px; text-align: center; border-right: 1px solid #2a2d33; }
-        .tile-foot .cell:last-child { border-right: none; }
-        .tile-foot .cell .lbl { font-size: 10px; color: #8e94a1; text-transform: uppercase; }
-        .tile-foot .cell .val { font-size: 16px; font-weight: 700; margin-top: 2px; }
-        .val.pos { color: #43e97b; } .val.neg { color: #f5576c; } .val.neu { color: #e8e9ea; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
+        .cell {
+            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            display: flex; flex-direction: column; overflow: hidden;
+            height: calc((100vh - 114px) / 2);  /* topbar(48) + banner(30) + padding(24) + gap(12) → 2 rows */
+        }
+        .cell .hdr {
+            height: 36px; flex: 0 0 36px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33; font-size: 13px;
+        }
+        .cell .hdr .left { display: flex; align-items: center; min-width: 0; }
+        .cell .hdr .label { font-weight: 600; color: #e8e9ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cell .hdr .env { margin-left: 8px; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 500; background: #2a2d33; color: #8e94a1; }
+        .cell .hdr .env.live { background: #1f3a2a; color: #73d391; }
+        .cell .hdr .env.demo { background: #3a2f1f; color: #e0b36a; }
+        .cell .hdr a { color: #6ea8ff; text-decoration: none; font-size: 12px; white-space: nowrap; }
+        .cell .hdr a:hover { text-decoration: underline; }
+        .cell .body { flex: 1 1 auto; position: relative; padding: 6px 10px 10px; }
     </style>
 </head>
 <body>
     <div class="topbar">
         <div class="left">
-            <div class="logo">N</div>
-            <span class="title">Strategy Grid</span>
-            <span class="count" id="cnt"></span>
+            <span>Live Strategy Grid</span>
+            <span class="count" id="count"></span>
         </div>
-        <div class="right">
+        <div class="links">
             <a href="portfolio.html">&larr; Portfolio</a>
             <a href="https://neomatrix.ai">neomatrix.ai</a>
         </div>
     </div>
     <div class="demo-banner">
-        <strong>SAMPLE DATA</strong> &mdash; Illustrative preview of the strategy grid. All numbers are synthetic.
+        <strong>SAMPLE DATA</strong> &mdash; Illustrative preview of the strategy grid. Each cell shows Portfolio Return vs Benchmark (%). All numbers are synthetic.
     </div>
 
-    <div class="container">
-        <div class="grid" id="grid"></div>
-    </div>
+    <div class="grid" id="grid"></div>
 
     <script>
     (function () {
         const G = DEMO.grid();
-        document.getElementById('cnt').textContent = `— ${G.strategies.length} strategies`;
+        document.getElementById('count').textContent = `— ${G.strategies.length} active`;
         const grid = document.getElementById('grid');
-        const fmt = v => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
         G.strategies.forEach((s, idx) => {
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.onclick = () => { window.location.href = `strategy.html?s=${encodeURIComponent(s.id)}`; };
-            const roeCls = s.roe >= 0 ? 'pos' : 'neg';
-            tile.innerHTML = `
-                <div class="tile-hdr">
-                    <span class="name">${s.label}</span>
-                    <span class="env">${s.env} · ${s.type}</span>
-                </div>
-                <div class="spark"><canvas id="spark-${idx}"></canvas></div>
-                <div class="tile-foot">
-                    <div class="cell"><div class="lbl">ROE</div><div class="val ${roeCls}">${s.roe >= 0 ? '+' : ''}${s.roe.toFixed(1)}%</div></div>
-                    <div class="cell"><div class="lbl">Sharpe</div><div class="val neu">${s.sharpe.toFixed(2)}</div></div>
-                    <div class="cell"><div class="lbl">MDD</div><div class="val neg">${s.mdd.toFixed(1)}%</div></div>
-                </div>`;
-            grid.appendChild(tile);
+            const cell = document.createElement('div');
+            cell.className = 'cell';
 
-            const up = s.roe >= 0;
-            new Chart(document.getElementById(`spark-${idx}`), {
+            const hdr = document.createElement('div');
+            hdr.className = 'hdr';
+            hdr.innerHTML = `
+                <div class="left">
+                    <span class="label">${s.label}</span>
+                    <span class="env ${s.env}">${s.env} · ${s.type}</span>
+                </div>
+                <a href="strategy.html?s=${encodeURIComponent(s.id)}">Open dashboard &#8599;</a>`;
+
+            const body = document.createElement('div');
+            body.className = 'body';
+            const canvas = document.createElement('canvas');
+            canvas.id = `chart-${idx}`;
+            body.appendChild(canvas);
+
+            cell.appendChild(hdr);
+            cell.appendChild(body);
+            grid.appendChild(cell);
+
+            new Chart(canvas, {
                 type: 'line',
-                data: { labels: G.dates, datasets: [{
-                    data: s.pv, borderColor: up ? '#43e97b' : '#f5576c',
-                    backgroundColor: up ? 'rgba(67,233,123,0.10)' : 'rgba(245,87,108,0.10)',
-                    fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.15,
-                }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    scales: { x: { display: false }, y: { display: false } } }
+                data: {
+                    labels: G.dates,
+                    datasets: [
+                        { label: s.label, data: s.returnPct,
+                          borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)',
+                          fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                        { label: 'BTC (benchmark)', data: G.benchmarkReturn,
+                          borderColor: '#3b82f6', backgroundColor: 'transparent',
+                          fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d8d9da', font: { size: 11 }, boxWidth: 12 } } },
+                    scales: {
+                        x: { ticks: { color: '#8e94a1', maxTicksLimit: 6 }, grid: { color: '#23262c' } },
+                        y: { ticks: { color: '#8e94a1', callback: v => v.toFixed(0) + '%' }, grid: { color: '#23262c' } }
+                    }
+                }
             });
         });
     })();
