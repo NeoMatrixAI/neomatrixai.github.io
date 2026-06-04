@@ -51,6 +51,24 @@
     .card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: .02em; }
     .card p { margin: 0; color: #222; }
 
+    /* Architecture diagram */
+    .arch { display: flex; flex-direction: column; margin-top: 14px; }
+    .arch-band { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
+    .arch-band .bl { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 10px; }
+    .arch-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .arch-flow + .arch-flow { margin-top: 10px; }
+    .arch-node { border: 1px solid var(--fg); border-radius: 10px; padding: 9px 13px; font-weight: 700; font-size: 14px; background: var(--bg); white-space: nowrap; }
+    .arch-node .nx { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .arch-node.soft { border-color: var(--line); font-weight: 600; }
+    .arch-arrow { color: var(--muted); font-weight: 800; font-size: 16px; }
+    .arch-down { text-align: center; color: var(--muted); font-size: 20px; line-height: 1; padding: 7px 0; }
+    .arch-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    @media (max-width: 640px) {
+      .arch-node { white-space: normal; width: 100%; }
+      .arch-arrow { display: none; }
+    }
+
     /* Statement Blocks */
     .banner { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; margin-top: 14px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; color: var(--muted); }
@@ -238,6 +256,60 @@
           <p>Deploy in one click. Hot‑swap your strategy or config mid‑trade. Every fill is snapshot‑logged for audit.</p>
         </div>
       </div>
+    </section>
+
+    <section class="banner" id="architecture">
+      <div class="mono">/architecture</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">What happens when you go live.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Deploy once and the platform runs your strategy on schedule, executes the orders, defends the downside, and records everything — automatically, around the clock.</p>
+
+      <div class="arch">
+        <div class="arch-band">
+          <div class="bl">1 · Market data in</div>
+          <div class="arch-flow">
+            <span class="arch-node soft">OHLCV<span class="nx">1m · 5m · 15m · 1d</span></span>
+            <span class="arch-node soft">Funding rates</span>
+            <span class="arch-node soft">Market cap</span>
+            <span class="arch-node soft">Macro &amp; on‑chain</span>
+            <span class="arch-arrow">→</span>
+            <span style="font-size:13px;color:var(--muted)">pre‑fetched ~2 min before each run, so there's no slippage at execution</span>
+          </div>
+        </div>
+
+        <div class="arch-down">↓</div>
+
+        <div class="arch-band">
+          <div class="bl">2 · Execution loop</div>
+          <div class="arch-flow">
+            <span class="arch-node">Scheduler<span class="nx">fires on your rebalancing clock</span></span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-node">Strategy Runner<span class="nx">your Python · target weights</span></span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-node">Order Execution<span class="nx">orders + SL/TP, spot &amp; futures</span></span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-node">Exchange<span class="nx">Bitget live · Binance soon</span></span>
+          </div>
+          <div class="arch-flow">
+            <span class="arch-arrow" style="visibility:hidden">→</span>
+            <span class="arch-node soft">CrashGuard<span class="nx">between rebalances — your crash logic runs minute‑by‑minute and scales positions instantly</span></span>
+          </div>
+        </div>
+
+        <div class="arch-down">↓</div>
+
+        <div class="arch-band">
+          <div class="bl">3 · Monitor &amp; protect</div>
+          <div class="arch-flow">
+            <span class="arch-node">Monitor<span class="nx">records PV, PnL &amp; fills every 60s</span></span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-node">Your Dashboards<span class="nx">portfolio · grid · per‑strategy</span></span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-node soft">Risk Guard<span class="nx">max‑loss auto‑liquidation · auto‑recovery</span></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="arch-note">Runs on Kubernetes — self‑healing if a node dies, every fill snapshotted for audit, and your strategy or config can be hot‑swapped mid‑trade with no downtime.</p>
     </section>
 
     <section class="banner" id="data">
