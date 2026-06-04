@@ -150,13 +150,33 @@
       .btn { width: 100%; justify-content: center; }
       .hero-cta { flex-direction: column; }
     }
+
+    /* In-page jump nav + smooth scroll */
+    html { scroll-behavior: smooth; }
+    section[id], header[id] { scroll-margin-top: 80px; }
+    .nav .jump { display: flex; gap: 20px; font-size: 14px; }
+    .nav .jump a { color: #555; }
+    .nav .jump a:hover { color: var(--fg); }
+    .nav .left { display: flex; align-items: center; }
+    @media (max-width: 980px) { .nav .jump { display: none; } }
+
+    /* Section sub-labels (used to group content within a section) */
+    .sublabel { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <nav class="nav">
-      <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:55px; margin-right:8px; vertical-align:middle;">
-      <div class="brand-center">NeoMatrix AI</div>
+      <div class="left">
+        <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:48px; margin-right:8px; vertical-align:middle;">
+        <div class="brand-center" style="font-size:24px;">NeoMatrix AI</div>
+      </div>
+      <div class="jump">
+        <a href="#demo">Demo</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#data">Data</a>
+        <a href="#blog">Blog</a>
+      </div>
       <div style="display:flex; align-items:center; gap:14px;">
         <a href="demo/portfolio.html" style="font-weight:600;">Live Demo</a>
         <a class="cta" href="https://github.com/NeoMatrixAI" target="_blank" aria-label="Get started">Get Started →</a>
@@ -228,21 +248,13 @@
       </div>
     </section>
 
-    <section class="banner" id="get-started">
-      <div class="mono">/promise</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From idea to live in one click.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Write a strategy in Python. Backtest it on Zipline or our local engine. Deploy it live — same code, no rewrites. We handle execution, risk, monitoring, and recovery.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
-        <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Setup Guide</a>
-        <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy" target="_blank">Strategy Templates</a>
-      </div>
-    </section>
+    <section class="banner" id="how-it-works">
+      <div class="mono">/how-it-works</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From your Python file to a live book.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Write a strategy once. The platform validates it, runs it on schedule, executes the orders, defends the downside, and records everything — around the clock.</p>
 
-    <section class="banner" id="workflow">
-      <div class="mono">/workflow</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Same code, three modes.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">One strategy file works across every stage — verified to behave identically from research to production.</p>
-      <div class="grid" style="margin-top:14px">
+      <p class="sublabel" style="margin:18px 0 0">Build · same code, three modes</p>
+      <div class="grid" style="margin-top:10px">
         <div class="card">
           <h3>1. Backtest</h3>
           <p>Run on Zipline or our local backtest engine. Local results are cross‑validated against real live trades.</p>
@@ -256,13 +268,8 @@
           <p>Deploy in one click. Hot‑swap your strategy or config mid‑trade. Every fill is snapshot‑logged for audit.</p>
         </div>
       </div>
-    </section>
 
-    <section class="banner" id="how-it-works">
-      <div class="mono">/how-it-works</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">What happens when you go live.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Deploy once and the platform runs your strategy on schedule, executes the orders, defends the downside, and records everything — automatically, around the clock.</p>
-
+      <p class="sublabel" style="margin:24px 0 0">Run · the live loop</p>
       <div class="arch">
         <div class="arch-band">
           <div class="bl">1 · Market data in</div>
@@ -309,8 +316,8 @@
         </div>
       </div>
 
-      <h3 style="margin:22px 0 0;font-size:18px;letter-spacing:-.01em">Built to be trusted with real capital.</h3>
-      <div class="grid" style="margin-top:12px">
+      <p class="sublabel" style="margin:24px 0 0">Protect · built to be trusted with real capital</p>
+      <div class="grid" style="margin-top:10px">
         <div class="card">
           <h3>Zero‑slippage execution</h3>
           <p>Market data is pre‑fetched ~2 minutes before every run, so your orders fire the instant the clock ticks — not after a slow data pull.</p>
@@ -338,6 +345,11 @@
       </div>
 
       <p class="arch-note">All of it runs on Kubernetes — self‑healing, snapshotted for audit, and hot‑swappable mid‑trade. You bring the strategy; we keep it running.</p>
+      <p style="margin:16px 0 0;font-size:13px;color:var(--muted)">Plus Discord alerts &amp; team management, cross/isolated margin, and a demo mode for risk-free dry runs before you commit capital.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
+        <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Setup Guide</a>
+        <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy" target="_blank">Strategy Templates</a>
+      </div>
     </section>
 
     <section class="banner" id="data">
@@ -452,22 +464,6 @@
       </div>
 
       <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">+ derivative & engineered features delivered alongside raw feeds. Multi‑symbol queries (up to 100 per request), dual‑collector architecture with auto‑recovery.</p>
-    </section>
-
-    <section class="banner">
-      <div class="mono">/spec</div>
-      <ul style="margin:0; padding-left: 18px;">
-        <li>Exchanges: <strong>Bitget</strong> live · <strong>Binance</strong> in progress · more coming</li>
-        <li>Markets: spot & futures (perpetuals) with cross/isolated margin</li>
-        <li>One strategy code → Zipline backtest, local backtest, and live — fully interchangeable</li>
-        <li>Local backtest engine cross‑checked against real live‑trading results</li>
-        <li>Live strategy & config hot‑swap — no downtime, no re‑deploy</li>
-        <li>Session snapshots: query the exact code, config, and modules used at any past fill</li>
-        <li>Two‑layer max‑loss auto‑liquidation & orphan‑session recovery</li>
-        <li>Real‑time Grafana dashboards: portfolio value, PnL, fills, leverage</li>
-        <li>Discord bot: live alerts, team management, secure API‑key request flow</li>
-        <li>Demo mode for risk‑free dry runs before going live</li>
-      </ul>
     </section>
 
     <section class="banner" id="blog">
