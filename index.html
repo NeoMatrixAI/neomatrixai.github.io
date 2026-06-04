@@ -258,8 +258,8 @@
       </div>
     </section>
 
-    <section class="banner" id="architecture">
-      <div class="mono">/architecture</div>
+    <section class="banner" id="how-it-works">
+      <div class="mono">/how-it-works</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">What happens when you go live.</h2>
       <p style="margin:6px 0 0;color:#1a1a1a">Deploy once and the platform runs your strategy on schedule, executes the orders, defends the downside, and records everything — automatically, around the clock.</p>
 
@@ -309,7 +309,35 @@
         </div>
       </div>
 
-      <p class="arch-note">Runs on Kubernetes — self‑healing if a node dies, every fill snapshotted for audit, and your strategy or config can be hot‑swapped mid‑trade with no downtime.</p>
+      <h3 style="margin:22px 0 0;font-size:18px;letter-spacing:-.01em">Built to be trusted with real capital.</h3>
+      <div class="grid" style="margin-top:12px">
+        <div class="card">
+          <h3>Zero‑slippage execution</h3>
+          <p>Market data is pre‑fetched ~2 minutes before every run, so your orders fire the instant the clock ticks — not after a slow data pull.</p>
+        </div>
+        <div class="card">
+          <h3>Minute‑level control</h3>
+          <p>Rebalance on your own schedule, and let CrashGuard react between cycles — down to a single minute, with your own logic.</p>
+        </div>
+        <div class="card">
+          <h3>Two‑layer downside protection</h3>
+          <p>Set a max loss and we auto‑liquidate and close the session — backed by a second, independent enforcement layer.</p>
+        </div>
+        <div class="card">
+          <h3>Every session, on the record</h3>
+          <p>The exact strategy code, config and fills are snapshotted — replay or audit any past trade, anytime.</p>
+        </div>
+        <div class="card">
+          <h3>Self‑healing by design</h3>
+          <p>If a node or job dies mid‑session, the platform detects it and recovers your positions automatically — no babysitting.</p>
+        </div>
+        <div class="card">
+          <h3>Hot‑swap, no downtime</h3>
+          <p>Update your strategy or config while you're live — it takes effect on the next cycle, with no restart.</p>
+        </div>
+      </div>
+
+      <p class="arch-note">All of it runs on Kubernetes — self‑healing, snapshotted for audit, and hot‑swappable mid‑trade. You bring the strategy; we keep it running.</p>
     </section>
 
     <section class="banner" id="data">
