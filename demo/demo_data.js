@@ -173,42 +173,89 @@ const DEMO = (function () {
         };
     }
 
+    function _fmtDt(ms) { return new Date(ms).toISOString().substring(0, 16).replace('T', ' '); }
+
     function strategy(id) {
         const S = build();
         const s = S.find(x => x.id === id) || S[0];
         const dates = dateLabels(N_DAYS);
         const rnd = mulberry32(s.seed + 33);
 
-        const nPos = 3 + Math.floor(rnd() * 4);
+        // ── Open positions ──
+        const nPos = 4 + Math.floor(rnd() * 4);
         const positions = [];
         const used = new Set();
         for (let i = 0; i < nPos; i++) {
             let sym; do { sym = UNIVERSE[Math.floor(rnd() * UNIVERSE.length)]; } while (used.has(sym));
             used.add(sym);
             const side = s.type === 'spot' ? 'long' : (rnd() > 0.5 ? 'long' : 'short');
-            const notional = s.equity * (0.08 + rnd() * 0.22);
+            const notional = s.equity * (0.06 + rnd() * 0.20);
             const lev = s.type === 'spot' ? 1 : s.leverage;
             const pnl = (rnd() - 0.40) * notional * 0.07;
             const mark = PRICES[sym] * (1 + (rnd() - 0.5) * 0.06);
             positions.push({ symbol: sym, side, notional, margin: notional / lev, leverage: lev, markPrice: mark, qty: notional / mark, pnl, roe: pnl / (notional / lev) * 100 });
         }
+        const grossExposure = positions.reduce((a, p) => a + p.notional, 0);
+        const usedMargin = positions.reduce((a, p) => a + p.margin, 0);
+        const unrealized = positions.reduce((a, p) => a + p.pnl, 0);
+        const exposureRatio = grossExposure / s.equity * 100;
 
-        const fills = [];
-        for (let i = 0; i < 14; i++) {
+        // ── Symbol weight distributions (for the piecharts) ──
+        const wAll = positions.map(p => ({ symbol: p.symbol, weight: p.notional / grossExposure * 100 }));
+        const wLong = positions.filter(p => p.side === 'long').map(p => ({ symbol: p.symbol, weight: p.notional }));
+        const wShort = positions.filter(p => p.side === 'short').map(p => ({ symbol: p.symbol, weight: p.notional }));
+
+        // ── Rebalancing schedule (synthetic) ──
+        const intervalH = s.type === 'spot' ? 8 : [4, 6, 8][Math.floor(rnd() * 3)];
+        const lastReb = END.getTime() - (rnd() * intervalH * 0.5) * 3600000;
+        const nextReb = lastReb + intervalH * 3600000;
+        const firstReb = new Date(s.since + 'T00:00:00Z').getTime();
+        const sessionId = s.since.replace(/-/g, '').substring(2) + '0900';
+
+        // ── Time series (mirror the 8 timeseries panels) ──
+        const benchPV = benchCurve(9001, 1.0, 0.012, N_DAYS, 30000);
+        const benchRet = benchPV.map(v => (v / benchPV[0] - 1) * 100);
+        const cumReturn = s.pv.map(v => (v / s.pv[0] - 1) * 100);
+        const grossExpRatioTs = s.pv.map((_, i) => exposureRatio + Math.sin(i / 6) * 6 + (mulberry32(s.seed + i)() - 0.5) * 8);
+        const netProfitPerMin = s.ret.map(r => r * s.equity); // approximate per-cycle profit
+        const sharpeTs = rollingSharpe(s.ret, 30);
+        const volTs = rollingVol(s.ret, 30);
+
+        // ── Historical positions & transactions (limit 20) ──
+        const histPositions = [];
+        for (let i = 0; i < 18; i++) {
+            const p = positions[Math.floor(rnd() * positions.length)];
+            const open = END.getTime() - (i + 1) * intervalH * 3600000 - rnd() * 3600000;
+            const close = open + (1 + rnd() * 5) * 3600000;
+            const realized = (rnd() - 0.42) * p.notional * 0.09;
+            histPositions.push({ symbol: p.symbol, side: p.side, openTime: _fmtDt(open), closeTime: _fmtDt(close), pnl: realized, roe: realized / p.margin * 100 });
+        }
+        const transactions = [];
+        for (let i = 0; i < 20; i++) {
             const p = positions[Math.floor(rnd() * positions.length)];
             const side = rnd() > 0.5 ? 'buy' : 'sell';
             const price = PRICES[p.symbol] * (1 + (rnd() - 0.5) * 0.05);
             const value = s.equity * (0.02 + rnd() * 0.10);
-            const t = new Date(END.getTime() - i * 3600000 * (1 + Math.floor(rnd() * 5)));
-            fills.push({ time: t.toISOString().substring(0, 16).replace('T', ' '), symbol: p.symbol, side, price, qty: value / price, value });
+            const t = END.getTime() - i * 3600000 * (1 + Math.floor(rnd() * 4));
+            transactions.push({ time: _fmtDt(t), symbol: p.symbol, side, price, qty: value / price, value });
         }
-        fills.sort((a, b) => (a.time < b.time ? 1 : -1));
+        transactions.sort((a, b) => (a.time < b.time ? 1 : -1));
 
         return {
-            meta: { id: s.id, label: s.label, type: s.type, env: s.env, since: s.since, leverage: s.leverage },
-            dates, pv: s.pv.map(v => Math.round(v)), dd: s.dd,
-            metrics: { equity: s.equity, pnl: s.pnl, margin: s.margin, available: s.available, roe: s.roe, sharpe: s.sharpe, vol: s.vol, mdd: s.mdd, deposits: s.deposits },
-            positions, fills,
+            meta: {
+                id: s.id, label: s.label, type: s.type, env: s.env, since: s.since, leverage: s.leverage,
+                strategyName: s.id.replace(/-/g, '_'), sessionId,
+                startTime: s.since + ' 09:00', endDate: dateLabels(1)[0] + ' 00:00',
+                interval: intervalH + 'h',
+                firstReb: _fmtDt(firstReb), lastReb: _fmtDt(lastReb), nextReb: _fmtDt(nextReb),
+            },
+            account: { equity: s.equity, available: s.available, usedMargin, unrealized, grossExposure, exposureRatio, deposits: s.deposits },
+            dates,
+            pv: s.pv.map(v => Math.round(v)), dd: s.dd,
+            ts: { benchRet, cumReturn, grossExpRatio: grossExpRatioTs, netProfitPerMin, sharpe: sharpeTs, vol: volTs },
+            metrics: { equity: s.equity, pnl: unrealized, margin: usedMargin, available: s.available, roe: s.roe, sharpe: s.sharpe, vol: s.vol, mdd: s.mdd, deposits: s.deposits },
+            positions, symbolWeights: { all: wAll, long: wLong, short: wShort },
+            histPositions, transactions,
         };
     }
 
@@ -232,30 +279,37 @@ const DEMO = (function () {
         return out;
     }
 
-    // ── Synthetic structured trading-log lines for the Trading Logs tab ──
+    // ── Synthetic structured logs, grouped by component (mirrors the 5 log panels:
+    //    Strategy Execution / CrashGuard / Finwatcher / Scheduler / API). ──
+    const LOG_MSGS = {
+        Strategy: ['Rebalancing cycle started', 'Strategy executed: {n} target weights computed',
+            'order_queue: {n} orders inserted', 'Phase 1 complete: {n}/{n} orders filled',
+            'Phase 2 complete: SL/TP set on {n} symbols', 'state=strategy_done'],
+        CrashGuard: ['CrashGuard check: no action', 'snapshot_positions: {n} positions',
+            'scale=1.0 (no breach)', 'crashNextTime advanced', 'user crashguard() returned None'],
+        Finwatcher: ['Finwatcher cycle: PV recorded', 'futures result_1min: {n} rows inserted',
+            'portfolio_result_1min upserted', 'indicator_result computed', 'elapsed {n}.2s'],
+        Scheduler: ['get_due_users: {n} due', 'Strategy-Main Job created', 'advisory lock acquired',
+            'next rebalancing scheduled', 'standby (lock held by another instance)'],
+        API: ['POST /run-system 200', 'session UPSERT ok', 'snapshot created',
+            'GET /session-check 200', 'config validated (7 steps)'],
+    };
     function logs(id) {
         const s = ROSTER.find(x => x.id === id) || ROSTER[0];
-        const rnd = mulberry32(s.seed + 91);
-        const comps = ['Strategy', 'Main', 'Finwatcher', 'Scheduler'];
-        const msgs = [
-            'Rebalancing cycle started', 'Strategy executed: {n} target weights computed',
-            'order_queue: {n} orders inserted', 'Phase 1 complete: {n}/{n} orders filled',
-            'Phase 2 complete: SL/TP set on {n} symbols', 'Finwatcher cycle: PV recorded',
-            'Next rebalancing scheduled', 'CrashGuard check: no action', 'Position snapshot stored',
-        ];
-        const lvls = ['INFO', 'INFO', 'INFO', 'INFO', 'WARN'];
-        const out = [];
-        let t = END.getTime();
-        for (let i = 0; i < 40; i++) {
-            t -= (40 + rnd() * 220) * 1000;
-            const lvl = lvls[Math.floor(rnd() * lvls.length)];
-            const comp = comps[Math.floor(rnd() * comps.length)];
-            const msg = msgs[Math.floor(rnd() * msgs.length)].replace(/\{n\}/g, () => 1 + Math.floor(rnd() * 8));
-            out.push({
-                time: new Date(t).toISOString().substring(0, 19).replace('T', ' '),
-                level: lvl, component: comp, strategy: s.id, type: s.type, msg,
-            });
-        }
+        const out = {};
+        Object.keys(LOG_MSGS).forEach((comp, ci) => {
+            const rnd = mulberry32(s.seed + 91 + ci * 13);
+            const lines = [];
+            let t = END.getTime();
+            const n = comp === 'Strategy' ? 16 : (comp === 'API' ? 8 : 12);
+            for (let i = 0; i < n; i++) {
+                t -= (60 + rnd() * 600) * 1000;
+                const lvl = rnd() > 0.9 ? 'WARN' : 'INFO';
+                const msg = LOG_MSGS[comp][Math.floor(rnd() * LOG_MSGS[comp].length)].replace(/\{n\}/g, () => 1 + Math.floor(rnd() * 8));
+                lines.push({ time: new Date(t).toISOString().substring(0, 19).replace('T', ' '), level: lvl, component: comp, strategy: s.id, type: s.type, msg });
+            }
+            out[comp] = lines;
+        });
         return out;
     }
 

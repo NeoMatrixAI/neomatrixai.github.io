@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trading Dashboard Demo — NeoMatrix AI</title>
-    <meta name="description" content="A sample single-strategy live trading dashboard. Illustrative data only — mirrors the Candlestick / Trading / Trading Logs tab layout." />
+    <meta name="description" content="A sample single-strategy live trading dashboard. Illustrative data only — mirrors the real Candlestick / Trading / Trading Logs tab layout." />
     <link rel="icon" href="../favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="demo_data.js"></script>
@@ -14,7 +14,6 @@
             background-color: #181b1f; color: #d8d9da; overflow: hidden; }
         *, *::before, *::after { box-sizing: border-box; }
 
-        /* Title bar (40px) */
         .titlebar { position: fixed; top: 0; left: 0; width: 100vw; height: 40px;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); z-index: 5;
             display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
@@ -29,7 +28,6 @@
         .titlebar select { background: #111317; border: 1px solid #2a2d33; border-radius: 4px;
             color: #d8d9da; padding: 4px 8px; font-size: 12px; font-family: inherit; }
 
-        /* Tab bar (40px) */
         .tab-bar { position: fixed; top: 40px; left: 0; width: 100vw; height: 40px;
             background-color: #1e2228; z-index: 5; display: flex; border-bottom: 1px solid #2d3748; }
         .tab-button { flex: 1; text-align: center; line-height: 40px; cursor: pointer;
@@ -37,53 +35,56 @@
         .tab-button:hover { background-color: #2d3748; color: #e2e8f0; }
         .tab-button.active { background-color: #181b1f; border-bottom: 2px solid #667eea; color: #667eea; font-weight: 700; }
 
-        /* Demo banner (26px) */
         .demo-banner { position: fixed; top: 80px; left: 0; width: 100vw; height: 26px; z-index: 5;
             background: linear-gradient(90deg, #2a1f3d, #1f2d3d); border-bottom: 1px solid #3a3d55;
             color: #c9b8ff; font-size: 12px; display: flex; align-items: center; justify-content: center; }
         .demo-banner strong { color: #fff; margin-right: 6px; }
 
-        /* Content area */
         .content { position: fixed; top: 106px; left: 0; width: 100vw; height: calc(100vh - 106px);
-            overflow-y: auto; padding: 12px; }
+            overflow-y: auto; padding: 10px; }
         .pane { display: none; }
         .pane.active { display: block; }
 
-        .full-chart { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
-            padding: 8px 12px 12px; height: calc(100vh - 130px); }
+        /* Candlestick */
+        .full-chart { background: #111317; border: 1px solid #2a2d33; border-radius: 6px; padding: 8px 12px 12px; margin-bottom: 10px; }
         .full-chart .hdr { font-size: 12px; font-weight: 600; color: #a0a4ae; margin-bottom: 6px; }
-        .full-chart .wrap { height: calc(100% - 22px); position: relative; }
+        .full-chart .wrap { position: relative; }
+        #candleWrap { height: calc(70vh - 90px); }
+        #volWrap { height: 130px; }
 
-        /* Trading tab grid */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .kpi-card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px; padding: 12px 14px; }
-        .kpi-card .lbl { font-size: 11px; color: #8e94a1; text-transform: uppercase; }
-        .kpi-card .val { font-size: 20px; font-weight: 700; color: #e8e9ea; margin-top: 3px; }
-        .kpi-card .val.pos { color: #43e97b; } .kpi-card .val.neg { color: #f5576c; }
-        .kpi-card .sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
-        .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
-        .panel { background: #111317; border: 1px solid #2a2d33; border-radius: 6px; overflow: hidden; }
-        .panel .phdr { height: 32px; display: flex; align-items: center; padding: 0 12px;
-            background: #1a1d22; border-bottom: 1px solid #2a2d33; font-size: 12px; font-weight: 600; color: #a0a4ae; }
-        .panel .pchart { height: 280px; padding: 8px 12px; position: relative; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-        th, td { text-align: right; padding: 7px 12px; border-bottom: 1px solid #23262c; }
-        th:first-child, td:first-child { text-align: left; }
-        th { color: #8e94a1; font-weight: 500; font-size: 11px; text-transform: uppercase; background: #16181c; }
+        /* Grafana-style 24-col grid for Trading tab */
+        .gf { display: grid; grid-template-columns: repeat(24, 1fr); gap: 8px; }
+        .gp { background: #111317; border: 1px solid #2a2d33; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+        .gp .t { height: 26px; flex: 0 0 26px; display: flex; align-items: center; padding: 0 10px;
+            background: #1a1d22; border-bottom: 1px solid #23262c; font-size: 11px; font-weight: 600; color: #a0a4ae;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gp .c { flex: 1 1 auto; padding: 6px 8px; position: relative; min-height: 0; }
+        .gp.stat .c { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .gp.stat .sv { font-size: 17px; font-weight: 700; color: #e8e9ea; line-height: 1.2; }
+        .gp.stat .sv.pos { color: #43e97b; } .gp.stat .sv.neg { color: #f5576c; }
+        .gp.stat .ss { font-size: 10px; color: #8e94a1; margin-top: 2px; }
+        .gp table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .gp th, .gp td { text-align: right; padding: 5px 8px; border-bottom: 1px solid #23262c; }
+        .gp th:first-child, .gp td:first-child { text-align: left; }
+        .gp th { color: #8e94a1; font-weight: 500; font-size: 10px; text-transform: uppercase; background: #16181c; position: sticky; top: 0; }
         td.pos { color: #43e97b; } td.neg { color: #f5576c; }
-        .pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+        .pill { font-size: 9.5px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
         .pill.long, .pill.buy { background: #1f3a2a; color: #73d391; }
         .pill.short, .pill.sell { background: #3a1f24; color: #f08a98; }
-        .tbl-wrap { max-height: 300px; overflow-y: auto; }
+        .scroll { overflow: auto; }
 
-        /* Logs tab */
-        .logbox { background: #0d0f12; border: 1px solid #2a2d33; border-radius: 6px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;
-            padding: 10px 12px; height: calc(100vh - 130px); overflow-y: auto; line-height: 1.7; }
-        .logbox .ln { white-space: pre; }
-        .logbox .lv-INFO { color: #73d391; } .logbox .lv-WARN { color: #e0b36a; } .logbox .lv-ERROR { color: #f08a98; }
-        .logbox .muted { color: #6b7280; } .logbox .comp { color: #6ea8ff; } .logbox .msg { color: #d8d9da; }
+        .rowlabel { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: #c2c6cf;
+            padding: 6px 4px 2px; border-bottom: 1px solid #2a2d33; margin-top: 4px; }
+
+        /* Logs */
+        .logpanel { background: #0d0f12; border: 1px solid #2a2d33; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+        .logpanel .lh { height: 28px; display: flex; align-items: center; padding: 0 12px;
+            background: #1a1d22; border-bottom: 1px solid #23262c; font-size: 12px; font-weight: 600; color: #a0a4ae; }
+        .logpanel .lb { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
+            padding: 8px 12px; max-height: 220px; overflow-y: auto; line-height: 1.7; }
+        .logpanel .ln { white-space: pre; }
+        .lv-INFO { color: #73d391; } .lv-WARN { color: #e0b36a; } .lv-ERROR { color: #f08a98; }
+        .muted { color: #6b7280; } .comp { color: #6ea8ff; } .msg { color: #d8d9da; }
     </style>
 </head>
 <body>
@@ -106,49 +107,30 @@
     <div class="demo-banner"><strong>SAMPLE DATA</strong> Illustrative preview — all candles, fills, positions and logs are synthetic.</div>
 
     <div class="content">
-        <!-- Candlestick -->
         <div class="pane active" id="pane-candlestick">
             <div class="full-chart">
-                <div class="hdr" id="candle-hdr">BTCUSDT · 1m</div>
-                <div class="wrap"><canvas id="candleCanvas"></canvas></div>
+                <div class="hdr" id="candle-hdr">BTCUSDT - 1m</div>
+                <div class="wrap" id="candleWrap"><canvas id="candleCanvas"></canvas></div>
+            </div>
+            <div class="full-chart">
+                <div class="hdr">Volume</div>
+                <div class="wrap" id="volWrap"><canvas id="volCanvas"></canvas></div>
             </div>
         </div>
 
-        <!-- Trading -->
-        <div class="pane" id="pane-trading">
-            <div class="kpi-row">
-                <div class="kpi-card"><div class="lbl">Equity</div><div class="val" id="k-eq"></div><div class="sub" id="k-eq-sub"></div></div>
-                <div class="kpi-card"><div class="lbl">Unrealized PnL</div><div class="val" id="k-pnl"></div><div class="sub">Open positions</div></div>
-                <div class="kpi-card"><div class="lbl">ROE</div><div class="val" id="k-roe"></div><div class="sub" id="k-roe-sub"></div></div>
-                <div class="kpi-card"><div class="lbl">Max Drawdown</div><div class="val neg" id="k-mdd"></div><div class="sub" id="k-mdd-sub"></div></div>
-            </div>
-            <div class="row-2col">
-                <div class="panel"><div class="phdr">Portfolio Value (USDT)</div><div class="pchart"><canvas id="chartPV"></canvas></div></div>
-                <div class="panel"><div class="phdr">Drawdown (%)</div><div class="pchart"><canvas id="chartDD"></canvas></div></div>
-            </div>
-            <div class="row-2col">
-                <div class="panel"><div class="phdr">Open Positions</div><div class="tbl-wrap">
-                    <table id="posTable"><thead><tr><th>Symbol</th><th>Side</th><th>Notional</th><th>Lev</th><th>PnL</th><th>ROE</th></tr></thead><tbody></tbody></table>
-                </div></div>
-                <div class="panel"><div class="phdr">Recent Fills</div><div class="tbl-wrap">
-                    <table id="fillTable"><thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Price</th><th>Qty</th><th>Value</th></tr></thead><tbody></tbody></table>
-                </div></div>
-            </div>
-        </div>
+        <div class="pane" id="pane-trading"><div class="gf" id="tradingGrid"></div></div>
 
-        <!-- Trading Logs -->
-        <div class="pane" id="pane-logs">
-            <div class="logbox" id="logbox"></div>
-        </div>
+        <div class="pane" id="pane-logs"><div id="logsWrap"></div></div>
     </div>
 
     <script>
     (function () {
         const fmt = (v, d = 2) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const fmt0 = v => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
         const params = new URLSearchParams(location.search);
         const wanted = params.get('s') || 'mom-alpha';
+        const COLORS = ['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#43e97b','#fa709a','#fee140','#a18cd1','#84fab0'];
 
-        // Strategy switcher
         const sel = document.getElementById('stratSelect');
         DEMO.roster().forEach(r => {
             const o = document.createElement('option');
@@ -159,14 +141,13 @@
         sel.onchange = () => { location.search = '?s=' + sel.value; };
 
         const S = DEMO.strategy(wanted);
-        const m = S.metrics;
-        const typeLabel = S.meta.type.charAt(0).toUpperCase() + S.meta.type.slice(1);
-        const envLabel = S.meta.env.charAt(0).toUpperCase() + S.meta.env.slice(1);
-        document.getElementById('title').textContent = `${S.meta.label} — ${envLabel} ${typeLabel}`;
+        const meta = S.meta, acc = S.account;
+        const typeLabel = meta.type.charAt(0).toUpperCase() + meta.type.slice(1);
+        const envLabel = meta.env.charAt(0).toUpperCase() + meta.env.slice(1);
+        document.getElementById('title').textContent = `${meta.label} — ${envLabel} ${typeLabel}`;
         document.getElementById('tab-candlestick').textContent = `${typeLabel}/Candlestick`;
         document.getElementById('tab-trading').textContent = `${envLabel} ${typeLabel} Trading`;
 
-        // ── Tabs ──
         let rendered = { candlestick: false, trading: false, logs: false };
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.onclick = () => {
@@ -176,7 +157,6 @@
                 render(pane);
             };
         });
-
         function render(pane) {
             if (rendered[pane]) return;
             rendered[pane] = true;
@@ -185,116 +165,190 @@
             if (pane === 'logs') renderLogs();
         }
 
-        // ── Candlestick (manual canvas renderer; Chart.js core has no candle type) ──
+        // ───────────────── Candlestick + Volume (manual canvas) ─────────────────
         function renderCandles() {
             const candles = DEMO.candles(wanted);
-            const canvas = document.getElementById('candleCanvas');
-            const dpr = window.devicePixelRatio || 1;
-            function draw() {
-                const wrap = canvas.parentElement;
-                const W = wrap.clientWidth, H = wrap.clientHeight;
-                canvas.width = W * dpr; canvas.height = H * dpr;
-                canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-                const ctx = canvas.getContext('2d');
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                ctx.clearRect(0, 0, W, H);
-
-                const padL = 56, padR = 10, padT = 10, padB = 60; // bottom area for volume
-                const priceH = H - padT - padB, plotW = W - padL - padR;
-                const volTop = H - 48, volH = 38;
-
-                const his = candles.map(c => c.h), los = candles.map(c => c.l);
-                const hi = Math.max(...his), lo = Math.min(...los);
-                const vMax = Math.max(...candles.map(c => c.v));
+            drawCandle(document.getElementById('candleCanvas'), candles);
+            drawVolume(document.getElementById('volCanvas'), candles);
+        }
+        function fitCanvas(canvas) {
+            const dpr = window.devicePixelRatio || 1, wrap = canvas.parentElement;
+            const W = wrap.clientWidth, H = wrap.clientHeight;
+            canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+            const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+            return { ctx, W, H };
+        }
+        function drawCandle(canvas, candles) {
+            const render = () => {
+                const { ctx, W, H } = fitCanvas(canvas);
+                const padL = 60, padR = 10, padT = 8, padB = 8;
+                const plotW = W - padL - padR, plotH = H - padT - padB;
+                const hi = Math.max(...candles.map(c => c.h)), lo = Math.min(...candles.map(c => c.l));
                 const x = i => padL + (i + 0.5) * (plotW / candles.length);
-                const y = p => padT + (hi - p) / (hi - lo) * priceH;
+                const y = p => padT + (hi - p) / (hi - lo) * plotH;
                 const cw = Math.max(2, (plotW / candles.length) * 0.6);
-
-                // grid + price axis
-                ctx.strokeStyle = '#23262c'; ctx.fillStyle = '#8e94a1'; ctx.font = '11px sans-serif';
-                ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-                for (let g = 0; g <= 4; g++) {
-                    const py = padT + priceH * g / 4;
-                    ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke();
-                    const pv = hi - (hi - lo) * g / 4;
-                    ctx.fillText('$' + pv.toLocaleString('en-US', { maximumFractionDigits: 0 }), padL - 6, py);
-                }
-
-                // candles + volume
+                ctx.strokeStyle = '#23262c'; ctx.fillStyle = '#8e94a1'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+                for (let g = 0; g <= 4; g++) { const py = padT + plotH * g / 4; ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke(); ctx.fillText('$' + fmt0(hi - (hi - lo) * g / 4), padL - 6, py); }
                 candles.forEach((c, i) => {
-                    const up = c.c >= c.o;
-                    const col = up ? '#43e97b' : '#f5576c';
-                    const cx = x(i);
+                    const up = c.c >= c.o, col = up ? '#43e97b' : '#f5576c', cx = x(i);
                     ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
                     ctx.beginPath(); ctx.moveTo(cx, y(c.h)); ctx.lineTo(cx, y(c.l)); ctx.stroke();
-                    const yo = y(c.o), yc = y(c.c);
-                    ctx.fillRect(cx - cw / 2, Math.min(yo, yc), cw, Math.max(1, Math.abs(yc - yo)));
-                    const vh = (c.v / vMax) * volH;
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillRect(cx - cw / 2, volTop + (volH - vh), cw, vh);
-                    ctx.globalAlpha = 1;
+                    const yo = y(c.o), yc = y(c.c); ctx.fillRect(cx - cw / 2, Math.min(yo, yc), cw, Math.max(1, Math.abs(yc - yo)));
                 });
-            }
-            draw();
-            window.addEventListener('resize', draw);
+            };
+            render(); window.addEventListener('resize', render);
+        }
+        function drawVolume(canvas, candles) {
+            const render = () => {
+                const { ctx, W, H } = fitCanvas(canvas);
+                const padL = 60, padR = 10, padT = 6, padB = 6, plotW = W - padL - padR, plotH = H - padT - padB;
+                const vMax = Math.max(...candles.map(c => c.v));
+                const x = i => padL + (i + 0.5) * (plotW / candles.length);
+                const cw = Math.max(2, (plotW / candles.length) * 0.6);
+                ctx.strokeStyle = '#23262c'; ctx.beginPath(); ctx.moveTo(padL, padT + plotH); ctx.lineTo(W - padR, padT + plotH); ctx.stroke();
+                candles.forEach((c, i) => {
+                    const up = c.c >= c.o; ctx.fillStyle = up ? 'rgba(67,233,123,0.5)' : 'rgba(245,87,108,0.5)';
+                    const vh = (c.v / vMax) * plotH; ctx.fillRect(x(i) - cw / 2, padT + plotH - vh, cw, vh);
+                });
+            };
+            render(); window.addEventListener('resize', render);
         }
 
-        // ── Trading ──
+        // ───────────────── Trading tab (mirrors the real 24-col Grafana layout) ─────────────────
+        function panel(span, hpx, title, cls) {
+            const d = document.createElement('div');
+            d.className = 'gp' + (cls ? ' ' + cls : '');
+            d.style.gridColumn = 'span ' + span;
+            if (hpx) d.style.height = hpx + 'px';
+            if (title) { const t = document.createElement('div'); t.className = 't'; t.textContent = title; d.appendChild(t); }
+            const c = document.createElement('div'); c.className = 'c'; d.appendChild(c);
+            return { el: d, body: c };
+        }
+        function rowLabel(grid, text) { const r = document.createElement('div'); r.className = 'rowlabel'; r.textContent = text; grid.appendChild(r); }
+        function statPanel(grid, span, title, value, cls, sub) {
+            const p = panel(span, 74, title, 'stat');
+            p.body.innerHTML = `<div class="sv ${cls || ''}">${value}</div>${sub ? `<div class="ss">${sub}</div>` : ''}`;
+            grid.appendChild(p.el);
+        }
+        function tablePanel(grid, span, hpx, title, headers, rows) {
+            const p = panel(span, hpx, title); p.body.classList.add('scroll');
+            const thead = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+            const tbody = `<tbody>${rows.map(r => `<tr>${r.map(c => c).join('')}</tr>`).join('')}</tbody>`;
+            p.body.innerHTML = `<table>${thead}${tbody}</table>`;
+            grid.appendChild(p.el);
+        }
+        function chartPanel(grid, span, hpx, title, cfgFn) {
+            const p = panel(span, hpx, title);
+            const cv = document.createElement('canvas'); p.body.appendChild(cv);
+            grid.appendChild(p.el);
+            setTimeout(() => new Chart(cv, cfgFn()), 0);
+        }
+        const tsAxis = pct => ({ x: { ticks: { color: '#8e94a1', maxTicksLimit: 6 }, grid: { color: '#23262c' } },
+            y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : '$' + fmt0(v) }, grid: { color: '#23262c' } } });
+        function lineCfg(labels, datasets, pct) {
+            return { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#d8d9da', font: { size: 10 }, boxWidth: 10 } } }, scales: tsAxis(pct) } };
+        }
+        function ds(label, data, color, fill) { return { label, data, borderColor: color, backgroundColor: fill || 'transparent', fill: !!fill, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }; }
+        function pieCfg(labels, data) {
+            return { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: COLORS.slice(0, labels.length), borderColor: '#181b1f', borderWidth: 1.5 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#d8d9da', font: { size: 9 }, boxWidth: 8, padding: 4 } } } } };
+        }
+
         function renderTrading() {
-            document.getElementById('k-eq').textContent = `$${fmt(m.equity)}`;
-            document.getElementById('k-eq-sub').textContent = `Margin $${fmt(m.margin)} · Avail $${fmt(m.available)}`;
-            const pnlEl = document.getElementById('k-pnl');
-            pnlEl.textContent = `${m.pnl >= 0 ? '+' : ''}$${fmt(m.pnl)}`;
-            pnlEl.className = `val ${m.pnl >= 0 ? 'pos' : 'neg'}`;
-            const roeEl = document.getElementById('k-roe');
-            roeEl.textContent = `${m.roe >= 0 ? '+' : ''}${fmt(m.roe)}%`;
-            roeEl.className = `val ${m.roe >= 0 ? 'pos' : 'neg'}`;
-            document.getElementById('k-roe-sub').textContent = `Since ${S.meta.since}`;
-            document.getElementById('k-mdd').textContent = `${fmt(m.mdd)}%`;
-            document.getElementById('k-mdd-sub').textContent = `Sharpe ${m.sharpe.toFixed(3)} · Vol ${m.vol.toFixed(1)}%`;
+            const grid = document.getElementById('tradingGrid');
 
-            const ax = pct => ({
-                x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#23262c' } },
-                y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : '$' + v }, grid: { color: '#23262c' } }
-            });
-            new Chart(document.getElementById('chartPV'), {
-                type: 'line', data: { labels: S.dates, datasets: [{ label: 'PV (USDT)', data: S.pv,
-                    borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d8d9da' } } }, scales: ax(false) }
-            });
-            new Chart(document.getElementById('chartDD'), {
-                type: 'line', data: { labels: S.dates, datasets: [{ label: 'Drawdown (%)', data: S.dd,
-                    borderColor: '#f5576c', backgroundColor: 'rgba(245,87,108,0.18)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d8d9da' } } }, scales: ax(true) }
-            });
+            rowLabel(grid, 'Real Time Result');
+            statPanel(grid, 3, 'Strategy Start Time', meta.startTime);
+            statPanel(grid, 3, 'System endDate', meta.endDate);
+            statPanel(grid, 3, 'StrategyName', meta.strategyName);
+            statPanel(grid, 3, 'SessionId', meta.sessionId);
+            statPanel(grid, 3, 'Rebalancing Interval', meta.interval);
+            statPanel(grid, 3, 'First Rebalancing', meta.firstReb);
+            statPanel(grid, 3, 'Last Rebalancing', meta.lastReb);
+            statPanel(grid, 3, 'Next Rebalancing', meta.nextReb);
 
-            const posBody = document.querySelector('#posTable tbody');
-            S.positions.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${p.symbol}</td><td><span class="pill ${p.side}">${p.side.toUpperCase()}</span></td>
-                    <td>$${fmt(p.notional)}</td><td>${p.leverage}x</td>
-                    <td class="${p.pnl >= 0 ? 'pos' : 'neg'}">${p.pnl >= 0 ? '+' : ''}${fmt(p.pnl)}</td>
-                    <td class="${p.roe >= 0 ? 'pos' : 'neg'}">${p.roe >= 0 ? '+' : ''}${fmt(p.roe)}%</td>`;
-                posBody.appendChild(tr);
-            });
-            const fillBody = document.querySelector('#fillTable tbody');
-            S.fills.forEach(f => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${f.time}</td><td>${f.symbol}</td><td><span class="pill ${f.side}">${f.side.toUpperCase()}</span></td>
-                    <td>$${fmt(f.price, f.price > 100 ? 1 : 4)}</td><td>${fmt(f.qty, 4)}</td><td>$${fmt(f.value)}</td>`;
-                fillBody.appendChild(tr);
-            });
+            // Portfolio Summary (key/value) + Account (row)
+            tablePanel(grid, 8, 132, 'Portfolio Summary',
+                ['Metric', 'Value'],
+                [
+                    ['<td>Equity</td>', `<td>$${fmt(acc.equity)}</td>`],
+                    ['<td>Unrealized PnL</td>', `<td class="${acc.unrealized >= 0 ? 'pos' : 'neg'}">${acc.unrealized >= 0 ? '+' : ''}${fmt(acc.unrealized)}</td>`],
+                    ['<td>ROE</td>', `<td class="${S.metrics.roe >= 0 ? 'pos' : 'neg'}">${S.metrics.roe >= 0 ? '+' : ''}${fmt(S.metrics.roe)}%</td>`],
+                ]);
+            tablePanel(grid, 16, 132, 'Account',
+                ['Available', 'Used Margin', 'Gross Exposure', 'Exposure Ratio', 'Sharpe', 'Max Drawdown'],
+                [[
+                    `<td>$${fmt(acc.available)}</td>`, `<td>$${fmt(acc.usedMargin)}</td>`, `<td>$${fmt(acc.grossExposure)}</td>`,
+                    `<td>${fmt(acc.exposureRatio)}%</td>`, `<td>${S.metrics.sharpe.toFixed(3)}</td>`, `<td class="neg">${fmt(S.metrics.mdd)}%</td>`,
+                ]]);
+
+            // Each Position (table) + Account piechart (margin) + Gross Exposure / Exposure Ratio stats
+            tablePanel(grid, 14, 250, 'Each Position',
+                ['Symbol', 'Side', 'Qty', 'Notional', 'Lev', 'Mark', 'PnL', 'ROE'],
+                S.positions.map(p => [
+                    `<td>${p.symbol}</td>`, `<td><span class="pill ${p.side}">${p.side.toUpperCase()}</span></td>`,
+                    `<td>${fmt(p.qty, 4)}</td>`, `<td>$${fmt(p.notional)}</td>`, `<td>${p.leverage}x</td>`,
+                    `<td>$${fmt(p.markPrice, p.markPrice > 100 ? 1 : 4)}</td>`,
+                    `<td class="${p.pnl >= 0 ? 'pos' : 'neg'}">${p.pnl >= 0 ? '+' : ''}${fmt(p.pnl)}</td>`,
+                    `<td class="${p.roe >= 0 ? 'pos' : 'neg'}">${p.roe >= 0 ? '+' : ''}${fmt(p.roe)}%</td>`,
+                ]));
+            chartPanel(grid, 6, 250, 'Account (margin by symbol)', () => pieCfg(S.positions.map(p => p.symbol), S.positions.map(p => p.margin)));
+            const statCol = document.createElement('div'); statCol.style.gridColumn = 'span 4'; statCol.style.display = 'grid'; statCol.style.gap = '8px';
+            grid.appendChild(statCol);
+            const g1 = panel(0, 121, 'Gross Exposure', 'stat'); g1.el.style.gridColumn = ''; g1.body.innerHTML = `<div class="sv">$${fmt(acc.grossExposure)}</div><div class="ss">notional</div>`; statCol.appendChild(g1.el);
+            const g2 = panel(0, 121, 'Exposure Ratio', 'stat'); g2.el.style.gridColumn = ''; g2.body.innerHTML = `<div class="sv">${fmt(acc.exposureRatio)}%</div><div class="ss">of equity</div>`; statCol.appendChild(g2.el);
+
+            // 4 piecharts
+            chartPanel(grid, 5, 210, 'All Symbol (notional)', () => pieCfg(S.symbolWeights.all.map(w => w.symbol), S.symbolWeights.all.map(w => w.weight)));
+            chartPanel(grid, 7, 210, 'All Symbol (margin)', () => pieCfg(S.positions.map(p => p.symbol), S.positions.map(p => p.margin)));
+            chartPanel(grid, 6, 210, 'Long Position', () => pieCfg(S.symbolWeights.long.map(w => w.symbol), S.symbolWeights.long.map(w => w.weight)));
+            chartPanel(grid, 6, 210, 'Short Position', () => pieCfg(S.symbolWeights.short.map(w => w.symbol), S.symbolWeights.short.map(w => w.weight)));
+
+            // 8 timeseries
+            chartPanel(grid, 12, 230, 'Portfolio Value (USDT)', () => lineCfg(S.dates, [ds('PV (USDT)', S.pv, '#43e97b', 'rgba(67,233,123,0.08)')], false));
+            chartPanel(grid, 12, 230, 'Portfolio Return vs Benchmark (%)', () => lineCfg(S.dates, [ds('Strategy', S.ts.cumReturn, '#43e97b'), ds('BTC', S.ts.benchRet, '#3b82f6')], true));
+            chartPanel(grid, 12, 230, 'Cumulative Returns (%)', () => lineCfg(S.dates, [ds('Cumulative', S.ts.cumReturn, '#667eea', 'rgba(102,126,234,0.10)')], true));
+            chartPanel(grid, 12, 230, 'Total Net Profit per minute', () => ({ type: 'bar', data: { labels: S.dates, datasets: [{ label: 'Net Profit', data: S.ts.netProfitPerMin, backgroundColor: S.ts.netProfitPerMin.map(v => v >= 0 ? 'rgba(67,233,123,0.7)' : 'rgba(245,87,108,0.7)') }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: tsAxis(false) } }));
+            chartPanel(grid, 12, 230, 'Gross Exposure Ratio (%)', () => lineCfg(S.dates, [ds('Exposure', S.ts.grossExpRatio, '#fee140')], true));
+            chartPanel(grid, 12, 230, 'Sharpe Ratio (30d rolling)', () => lineCfg(S.dates, [ds('Sharpe', S.ts.sharpe, '#4facfe')], false));
+            chartPanel(grid, 12, 230, 'Drawdown (%)', () => lineCfg(S.dates, [ds('Drawdown', S.dd, '#f5576c', 'rgba(245,87,108,0.18)')], true));
+            chartPanel(grid, 12, 230, 'Volatility (%)', () => lineCfg(S.dates, [ds('Volatility', S.ts.vol, '#fa709a')], true));
+
+            // Historical Data
+            rowLabel(grid, 'Historical Data (limit 20)');
+            tablePanel(grid, 24, 240, 'Positions',
+                ['Symbol', 'Side', 'Open', 'Close', 'Realized PnL', 'ROE'],
+                S.histPositions.map(h => [
+                    `<td>${h.symbol}</td>`, `<td><span class="pill ${h.side}">${h.side.toUpperCase()}</span></td>`,
+                    `<td>${h.openTime}</td>`, `<td>${h.closeTime}</td>`,
+                    `<td class="${h.pnl >= 0 ? 'pos' : 'neg'}">${h.pnl >= 0 ? '+' : ''}${fmt(h.pnl)}</td>`,
+                    `<td class="${h.roe >= 0 ? 'pos' : 'neg'}">${h.roe >= 0 ? '+' : ''}${fmt(h.roe)}%</td>`,
+                ]));
+            tablePanel(grid, 24, 240, 'Transactions',
+                ['Time', 'Symbol', 'Side', 'Price', 'Qty', 'Value'],
+                S.transactions.map(t => [
+                    `<td>${t.time}</td>`, `<td>${t.symbol}</td>`, `<td><span class="pill ${t.side}">${t.side.toUpperCase()}</span></td>`,
+                    `<td>$${fmt(t.price, t.price > 100 ? 1 : 4)}</td>`, `<td>${fmt(t.qty, 4)}</td>`, `<td>$${fmt(t.value)}</td>`,
+                ]));
         }
 
-        // ── Trading Logs ──
+        // ───────────────── Trading Logs (5 component panels) ─────────────────
         function renderLogs() {
-            const box = document.getElementById('logbox');
-            DEMO.logs(wanted).forEach(l => {
-                const div = document.createElement('div');
-                div.className = 'ln';
-                div.innerHTML = `<span class="muted">${l.time}</span> | <span class="lv-${l.level}">${l.level.padEnd(5)}</span> | ` +
-                    `<span class="comp">${l.component.padEnd(11)}</span> | <span class="muted">${l.strategy} ${l.type}</span> | <span class="msg">${l.msg}</span>`;
-                box.appendChild(div);
+            const wrap = document.getElementById('logsWrap');
+            const logs = DEMO.logs(wanted);
+            const titles = {
+                Strategy: 'Strategy Execution (전략 실행 + 주문)', CrashGuard: 'CrashGuard (포지션 스케일링)',
+                Finwatcher: 'Finwatcher (결과 수집 + DB 저장)', Scheduler: 'Scheduler (리밸런싱 스케줄)', API: 'API (시스템 실행/종료)',
+            };
+            ['Strategy', 'CrashGuard', 'Finwatcher', 'Scheduler', 'API'].forEach(comp => {
+                const panel = document.createElement('div'); panel.className = 'logpanel';
+                const body = (logs[comp] || []).map(l =>
+                    `<div class="ln"><span class="muted">${l.time}</span> | <span class="lv-${l.level}">${l.level.padEnd(5)}</span> | ` +
+                    `<span class="comp">${comp.padEnd(11)}</span> | <span class="muted">${l.strategy} ${l.type}</span> | <span class="msg">${l.msg}</span></div>`
+                ).join('');
+                panel.innerHTML = `<div class="lh">${titles[comp]}</div><div class="lb">${body}</div>`;
+                wrap.appendChild(panel);
             });
         }
 
