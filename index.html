@@ -99,6 +99,8 @@
 
     /* Blog Links */
     .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+    /* 4-card variant (Neomanifold): 2×2 on wide instead of an unbalanced 3+1 */
+    @media (min-width: 720px) { .blog-grid.four { grid-template-columns: repeat(2, 1fr); } }
     .blog-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -173,6 +175,7 @@
       </div>
       <div class="jump">
         <a href="#demo">Demo</a>
+        <a href="#neomanifold">Neomanifold</a>
         <a href="#how-it-works">How it works</a>
         <a href="#data">Data</a>
         <a href="#blog">Blog</a>
@@ -247,6 +250,35 @@
           <span class="blog-arrow">→</span>
         </a>
       </div>
+    </section>
+
+    <section class="banner" id="neomanifold">
+      <div class="mono">/neomanifold</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Write the strategy, not the plumbing.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Neomanifold is the other half of the platform — a browser IDE where you write <strong>strategy.py</strong>, validate it in a sandbox, and publish it to a live session. The dashboards above are what happens next. <strong>Sample data, no signup.</strong></p>
+      <div class="blog-grid four" style="margin-top:14px">
+        <a class="blog-card" href="demo/neomanifold/editor.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">⌨</div>
+          <div class="blog-info"><h3>Strategy Editor</h3><p>File tree, code, and a Save → Validate → Publish → Run rail</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="demo/neomanifold/builder.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">✨</div>
+          <div class="blog-info"><h3>Strategy Builder</h3><p>Pick indicators, compose rules — it writes the Python</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="demo/neomanifold/data.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">⌘</div>
+          <div class="blog-info"><h3>Data Explorer</h3><p>/ohlcv BTCUSDT 1m 240 — the whole dataset, as slash commands</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="demo/neomanifold/community.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">🏆</div>
+          <div class="blog-info"><h3>Community &amp; Leaderboard</h3><p>Share a strategy, copy someone else's, rank on PnL</p></div>
+          <span class="blog-arrow">→</span>
+        </a>
+      </div>
+      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">Your code stays yours — credentials are never written into a config, they're injected at publish. Connect it to Claude Code, Cursor or VS Code over MCP and keep using your own subscription.</p>
     </section>
 
     <section class="banner" id="how-it-works">
