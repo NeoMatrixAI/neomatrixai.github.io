@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Community & Leaderboard Demo — Neomanifold</title>
+<meta name="description" content="A sample Neomanifold community feed and leaderboard. Traders, returns and rankings are synthetic — a preview of the strategy-sharing layer." />
+<link rel="icon" href="../../favicon.png">
+<link rel="stylesheet" href="nm.css">
+<style>
+  /* a normal scrolling document here, not a full-viewport app */
+  .page { max-width: 1024px; margin: 0 auto; padding: 32px; }
+  .chead { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+  .chead h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  .chead .sub { font-size: 14px; color: var(--nm-n400); margin: 4px 0 0; }
+  .chead .nav { display: flex; flex-wrap: wrap; gap: 12px 8px; white-space: nowrap; align-items: center; }
+  .pill { padding: 6px 12px; border-radius: 4px; background: var(--nm-n800); color: var(--nm-n300);
+          font-size: 14px; border: 0; cursor: pointer; text-decoration: none; }
+  .pill:hover { background: var(--nm-n700); }
+  .pill.act { background: var(--nm-blue700); color: #fff; }
+  .ctl { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .ctl .search { margin-left: auto; width: 192px; padding: 6px 12px; background: var(--nm-panel);
+          border: 1px solid var(--nm-edge); border-radius: 4px; font-size: 14px; color: #fff; }
+  .sortpill { padding: 4px 12px; border-radius: 4px; font-size: 14px; background: var(--nm-n800); color: var(--nm-n300); border: 0; cursor: pointer; }
+  .sortpill:hover { background: var(--nm-n700); }
+  .sortpill.act { background: var(--nm-blue700); color: #fff; }
+  select.lbsel { padding: 6px 12px; background: var(--nm-panel); border: 1px solid var(--nm-edge); border-radius: 4px; color: #fff; font-size: 14px; }
+  .lbbtn { padding: 6px 12px; border-radius: 4px; border: 0; color: #fff; font-size: 14px; cursor: pointer; }
+  .b-join { background: var(--nm-green800); } .b-join:hover { background: var(--nm-green700); }
+  .b-leave { background: var(--nm-red900); } .b-leave:hover { background: var(--nm-red800); }
+  .lbbtn.pending { opacity: .5; }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+  /* PostCard sits DARKER than the page and LIGHTENS on hover (inverse of session cards) */
+  .card { border: 1px solid var(--nm-edge); border-radius: var(--nm-radius-lg); padding: 16px;
+          background: var(--nm-panel); transition: background .15s; }
+  .card:hover { background: var(--nm-panel-alt); }
+  .card .r1 { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .card h3 { font-size: 14px; font-weight: 500; margin: 0; }
+  .card .who { font-size: 12px; color: var(--nm-n500); margin-top: 2px; }
+  .badge-code { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--nm-blue900); color: var(--nm-blue300); }
+  .spark { margin-bottom: 8px; }
+  .stats { display: flex; gap: 12px; font-size: 12px; }
+  .counts { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--nm-n500); }
+  .counts button { background: none; border: 0; cursor: pointer; color: inherit; font-size: 12px; padding: 0; }
+  .pos { color: var(--nm-green400); } .neg { color: var(--nm-red400); }
+  .liked { color: var(--nm-pink400); }
+
+  .lbwrap { border: 1px solid var(--nm-edge); border-radius: 4px; overflow: auto; }
+  .lb { width: 100%; font-size: 14px; border-collapse: collapse; }
+  .lb thead th { background: var(--nm-n900); color: var(--nm-n400); text-align: left; padding: 8px 12px; font-weight: 500; }
+  .lb thead th.num, .lb tbody td.num { text-align: right; }
+  .lb th.rank { width: 48px; }
+  .lb tbody td { padding: 8px 12px; border-top: 1px solid var(--nm-edge-faint); }
+  .lb tbody tr:hover { background: var(--nm-row-hover); }
+  .lb .rk { color: var(--nm-n500); } .lb .strat { color: var(--nm-n400); }
+  .lb-empty { text-align: center; padding: 32px 0; color: var(--nm-n500); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left"><span id="tbtitle">Neomanifold — Community</span></div>
+  <div class="links">
+    <a href="editor.html">← Editor</a>
+    <a href="data.html">Data Explorer</a>
+    <a href="../portfolio.html">← Portfolio</a>
+    <a href="https://neomatrix.ai">neomatrix.ai</a>
+  </div>
+</div>
+<div class="demo-banner">
+  <strong>SAMPLE DATA</strong> — Illustrative preview of the Neomanifold community feed and leaderboard. Traders, returns and rankings are synthetic.
+</div>
+
+<div class="page" id="page"></div>
+
+<script src="nm_data.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  let view = 'community';        // 'community' | 'leaderboard'
+  let sort = 'New';             // New | Hot | Top Return | Top Sharpe
+  let search = '';
+  let lbMetric = 'PnL %';       // PnL % | Sharpe | MDD %
+  let posts = NM_DATA.posts();
+
+  // ── mini equity curve — pure inline SVG, no library ────────────────────────
+  function sparkline(curve) {
+    if (!curve || curve.length <= 2) return '';
+    const vals = curve.map(d => d.value);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = (max - min) || 1;
+    const n = vals.length;
+    const pts = vals.map((v, i) => (i / (n - 1) * 160).toFixed(2) + ',' + (40 - (v - min) / range * 40).toFixed(2)).join(' ');
+    const up = vals[n - 1] >= vals[0];
+    const stroke = up ? 'var(--nm-green400)' : 'var(--nm-red400)';
+    return '<svg class="spark" viewBox="0 0 160 40" preserveAspectRatio="none" width="100%" height="40">' +
+      '<polyline points="' + pts + '" fill="none" stroke="' + stroke + '" stroke-width="1.5" /></svg>';
+  }
+
+  // ── community view ─────────────────────────────────────────────────────────
+  function sortedPosts() {
+    let arr = posts.slice();
+    if (search) arr = arr.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
+    // match the real ORDER BY semantics (community_manager.py:75-80)
+    if (sort === 'New') arr.sort((a, b) => b.createdAt < a.createdAt ? -1 : (b.createdAt > a.createdAt ? 1 : 0));
+    else if (sort === 'Hot') arr.sort((a, b) => (b.likesCount - a.likesCount) || (b.createdAt < a.createdAt ? -1 : 1));
+    else if (sort === 'Top Return') arr.sort((a, b) => b.pnlPct - a.pnlPct);
+    else if (sort === 'Top Sharpe') arr.sort((a, b) => b.sharpe - a.sharpe);
+    return arr;
+  }
+
+  function card(p) {
+    const pnl = (p.pnlPct >= 0 ? '+' : '') + p.pnlPct.toFixed(1) + '%';
+    return '<div class="card">' +
+      '<div class="r1"><div><h3>' + esc(p.title) + '</h3><div class="who">' + esc(p.author) + ' · ' + esc(p.tradeType) + '</div></div>' +
+        (p.codeShared ? '<span class="badge-code">code</span>' : '') + '</div>' +
+      sparkline(p.equityCurve) +
+      '<div class="stats"><span class="' + (p.pnlPct >= 0 ? 'pos' : 'neg') + '">' + pnl + '</span>' +
+        '<span>SR ' + p.sharpe.toFixed(2) + '</span><span>MDD ' + p.mddPct.toFixed(1) + '%</span></div>' +
+      '<div class="counts"><button data-like="' + p.id + '"><span class="' + (p.liked ? 'liked' : '') + '">' + (p.liked ? '♥' : '♡') + ' ' + p.likesCount + '</span></button>' +
+        '<span>📋 ' + p.copiesCount + '</span><span>💬 ' + p.commentsCount + '</span></div>' +
+      '</div>';
+  }
+
+  function renderCommunity() {
+    $('tbtitle').textContent = 'Neomanifold — Community';
+    const list = sortedPosts();
+    $('page').innerHTML =
+      '<div class="chead"><div><h1>Community</h1><p class="sub">Discover and share trading strategies</p></div>' +
+        '<div class="nav"><button class="pill" data-go="leaderboard">Leaderboard</button>' +
+        '<a class="pill" href="#">Connect AI</a><a class="pill" href="editor.html">Workspace</a>' +
+        '<span class="pill" style="background:none;padding:6px 4px">🌐 EN</span></div></div>' +
+      '<div class="ctl">' +
+        ['New', 'Hot', 'Top Return', 'Top Sharpe'].map(s => '<button class="sortpill' + (s === sort ? ' act' : '') + '" data-sort="' + esc(s) + '">' + s + '</button>').join('') +
+        '<input class="search" id="search" placeholder="Search..." value="' + esc(search) + '"></div>' +
+      '<div class="grid">' + list.map(card).join('') + '</div>';
+
+    $('page').querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => { sort = b.dataset.sort; renderCommunity(); }));
+    $('page').querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { view = 'leaderboard'; render(); }));
+    const s = $('search');
+    s.addEventListener('input', () => { search = s.value; const pos = s.selectionStart; renderCommunity(); const n = $('search'); n.focus(); n.setSelectionRange(pos, pos); });
+    $('page').querySelectorAll('[data-like]').forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation();           // real like button stops propagation
+      const p = posts.find(x => x.id == b.dataset.like);
+      p.liked = !p.liked; p.likesCount += p.liked ? 1 : -1;
+      renderCommunity();
+    }));
+  }
+
+  // ── leaderboard view ───────────────────────────────────────────────────────
+  let lbTradeType = 'Spot', lbPending = '';
+  function renderLeaderboard() {
+    $('tbtitle').textContent = 'Neomanifold — Leaderboard';
+    let rows = NM_DATA.leaderboard();
+    // all three metrics sort DESC (MDD % too — least-negative drawdown ranks first)
+    const key = lbMetric === 'Sharpe' ? 'sharpe' : (lbMetric === 'MDD %' ? 'mddPct' : 'pnlPct');
+    rows = rows.slice().sort((a, b) => b[key] - a[key]);
+
+    $('page').innerHTML =
+      '<div class="chead"><div><h1>Leaderboard</h1><p class="sub">Top traders ranked by performance</p></div>' +
+        '<div class="nav"><button class="pill" data-go="community">Community</button>' +
+        '<a class="pill" href="editor.html">Workspace</a>' +
+        '<span class="pill" style="background:none;padding:6px 4px">🌐 EN</span></div></div>' +
+      '<div class="ctl">' +
+        '<select class="lbsel" id="lbtype"><option' + (lbTradeType === 'Spot' ? ' selected' : '') + '>Spot</option><option' + (lbTradeType === 'Futures' ? ' selected' : '') + '>Futures</option></select>' +
+        ['PnL %', 'Sharpe', 'MDD %'].map(m => '<button class="sortpill' + (m === lbMetric ? ' act' : '') + '" data-metric="' + esc(m) + '">' + m + '</button>').join('') +
+        '<div style="margin-left:auto;display:flex;gap:8px">' +
+          '<button class="lbbtn b-join' + (lbPending === 'join' ? ' pending' : '') + '" data-act="join">Join</button>' +
+          '<button class="lbbtn b-leave' + (lbPending === 'leave' ? ' pending' : '') + '" data-act="leave">Leave</button></div></div>' +
+      '<div class="lbwrap"><table class="lb"><thead><tr>' +
+        '<th class="rank">#</th><th>Trader</th><th>Strategy</th><th class="num">PnL %</th><th class="num">Sharpe</th><th class="num">MDD %</th>' +
+      '</tr></thead><tbody>' +
+        (rows.length ? rows.map((r, i) =>
+          '<tr><td class="rk">' + (i + 1) + '</td><td>' + esc(r.trader) + '</td><td class="strat">' + esc(r.strategy) + '</td>' +
+          '<td class="num ' + (r.pnlPct >= 0 ? 'pos' : 'neg') + '">' + r.pnlPct.toFixed(1) + '</td>' +
+          '<td class="num">' + r.sharpe.toFixed(2) + '</td><td class="num">' + r.mddPct.toFixed(1) + '</td></tr>').join('')
+          : '<tr><td class="lb-empty" colspan="6">No participants yet. Opt in to join the leaderboard!</td></tr>') +
+      '</tbody></table></div>';
+
+    $('page').querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { lbMetric = b.dataset.metric; renderLeaderboard(); }));
+    $('page').querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { view = 'community'; render(); }));
+    $('lbtype').addEventListener('change', e => { lbTradeType = e.target.value; });
+    $('page').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+      lbPending = b.dataset.act; renderLeaderboard();
+      setTimeout(() => { lbPending = ''; renderLeaderboard(); }, 700);
+    }));
+  }
+
+  function render() { view === 'community' ? renderCommunity() : renderLeaderboard(); }
+  render();
+})();
+</script>
+</body>
+</html>

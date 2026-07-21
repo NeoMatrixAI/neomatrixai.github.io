@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategy Editor Demo — Neomanifold</title>
+<meta name="description" content="A sample Neomanifold strategy editor. Illustrative data only — this mirrors the live browser IDE where a Python strategy is written, validated and published." />
+<link rel="icon" href="../../favicon.png">
+<link rel="stylesheet" href="nm.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <span>Neomanifold — Strategy Editor</span>
+    <span class="count">— demo_strategy · spot</span>
+  </div>
+  <div class="links">
+    <a href="builder.html">Builder →</a>
+    <a href="data.html">Data Explorer</a>
+    <a href="community.html">Community</a>
+    <a href="../portfolio.html">← Portfolio</a>
+    <a href="https://neomatrix.ai">neomatrix.ai</a>
+  </div>
+</div>
+<div class="demo-banner">
+  <strong>SAMPLE DATA</strong> — Illustrative preview of the Neomanifold strategy editor. Session ids, validation output and logs are synthetic.
+</div>
+
+<div class="nm-root">
+  <div class="nm-hdr">
+    <div class="l">
+      <a class="back" href="#">← Projects</a>
+      <button class="proj" title="Rename">demo_strategy ✎</button>
+      <span class="ttype">(spot)</span>
+    </div>
+    <nav>
+      <span class="on">Files</span>
+      <a href="data.html">Data Explorer</a>
+      <span>Sessions</span>
+      <span class="off" title="Settings — coming soon">Settings</span>
+      <span class="nm-lang" title="Language">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>EN
+      </span>
+    </nav>
+  </div>
+
+  <div class="nm-body">
+    <!-- [A] file tree -->
+    <aside class="nm-tree" id="tree">
+      <button class="phdr" id="phdr"><span class="glyph">📂</span>demo_strategy</button>
+      <div class="tools"><a href="builder.html">✨ Builder</a></div>
+      <ul id="filelist"></ul>
+    </aside>
+    <button class="nm-handle" id="h1" title="Drag to resize" aria-label="Drag to resize"></button>
+
+    <!-- [C] fake Monaco -->
+    <div class="nm-code" id="code"><div class="nm-gutter" id="gutter"></div><pre id="pre"></pre></div>
+    <button class="nm-handle" id="h2" title="Drag to resize" aria-label="Drag to resize"></button>
+
+    <!-- [D] right rail -->
+    <aside class="nm-right" id="right">
+      <div class="nm-rail">
+        <button class="b-save" id="bSave">Save</button>
+        <button class="b-val"  id="bVal">Validate (Live)</button>
+        <button class="b-bt"   id="bBt">Backtest</button>
+        <button class="b-pub"  id="bPub">Publish (production)</button>
+        <button class="b-run"  id="bRun">Run System</button>
+        <button class="b-term" id="bTerm" disabled>Terminate</button>
+      </div>
+
+      <div class="nm-blk">
+        <div class="lbl">Output</div>
+        <pre class="nm-out" id="out">—</pre>
+      </div>
+
+      <div class="nm-blk" style="font-size:12px">
+        <div class="lbl">Version History</div>
+        <div class="nm-vers" id="vers"></div>
+      </div>
+
+      <div class="nm-sess">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--nm-n400)">Session</span>
+          <span class="nm-badge" id="badge">idle</span>
+        </div>
+        <div class="nm-meta" id="smeta" style="color:var(--nm-n500);margin-bottom:6px">No sessions have been run yet.</div>
+        <div class="nm-log">
+          <div class="bar">
+            <input id="lfilter" placeholder="Filter logs..." />
+            <button id="lauto" class="on" title="Auto-scroll ON">Auto</button>
+          </div>
+          <pre id="logs">Logs will appear after a session is started.</pre>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="nm-ctx" id="ctx" hidden>
+  <button>New File</button>
+  <button>Upload</button>
+  <button>Download entire project as zip</button>
+</div>
+
+<script src="nm_data.js"></script>
+<script src="nm_files.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+
+  // ── file tree ────────────────────────────────────────────────────────────
+  // The 6 seeded files of demo_strategy. REQUIRED_FILES (strategy.py/config.yaml)
+  // have no delete action at all — it is absent, not disabled (ProjectTree.tsx:65).
+  const REQUIRED = ['strategy.py', 'config.yaml'];
+  const TREE = [
+    { dir: 'common/', open: true, children: ['common/__init__.py', 'common/indicators.py', 'common/signals.py', 'common/utils.py'] },
+    'config.yaml',
+    'strategy.py',
+  ];
+  let active = 'strategy.py';
+  let dirty = new Set(['strategy.py']); // start dirty so the amber ● is visible
+
+  const iconOf = p => p.endsWith('.py') ? ['py', 'py'] : (/\.ya?ml$/.test(p) ? ['ym', 'ym'] : ['na', '--']);
+  const baseOf = p => p.split('/').pop();
+
+  function fileRow(path, depth) {
+    const li = document.createElement('li');
+    const row = document.createElement('div');
+    row.className = 'nm-row' + (path === active ? ' active' : '');
+    row.style.paddingLeft = (depth * 12 + 8) + 'px';
+    const [cls, txt] = iconOf(path);
+    const acts = REQUIRED.includes(path)
+      ? '<button class="ed" title="Rename">✎</button><button class="dl" title="Download">⬇</button>'
+      : '<button class="ed" title="Rename">✎</button><button class="dl" title="Download">⬇</button><button class="rm" title="Delete">🗑</button>';
+    row.innerHTML =
+      '<span class="ic ' + cls + '">' + txt + '</span>' +
+      '<button class="nm-label">' + baseOf(path) + '</button>' +
+      (dirty.has(path) && path === active ? '<span class="dirty">●</span>' : '') +
+      '<span class="acts">' + acts + '</span>';
+    row.querySelector('.nm-label').addEventListener('click', () => { active = path; render(); });
+    li.appendChild(row);
+    return li;
+  }
+
+  function render() {
+    const ul = $('filelist');
+    ul.innerHTML = '';
+    TREE.forEach(node => {
+      if (typeof node === 'string') { ul.appendChild(fileRow(node, 0)); return; }
+      const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'nm-row';
+      row.style.paddingLeft = '8px';
+      row.innerHTML = '<span class="chev">' + (node.open ? '▾' : '▸') + '</span><span class="fold">📁</span>' + node.dir;
+      row.addEventListener('click', () => { node.open = !node.open; render(); });
+      li.appendChild(row);
+      ul.appendChild(li);
+      if (node.open) node.children.forEach(c => ul.appendChild(fileRow(c, 1)));
+    });
+    paint();
+    $('bSave').disabled = !dirty.has(active);
+  }
+
+  function paint() {
+    const src = NM_FILES[active];
+    if (src === undefined) {
+      $('code').innerHTML = '<div class="nm-empty">Select a file</div>';
+      return;
+    }
+    $('code').innerHTML = '<div class="nm-gutter" id="gutter"></div><pre id="pre"></pre>';
+    const lang = active.endsWith('.py') ? 'py' : 'yaml';
+    $('pre').innerHTML = NM_FILES.highlight(src, lang);
+    $('gutter').textContent = src.split('\n').map((_, i) => i + 1).join('\n');
+  }
+
+  // right-click context menu — New/Upload/Download are right-click-only in the
+  // real app, so without this the tree looks like it is missing features.
+  $('tree').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const c = $('ctx');
+    c.hidden = false;
+    c.style.left = Math.min(e.clientX, innerWidth - 190) + 'px';
+    c.style.top = e.clientY + 'px';
+  });
+  document.addEventListener('click', () => { $('ctx').hidden = true; });
+  $('phdr').addEventListener('click', () => {
+    if (innerWidth <= 780) $('tree').classList.toggle('collapsed');
+  });
+
+  // ── resize handles (tree 160–560, right 240–640) ─────────────────────────
+  function drag(handle, el, min, max, invert) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const x0 = e.clientX, w0 = el.getBoundingClientRect().width;
+      const mv = ev => {
+        const d = invert ? x0 - ev.clientX : ev.clientX - x0;
+        el.style.width = Math.max(min, Math.min(max, w0 + d)) + 'px';
+      };
+      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+  }
+  drag($('h1'), $('tree'), 160, 560, false);
+  drag($('h2'), $('right'), 240, 640, true);
+
+  // ── action rail ──────────────────────────────────────────────────────────
+  const out = s => { $('out').textContent = s; };
+  let version = 12, sessionId = null, stream = null, autoScroll = true;
+
+  const VERSIONS = [
+    { v: 12, d: '6/13/2026, 7:04:11 AM', by: 'dev-user' },
+    { v: 11, d: '6/13/2026, 6:58:02 AM', by: 'dev-user' },
+    { v: 10, d: '6/12/2026, 9:12:44 PM', by: 'dev-user' },
+  ];
+  let selVer = 12;
+  function renderVers() {
+    $('vers').innerHTML = VERSIONS.map(r =>
+      '<div class="nm-ver' + (r.v === selVer ? ' sel' : '') + '" data-v="' + r.v + '">' +
+      '<div class="r1"><span class="v">v' + r.v + '</span><span class="d">' + r.d + '</span></div>' +
+      '<div class="by">' + r.by + '</div></div>').join('');
+    $('vers').querySelectorAll('.nm-ver').forEach(el =>
+      el.addEventListener('click', () => { selVer = +el.dataset.v; renderVers(); }));
+  }
+
+  function busy(btn, label, ms, done) {
+    const orig = btn.textContent;
+    btn.textContent = label; btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; done(); }, ms);
+  }
+
+  $('bSave').addEventListener('click', () => {
+    busy($('bSave'), 'Saving...', 600, () => {
+      version++;
+      out('Saved (version ' + version + ')');
+      dirty.delete(active);
+      VERSIONS.unshift({ v: version, d: '6/13/2026, 7:11:26 AM', by: 'dev-user' });
+      selVer = version; renderVers(); render();
+    });
+  });
+
+  $('bVal').addEventListener('click', () => {
+    busy($('bVal'), 'Validating...', 900, () => {
+      out('Validate (live):\n' + JSON.stringify({
+        valid: true, mode: 'live',
+        steps_completed: ['file_check', 'config_validation', 'syntax_check', 'security_check', 'import_check', 'execution', 'return_format'],
+        weights: { BTCUSDT: { weight: 0.5 }, ETHUSDT: { weight: 0.5 } },
+        errors: [], warnings: [],
+      }, null, 2));
+    });
+  });
+
+  $('bBt').addEventListener('click', () => {
+    busy($('bBt'), 'Running Backtest...', 1200, () => {
+      out('Backtest:\n' + JSON.stringify({ status: 'accepted', message: 'backtest queued' }, null, 2));
+    });
+  });
+
+  $('bPub').addEventListener('click', () => {
+    busy($('bPub'), 'Publishing...', 900, () => out('Published'));
+  });
+
+  const BADGES = {
+    idle:       ['var(--nm-st-fallback-bg)', 'var(--nm-st-idle-fg)'],
+    preparing:  ['var(--nm-st-preparing-bg)', 'var(--nm-st-preparing-fg)'],
+    waiting:    ['var(--nm-st-waiting-bg)', 'var(--nm-st-waiting-fg)'],
+    terminated: ['var(--nm-st-error-bg)', 'var(--nm-st-error-fg)'],
+  };
+  function setBadge(state) {
+    const [bg, fg] = BADGES[state];
+    const b = $('badge');
+    b.textContent = state; b.style.background = bg; b.style.color = fg;
+  }
+
+  $('bRun').addEventListener('click', () => {
+    busy($('bRun'), 'Running...', 1200, () => {
+      sessionId = '2606130700';
+      setBadge('preparing');
+      $('smeta').style.color = 'var(--nm-n400)';
+      $('smeta').innerHTML = '<span class="sid">' + sessionId + '</span>';
+      $('bTerm').disabled = false;
+      startStream();
+      setTimeout(() => {
+        setBadge('waiting');
+        $('smeta').innerHTML = '<span class="sid">' + sessionId + '</span><br>Next rebalancing: 2026-06-13 15:00';
+      }, 2000);
+    });
+  });
+
+  $('bTerm').addEventListener('click', () => {
+    if (!confirm('Terminate active session ' + sessionId + '? This will close all positions.')) return;
+    busy($('bTerm'), 'Terminating...', 800, () => {
+      out('Session terminated');
+      setBadge('terminated');
+      clearInterval(stream); stream = null;
+      $('bTerm').disabled = true;
+    });
+  });
+
+  // ── log stream ───────────────────────────────────────────────────────────
+  const lines = [];
+  const SRC = NM_DATA.logLines();
+  let li = 0;
+  function colorize(l) {
+    const esc = l.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    if (l.includes('| ERROR |')) return '<span class="lg-err">' + esc + '</span>';
+    if (l.includes('| WARN  |')) return '<span class="lg-wrn">' + esc + '</span>';
+    if (l.includes('| DEBUG |')) return '<span class="lg-dbg">' + esc + '</span>';
+    return esc;
+  }
+  function paintLogs() {
+    const f = $('lfilter').value.trim().toLowerCase();
+    const show = f ? lines.filter(l => l.toLowerCase().includes(f)) : lines;
+    const pre = $('logs');
+    pre.innerHTML = show.length ? show.map(colorize).join('\n') : '';
+    if (autoScroll) pre.scrollTop = pre.scrollHeight;
+  }
+  function startStream() {
+    lines.length = 0; li = 0; paintLogs();
+    clearInterval(stream);
+    stream = setInterval(() => {
+      lines.push(SRC[li % SRC.length]); li++;
+      if (lines.length > 60) lines.shift();
+      paintLogs();
+    }, 1500);
+  }
+  $('lfilter').addEventListener('input', paintLogs);
+  $('lauto').addEventListener('click', () => {
+    autoScroll = !autoScroll;
+    const b = $('lauto');
+    b.className = autoScroll ? 'on' : 'off';
+    b.textContent = autoScroll ? 'Auto' : 'Manual';
+    b.title = autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF';
+  });
+
+  renderVers(); render();
+})();
+</script>
+</body>
+</html>

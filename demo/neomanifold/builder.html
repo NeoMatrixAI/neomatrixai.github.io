@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategy Builder Demo — Neomanifold</title>
+<meta name="description" content="A sample Neomanifold Strategy Builder. Pick indicators, compose rules, and it writes real, runnable Python you can insert at the strategy.py cursor." />
+<link rel="icon" href="../../favicon.png">
+<link rel="stylesheet" href="nm.css">
+<style>
+  /* builder-only chrome */
+  .bx { flex-shrink: 0; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+        background: var(--nm-panel); width: 520px; }
+  .bx-title { display: flex; align-items: center; justify-content: space-between;
+        padding: 6px 12px; border-bottom: 1px solid var(--nm-edge); font-size: 12px; }
+  .bx-title .t { font-weight: 600; color: var(--nm-n200); }
+  .bx-title .docks { display: flex; gap: 6px; color: var(--nm-n400); }
+  .bx-title .docks button { background: none; border: 0; cursor: pointer; color: inherit; font-size: 12px; padding: 0 2px; }
+  .bx-title .docks button.on { color: var(--nm-blue400); }
+  .bx-title .docks button:not(.on):hover { color: #fff; }
+
+  .bx-tools { height: 100%; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .bx-intro { font-size: 12px; color: var(--nm-n500); padding: 0 4px 4px; margin: 0; }
+  .acc { border: 1px solid var(--nm-edge); border-radius: var(--nm-radius); }
+  .acc > .h { width: 100%; display: flex; justify-content: space-between; padding: 8px 12px;
+        font-size: 14px; font-weight: 600; color: var(--nm-n200); background: none; border: 0; cursor: pointer; }
+  .acc > .h:hover { background: var(--nm-panel-alt); }
+  .acc > .h .cv { color: var(--nm-n500); }
+  .acc > .b { padding: 12px; border-top: 1px solid var(--nm-edge); display: none; flex-direction: column; gap: 12px; }
+  .acc.open > .b { display: flex; }
+  .gen { width: 100%; padding: 6px 12px; font-size: 12px; border-radius: 4px; border: 0;
+         background: var(--nm-blue700); color: #fff; cursor: pointer; }
+  .gen:hover { background: var(--nm-blue600); }
+  .gen:disabled { opacity: .5; cursor: not-allowed; }
+  .bx h3 { font-size: 14px; font-weight: 600; color: var(--nm-n300); margin: 0 0 8px; }
+  .inp { width: 100%; padding: 4px 8px; border-radius: 4px; background: var(--nm-panel-alt);
+         border: 1px solid var(--nm-edge); font-family: var(--nm-mono); color: #fff; font-size: 12px; }
+  select.inp { font-family: var(--nm-font); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .cat { font-size: 10px; text-transform: uppercase; color: var(--nm-n500); margin-right: 4px; }
+  .chip { padding: 2px 8px; font-size: 12px; border-radius: 4px; background: var(--nm-panel);
+          border: 1px solid var(--nm-edge); color: var(--nm-n200); cursor: pointer; }
+  .chip:hover { background: var(--nm-panel-alt); }
+  .ind-row { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 4px;
+             background: var(--nm-panel); border: 1px solid var(--nm-edge); font-size: 14px; }
+  .ind-row .vn { font-family: var(--nm-mono); color: var(--nm-blue400); min-width: 80px; }
+  .ind-row label { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--nm-n400); }
+  .ind-row .num { width: 64px; }
+  .ind-row .del { margin-left: auto; background: none; border: 0; color: var(--nm-n500); cursor: pointer; font-size: 12px; }
+  .ind-row .del:hover { color: var(--nm-red400); }
+
+  .rule { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border-radius: 4px;
+          background: var(--nm-panel); border: 1px solid var(--nm-edge); font-size: 14px; }
+  .rule select, .rule input { font-family: var(--nm-mono); }
+  .rule .del { background: none; border: 0; color: var(--nm-n500); cursor: pointer; font-size: 12px; }
+  .rule .del:hover { color: var(--nm-red400); }
+  .join { padding: 2px 8px; border-radius: 4px; background: var(--nm-panel-alt); border: 1px solid var(--nm-edge);
+          font-size: 11px; font-weight: 600; color: var(--nm-n300); margin-left: 4px; }
+  .addrule { padding: 2px 8px; font-size: 12px; border-radius: 4px; background: var(--nm-blue700); color: #fff; border: 0; cursor: pointer; }
+  .hint { font-size: 11px; color: var(--nm-n500); }
+  .cap { font-size: 12px; color: var(--nm-n400); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+
+  /* preview view (replaces the whole panel) */
+  .pv { height: 100%; display: flex; flex-direction: column; }
+  .pv-top { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+            border-bottom: 1px solid var(--nm-edge); font-size: 12px; }
+  .pv-top .back { background: none; border: 0; color: var(--nm-n400); cursor: pointer; font-size: 12px; }
+  .pv-top .back:hover { color: #fff; }
+  .pv-top .status { color: var(--nm-n400); }
+  .pv-top .acts { display: flex; gap: 8px; }
+  .pv-top .acts button { padding: 4px 8px; border-radius: 4px; border: 0; color: #fff; cursor: pointer; font-size: 12px; }
+  .pv-top .copy { background: var(--nm-n700); } .pv-top .copy:hover { background: var(--nm-save-h); }
+  .pv-top .ins { background: var(--nm-run); } .pv-top .ins:hover { background: var(--nm-run-h); }
+  .pv-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .cp-sub { display: flex; justify-content: space-between; padding: 6px 12px; background: var(--nm-panel-alt);
+            border-bottom: 1px solid var(--nm-edge); font-size: 12px; color: var(--nm-n400); }
+  .cp-sub button { background: none; border: 0; color: var(--nm-n400); cursor: pointer; font-size: 12px; }
+  .cp-sub button:hover { color: #fff; }
+  .cfg-hint { border-top: 1px solid var(--nm-edge); padding: 12px; font-size: 12px; }
+  .cfg-hint .l { color: var(--nm-amber400); margin-bottom: 6px; }
+  .cfg-hint pre { background: var(--nm-panel-alt); border-radius: 4px; padding: 8px; color: var(--nm-n300);
+                  white-space: pre-wrap; font-family: var(--nm-mono); margin: 0; }
+  .note { padding: 6px 12px; font-size: 12px; color: var(--nm-amber400); border-top: 1px solid var(--nm-edge); }
+
+  @media (max-width: 1100px) {
+    .nm-body.builder { flex-direction: column; }
+    .bx { width: auto !important; border-top: 1px solid var(--nm-edge); min-height: 420px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <span>Neomanifold — Strategy Builder</span>
+    <span class="count">— demo_strategy · spot</span>
+  </div>
+  <div class="links">
+    <a href="editor.html">← Editor</a>
+    <a href="data.html">Data Explorer</a>
+    <a href="community.html">Community</a>
+    <a href="../portfolio.html">← Portfolio</a>
+    <a href="https://neomatrix.ai">neomatrix.ai</a>
+  </div>
+</div>
+<div class="demo-banner">
+  <strong>SAMPLE DATA</strong> — Illustrative preview of the Neomanifold Strategy Builder. The generated code is real; the project and market data are synthetic.
+</div>
+
+<div class="nm-root">
+  <div class="nm-hdr">
+    <div class="l">
+      <a class="back" href="editor.html">← Projects</a>
+      <button class="proj" title="Rename">demo_strategy ✎</button>
+      <span class="ttype">(spot)</span>
+    </div>
+    <nav>
+      <span class="on">Files</span>
+      <a href="data.html">Data Explorer</a>
+      <span>Sessions</span>
+      <span class="off" title="Settings — coming soon">Settings</span>
+      <span class="nm-lang" title="Language">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>EN
+      </span>
+    </nav>
+  </div>
+
+  <div class="nm-body builder" id="body">
+    <aside class="nm-tree" id="tree">
+      <button class="phdr"><span class="glyph">📂</span>demo_strategy</button>
+      <div class="tools"><a href="builder.html">✨ Builder</a></div>
+      <ul id="filelist"></ul>
+    </aside>
+    <button class="nm-handle" id="h1" title="Drag to resize"></button>
+
+    <div class="nm-code" id="code"><div class="nm-gutter" id="gutter"></div><pre id="pre"></pre></div>
+    <button class="nm-handle" id="hb" title="Drag to resize"></button>
+
+    <div class="bx" id="bx">
+      <div class="bx-title">
+        <span class="t">✨ Builder</span>
+        <span class="docks">
+          <button id="dockR" class="on" title="Dock right">▐</button>
+          <button id="dockB" title="Dock bottom">▄</button>
+          <button id="dockX" title="Close" onclick="location.href='editor.html'">✕</button>
+        </span>
+      </div>
+      <div id="bxview"></div>
+    </div>
+  </div>
+</div>
+
+<script src="nm_data.js"></script>
+<script src="nm_files.js"></script>
+<script src="nm_codegen.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const IND = NM_CODEGEN.INDICATORS;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // ── file tree (read-only here; strategy.py is the insert target) ──────────
+  const TREE = [
+    { dir: 'common/', open: true, children: ['common/__init__.py', 'common/indicators.py', 'common/signals.py', 'common/utils.py'] },
+    'config.yaml', 'strategy.py',
+  ];
+  let active = 'strategy.py';
+  const iconOf = p => p.endsWith('.py') ? ['py', 'py'] : (/\.ya?ml$/.test(p) ? ['ym', 'ym'] : ['na', '--']);
+  const baseOf = p => p.split('/').pop();
+  // a working copy of strategy.py so "Insert at cursor" can actually mutate it
+  let stratSrc = NM_FILES['strategy.py'];
+
+  function fileRow(path, depth) {
+    const li = document.createElement('li');
+    const row = document.createElement('div');
+    row.className = 'nm-row' + (path === active ? ' active' : '');
+    row.style.paddingLeft = (depth * 12 + 8) + 'px';
+    const [cls, txt] = iconOf(path);
+    row.innerHTML = '<span class="ic ' + cls + '">' + txt + '</span><button class="nm-label">' + baseOf(path) + '</button>';
+    row.querySelector('.nm-label').addEventListener('click', () => { active = path; paintCode(); renderTree(); });
+    li.appendChild(row); return li;
+  }
+  function renderTree() {
+    const ul = $('filelist'); ul.innerHTML = '';
+    TREE.forEach(node => {
+      if (typeof node === 'string') { ul.appendChild(fileRow(node, 0)); return; }
+      const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'nm-row'; row.style.paddingLeft = '8px';
+      row.innerHTML = '<span class="chev">' + (node.open ? '▾' : '▸') + '</span><span class="fold">📁</span>' + node.dir;
+      row.addEventListener('click', () => { node.open = !node.open; renderTree(); });
+      li.appendChild(row); ul.appendChild(li);
+      if (node.open) node.children.forEach(c => ul.appendChild(fileRow(c, 1)));
+    });
+  }
+  function paintCode() {
+    const src = active === 'strategy.py' ? stratSrc : NM_FILES[active];
+    if (src === undefined) { $('code').innerHTML = '<div class="nm-empty">Select a file</div>'; return; }
+    $('code').innerHTML = '<div class="nm-gutter" id="gutter"></div><pre id="pre"></pre>';
+    $('pre').innerHTML = NM_FILES.highlight(src, active.endsWith('.py') ? 'py' : 'yaml');
+    $('gutter').textContent = src.split('\n').map((_, i) => i + 1).join('\n');
+  }
+
+  // ── builder state (preloaded so the panel is populated, not empty) ────────
+  let uid = 1;
+  const state = {
+    indicators: [
+      { uid: uid++, key: 'rsi', var_name: 'rsi', params: { period: 14 } },
+      { uid: uid++, key: 'macd', var_name: 'macd', params: { fast: 12, slow: 26, signal: 9 } },
+    ],
+    rules: [
+      { uid: uid++, left: 'rsi', operator: '<', right: '30' },
+      { uid: uid++, left: 'macd_line', operator: '>', right: '0', join: 'and' },
+    ],
+    sizing: 'equal', sizingRef: '',
+    cfg: { market: 'futures', leverage: 5, assets: 'BTCUSDT, ETHUSDT', frequency: '1m', ohlcv: 240, rebalancing: 8 },
+  };
+  let openSection = 'ind'; // one accordion open at a time
+  let preview = null;      // { code, lang, target, config_hint }
+
+  const OPERATORS = [['>', '>'], ['<', '<'], ['>=', '>='], ['<=', '<='], ['==', '=='], ['crosses_above', 'Crosses Above'], ['crosses_below', 'Crosses Below']];
+
+  // var names produced by the current indicator set (for rule operand dropdowns)
+  function varNames() {
+    const out = [];
+    state.indicators.forEach(ind => {
+      const v = ind.var_name || ind.key;
+      if (ind.key === 'macd') out.push(v + '_line', v + '_signal', v + '_hist');
+      else if (ind.key === 'stochastic') out.push(v + '_k', v + '_d');
+      else if (ind.key === 'bollinger' || ind.key === 'keltner') out.push(v + '_upper', v + '_mid', v + '_lower');
+      else out.push(v);
+    });
+    return out;
+  }
+  // unique var name: first instance = key, duplicates = key_2, key_3 …
+  function nextVar(key) {
+    const base = key;
+    const used = new Set(state.indicators.map(i => i.var_name));
+    if (!used.has(base)) return base;
+    let i = 2; while (used.has(base + '_' + i)) i++;
+    return base + '_' + i;
+  }
+
+  // ── tools view render ─────────────────────────────────────────────────────
+  function catGroups() {
+    const cats = {};
+    Object.keys(IND).forEach(k => { const c = IND[k].category; (cats[c] = cats[c] || []).push(k); });
+    return cats;
+  }
+
+  function renderTools() {
+    const v = $('bxview');
+    const cats = catGroups();
+    const chipHtml = Object.keys(cats).map(cat =>
+      '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
+      '<span class="cat">' + cat + '</span>' +
+      cats[cat].map(k => '<button class="chip" data-add="' + k + '" title="' + esc(IND[k].description) + '">' + esc(IND[k].name) + '</button>').join('') +
+      '</div>').join('');
+
+    const indRows = state.indicators.length ? state.indicators.map(ind => {
+      const meta = IND[ind.key];
+      const params = meta.params.map(p =>
+        '<label>' + p.name + ':<input class="inp num" type="number" data-uid="' + ind.uid + '" data-p="' + p.name + '"' +
+        ' value="' + (ind.params[p.name] ?? p.default) + '" min="' + p.min + '" max="' + p.max + '" step="' + (p.type === 'float' ? '0.1' : '1') + '"></label>'
+      ).join('');
+      return '<div class="ind-row"><span class="vn">' + esc(ind.var_name) + '</span>' + params +
+        '<button class="del" data-del-ind="' + ind.uid + '">x</button></div>';
+    }).join('') : '<div class="hint">No indicators yet.</div>';
+
+    let rulesHtml = '';
+    if (!state.rules.length) rulesHtml = '<div class="hint">No rules yet. Add a rule to define when to assign weight to an asset.</div>';
+    else {
+      const vars = varNames();
+      rulesHtml = state.rules.map((r, i) => {
+        const join = i > 0 ? '<select class="join" data-join="' + r.uid + '"><option value="and"' + (r.join !== 'or' ? ' selected' : '') + '>AND</option><option value="or"' + (r.join === 'or' ? ' selected' : '') + '>OR</option></select>' : '';
+        const opt = (list, cur) => list.map(o => '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>').join('');
+        const isVar = vars.includes(r.left);
+        const leftSel = '<select class="inp" data-left="' + r.uid + '" style="width:auto">' + opt(vars.concat(['Custom']), isVar ? r.left : 'Custom') + '</select>' +
+          (isVar ? '' : '<input class="inp" data-leftc="' + r.uid + '" value="' + esc(r.left) + '" style="width:80px" placeholder="var">');
+        const opSel = '<select class="inp" data-op="' + r.uid + '" style="width:auto">' + OPERATORS.map(o => '<option value="' + o[0] + '"' + (o[0] === r.operator ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
+        const rIsVar = vars.includes(r.right);
+        const rightSel = '<select class="inp" data-right="' + r.uid + '" style="width:auto">' + opt(vars.concat(['Custom']), rIsVar ? r.right : 'Custom') + '</select>' +
+          (rIsVar ? '' : '<input class="inp" data-rightc="' + r.uid + '" value="' + esc(r.right) + '" style="width:80px" placeholder="' + (isFinite(Number(r.right)) && r.right !== '' ? 'number' : 'var') + '">');
+        return join + '<div class="rule">' + leftSel + opSel + rightSel + '<button class="del" data-del-rule="' + r.uid + '">x</button></div>';
+      }).join('');
+      rulesHtml += state.rules.length > 1
+        ? '<div class="hint">Rules combine left-to-right. AND binds tighter than OR — e.g. A AND B OR C means (A AND B) OR C.</div>'
+        : '<div class="hint">Weight is assigned only when the rule is true.</div>';
+    }
+
+    const scoreVars = varNames();
+    const sizingExtra = state.sizing === 'score'
+      ? (scoreVars.length
+          ? '<div><div class="cap">Score indicator variable</div><select class="inp" id="sizeRef"><option value="">Select an indicator variable...</option>' + scoreVars.map(v => '<option' + (v === state.sizingRef ? ' selected' : '') + '>' + esc(v) + '</option>').join('') + '</select></div>'
+          : '<div class="hint">Add an indicator first to pick a score variable.</div>')
+      : '';
+
+    v.innerHTML =
+      '<div class="bx-tools">' +
+      '<p class="bx-intro">Expand only the tools you need to build a snippet and insert it at the strategy.py cursor (or copy). Existing code is not overwritten.</p>' +
+
+      section('ind', 'Add Indicator',
+        '<div><h3>Indicators</h3><div class="chips">' + chipHtml + '</div></div>' +
+        '<div><h3>Active Indicators</h3>' + indRows + '</div>' +
+        '<button class="gen" data-gen="ind"' + (state.indicators.length ? '' : ' disabled') + '>Generate indicator snippet</button>') +
+
+      section('sig', 'Signal Rules',
+        '<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Rules</h3><button class="addrule" id="addRule">+ Add Rule</button></div>' +
+        rulesHtml +
+        '<button class="gen" data-gen="sig"' + (state.rules.length ? '' : ' disabled') + '>Generate signal snippet</button>') +
+
+      section('size', 'Position Sizing',
+        '<div><div class="cap">Weighting method</div><select class="inp" id="sizeMode">' +
+          ['equal:Equal weight', 'marketcap:Marketcap weighted', 'score:Indicator-score weighted'].map(o => { const [val, lab] = o.split(':'); return '<option value="' + val + '"' + (val === state.sizing ? ' selected' : '') + '>' + lab + '</option>'; }).join('') +
+        '</select></div>' + sizingExtra +
+        '<div class="hint">Insert the snippet inside the asset loop (after signal). Marketcap/score modes include placement comments for before/after the loop.</div>' +
+        '<button class="gen" data-gen="size">Generate sizing snippet</button>') +
+
+      section('cfg', 'Config Snippet',
+        '<div class="grid2">' +
+          '<div><div class="cap">Market</div><select class="inp" id="cfgMarket"><option value="spot"' + (state.cfg.market === 'spot' ? ' selected' : '') + '>spot</option><option value="futures"' + (state.cfg.market === 'futures' ? ' selected' : '') + '>futures</option></select></div>' +
+          (state.cfg.market === 'futures' ? '<div><div class="cap">Leverage</div><input class="inp" id="cfgLev" type="number" min="1" max="125" value="' + state.cfg.leverage + '"></div>' : '<div></div>') +
+          '<div style="grid-column:1/3"><div class="cap">Assets</div><input class="inp" id="cfgAssets" value="' + esc(state.cfg.assets) + '" placeholder="BTCUSDT, ETHUSDT"></div>' +
+          '<div><div class="cap">Frequency</div><select class="inp" id="cfgFreq">' + ['1m', '5m', '15m', '1h', '1d'].map(f => '<option' + (f === state.cfg.frequency ? ' selected' : '') + '>' + f + '</option>').join('') + '</select></div>' +
+          '<div><div class="cap">OHLCV Window</div><input class="inp" id="cfgOhlcv" type="number" min="10" value="' + state.cfg.ohlcv + '"></div>' +
+          '<div><div class="cap">Rebalancing (hrs)</div><input class="inp" id="cfgReb" type="number" min="1" value="' + state.cfg.rebalancing + '"></div>' +
+        '</div>' +
+        '<button class="gen" data-gen="cfg">Generate config snippet</button>') +
+      '</div>';
+
+    wireTools();
+  }
+
+  function section(id, title, body) {
+    const open = openSection === id;
+    return '<div class="acc' + (open ? ' open' : '') + '"><button class="h" data-sec="' + id + '">' + title + '<span class="cv">' + (open ? '▾' : '▸') + '</span></button><div class="b">' + body + '</div></div>';
+  }
+
+  function wireTools() {
+    $('bxview').querySelectorAll('[data-sec]').forEach(b =>
+      b.addEventListener('click', () => { openSection = openSection === b.dataset.sec ? null : b.dataset.sec; renderTools(); }));
+    $('bxview').querySelectorAll('[data-add]').forEach(b =>
+      b.addEventListener('click', () => {
+        const key = b.dataset.add;
+        const params = {}; IND[key].params.forEach(p => params[p.name] = p.default);
+        state.indicators.push({ uid: uid++, key, var_name: nextVar(key), params });
+        renderTools();
+      }));
+    $('bxview').querySelectorAll('[data-del-ind]').forEach(b =>
+      b.addEventListener('click', () => { state.indicators = state.indicators.filter(i => i.uid != b.dataset.delInd); renderTools(); }));
+    $('bxview').querySelectorAll('input[data-p]').forEach(inp =>
+      inp.addEventListener('input', () => { const ind = state.indicators.find(i => i.uid == inp.dataset.uid); if (ind) ind.params[inp.dataset.p] = inp.value === '' ? '' : Number(inp.value); }));
+
+    const addRule = $('addRule');
+    if (addRule) addRule.addEventListener('click', () => {
+      const vars = varNames();
+      state.rules.push({ uid: uid++, left: vars[0] || 'close', operator: '>', right: '0', join: 'and' });
+      renderTools();
+    });
+    $('bxview').querySelectorAll('[data-del-rule]').forEach(b =>
+      b.addEventListener('click', () => { state.rules = state.rules.filter(r => r.uid != b.dataset.delRule); renderTools(); }));
+    const bind = (attr, set) => $('bxview').querySelectorAll('[' + attr + ']').forEach(el =>
+      el.addEventListener('change', () => { const r = state.rules.find(x => x.uid == el.getAttribute(attr)); if (r) { set(r, el.value); renderTools(); } }));
+    bind('data-join', (r, v) => r.join = v);
+    bind('data-left', (r, v) => r.left = v === 'Custom' ? '' : v);
+    bind('data-leftc', (r, v) => r.left = v);
+    bind('data-op', (r, v) => r.operator = v);
+    bind('data-right', (r, v) => r.right = v === 'Custom' ? '' : v);
+    bind('data-rightc', (r, v) => r.right = v);
+
+    const sm = $('sizeMode'); if (sm) sm.addEventListener('change', () => { state.sizing = sm.value; renderTools(); });
+    const sr = $('sizeRef'); if (sr) sr.addEventListener('change', () => { state.sizingRef = sr.value; });
+
+    const cfgWire = (id, key, num) => { const el = $(id); if (el) el.addEventListener('change', () => { state.cfg[key] = num ? Number(el.value) : el.value; if (id === 'cfgMarket') renderTools(); }); };
+    cfgWire('cfgMarket', 'market'); cfgWire('cfgLev', 'leverage', true); cfgWire('cfgAssets', 'assets');
+    cfgWire('cfgFreq', 'frequency'); cfgWire('cfgOhlcv', 'ohlcv', true); cfgWire('cfgReb', 'rebalancing', true);
+
+    $('bxview').querySelectorAll('[data-gen]').forEach(b => b.addEventListener('click', () => generate(b.dataset.gen)));
+  }
+
+  // ── generation → preview ──────────────────────────────────────────────────
+  function generate(kind) {
+    let res, target = 'strategy', lang = 'py';
+    if (kind === 'ind') {
+      // multi-indicator: join per-indicator snippets with '\n' (each embeds its
+      // own helper defs — duplicated headers are the REAL output, not a bug)
+      res = { code: state.indicators.map(i => NM_CODEGEN.generateIndicatorSnippet(i).code).join('\n'), config_hint: null };
+      state.indicators.forEach(i => { const h = NM_CODEGEN.generateIndicatorSnippet(i).config_hint; if (h) res.config_hint = (res.config_hint ? res.config_hint + '\n' : '') + h; });
+    } else if (kind === 'sig') res = NM_CODEGEN.generateSignalSnippet(state.rules);
+    else if (kind === 'size') res = NM_CODEGEN.generateSizingSnippet(state.sizing, state.sizingRef);
+    else { res = NM_CODEGEN.generateConfigSnippet(state.cfg); target = 'config'; lang = 'yaml'; }
+    preview = { code: res.code, config_hint: res.config_hint, target, lang };
+    renderPreview();
+  }
+
+  function renderPreview() {
+    const p = preview;
+    const status = p.target === 'config' ? 'Preview (→ config.yaml)' : 'Preview (→ strategy.py)';
+    const gutter = p.code.split('\n').map((_, i) => i + 1).join('\n');
+    const hintHtml = p.config_hint
+      ? '<div class="cfg-hint"><div class="l">Needs to be added to strategy.config.data in config.yaml:</div><pre>' + esc(p.config_hint) + '</pre></div>'
+      : '';
+    $('bxview').innerHTML =
+      '<div class="pv">' +
+      '<div class="pv-top"><button class="back" id="pvBack">← Tools</button><span class="status">' + status + '</span>' +
+        '<span class="acts"><button class="copy" id="pvCopy">Copy</button>' +
+        (p.target === 'strategy' ? '<button class="ins" id="pvIns">Insert at cursor</button>' : '') + '</span></div>' +
+      '<div class="pv-body">' +
+        '<div class="cp-sub"><span>snippet</span><button id="pvCopy2">Copy</button></div>' +
+        '<div class="nm-code" style="flex:1"><div class="nm-gutter">' + gutter + '</div><pre>' + NM_FILES.highlight(p.code, p.lang) + '</pre></div>' +
+        hintHtml +
+      '</div>' +
+      '<div class="note" id="pvNote">' + (p.target === 'config' ? 'Copy the config snippet directly into config.yaml.' : '') + '</div>' +
+      '</div>';
+    $('pvBack').addEventListener('click', () => { preview = null; renderTools(); });
+    const doCopy = () => {
+      const ok = () => { $('pvNote').textContent = 'Copied ✓'; };
+      const fail = () => { $('pvNote').textContent = 'Copy failed — select and copy directly from the preview.'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p.code).then(ok, fail);
+      else fail();
+    };
+    $('pvCopy').addEventListener('click', doCopy);
+    $('pvCopy2').addEventListener('click', doCopy);
+    const ins = $('pvIns');
+    if (ins) ins.addEventListener('click', () => {
+      // "Insert at cursor" really inserts into strategy.py — the payoff.
+      // No live cursor here, so insert just before `return weights`.
+      const marker = '\n    return weights\n';
+      const block = '\n    # --- inserted from Builder ---\n' + p.code.split('\n').map(l => '    ' + l).join('\n') + '\n';
+      stratSrc = stratSrc.includes(marker) ? stratSrc.replace(marker, block + marker) : stratSrc + block;
+      active = 'strategy.py'; paintCode(); renderTree();
+      $('pvNote').textContent = 'Inserted at the strategy.py cursor position ✓';
+    });
+  }
+
+  // ── dock toggles (really switch flex-direction) ───────────────────────────
+  $('dockR').addEventListener('click', () => {
+    $('body').style.flexDirection = 'row'; $('dockR').classList.add('on'); $('dockB').classList.remove('on');
+    $('bx').style.width = '520px'; $('bx').style.height = ''; $('hb').className = 'nm-handle';
+  });
+  $('dockB').addEventListener('click', () => {
+    $('body').style.flexDirection = 'column'; $('dockB').classList.add('on'); $('dockR').classList.remove('on');
+    $('bx').style.width = 'auto'; $('bx').style.height = '360px'; $('hb').className = 'nm-handle row';
+  });
+
+  // resize handles
+  function dragW(handle, el, min, max, invert) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); const x0 = e.clientX, w0 = el.getBoundingClientRect().width;
+      const mv = ev => { const d = invert ? x0 - ev.clientX : ev.clientX - x0; el.style.width = Math.max(min, Math.min(max, w0 + d)) + 'px'; };
+      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+  }
+  dragW($('h1'), $('tree'), 160, 560, false);
+  dragW($('hb'), $('bx'), 280, 1000, true);
+
+  renderTree(); paintCode(); renderTools();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Data Explorer Demo — Neomanifold</title>
+<meta name="description" content="A sample Neomanifold Data Explorer — a slash-command terminal for market data. Type /ohlcv BTCUSDT 1m 240 and a candlestick block stacks into the log." />
+<link rel="icon" href="../../favicon.png">
+<link rel="stylesheet" href="nm.css">
+<style>
+  .dx { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+  .cmdbar { position: relative; border-bottom: 1px solid var(--nm-edge); background: var(--nm-panel-alt); }
+  .cmdbar .row { display: flex; align-items: center; padding: 8px 16px; gap: 8px; }
+  .cmdbar .slash { color: var(--nm-blue400); font-family: var(--nm-mono); font-size: 14px; font-weight: 700; user-select: none; }
+  .cmdbar input { flex: 1; background: transparent; color: #fff; font-family: var(--nm-mono); font-size: 14px; border: 0; outline: none; }
+  .cmdbar input::placeholder { color: var(--nm-n600); }
+  .cmdbar .enter { font-size: 12px; color: var(--nm-n400); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--nm-edge); background: none; cursor: pointer; }
+  .cmdbar .enter:hover { color: #fff; }
+
+  .sugg { position: absolute; left: 0; right: 0; top: 100%; z-index: 10; background: var(--nm-panel);
+          border: 1px solid var(--nm-edge); box-shadow: 0 10px 15px -3px rgba(0,0,0,.5); max-height: 192px; overflow-y: auto; }
+  .sugg button { width: 100%; text-align: left; padding: 6px 16px; background: none; border: 0; cursor: pointer;
+          display: flex; align-items: center; gap: 12px; font-size: 14px; }
+  .sugg button:hover, .sugg button.hi { background: var(--nm-panel-alt); }
+  .sugg .nm { color: var(--nm-blue400); width: 80px; font-family: var(--nm-mono); }
+  .sugg .ds { font-size: 12px; color: var(--nm-n500); }
+
+  .results { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .empty { color: var(--nm-n500); font-size: 14px; display: flex; flex-direction: column; gap: 12px; max-width: 512px; }
+  .empty .t { color: var(--nm-n400); font-weight: 600; }
+  .empty .ex { display: block; text-align: left; width: 100%; background: none; border: 0; cursor: pointer;
+               border-radius: 4px; padding: 4px 8px; font-family: var(--nm-mono); font-size: 12px; }
+  .empty .ex:hover { background: var(--nm-panel-alt); }
+  .empty .ex .c { color: var(--nm-blue400); }
+  .empty .ex .d { color: var(--nm-n600); margin-left: 12px; }
+  .empty .foot { font-size: 12px; color: var(--nm-n600); }
+
+  .block { border: 1px solid var(--nm-edge); border-radius: 4px; background: var(--nm-panel-alt); }
+  .block .hd { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--nm-edge); }
+  .block .hd .lg { display: flex; gap: 12px; align-items: center; }
+  .block .hd .cmd { font-size: 12px; color: var(--nm-n500); font-family: var(--nm-mono); }
+  .block .hd .cnt { font-size: 12px; color: var(--nm-n600); }
+  .toggle { display: flex; gap: 4px; }
+  .toggle button { font-size: 12px; padding: 2px 8px; border-radius: 4px; border: 0; background: none; color: var(--nm-n500); cursor: pointer; }
+  .toggle button:hover { color: #fff; }
+  .toggle button.on { background: var(--nm-n700); color: #fff; }
+  .block .bd { padding: 8px; }
+  .fetching { text-align: center; color: var(--nm-n500); font-size: 14px; padding: 16px 0; }
+
+  .chart-wrap { width: 100%; border-radius: 4px; border: 1px solid var(--nm-edge); overflow-x: auto; }
+  canvas { display: block; }
+
+  .tbl-wrap { max-height: 60vh; overflow: auto; border: 1px solid var(--nm-edge); border-radius: 4px; }
+  table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  thead th { position: sticky; top: 0; background: var(--nm-n900); color: var(--nm-n500); text-align: left; padding: 8px 12px; font-weight: 500; }
+  tbody td { padding: 6px 12px; border-top: 1px solid var(--nm-edge-faint); }
+  tbody tr:hover { background: var(--nm-row-hover); }
+  td.num, th.num { text-align: right; font-family: var(--nm-mono); }
+  td.dt { font-family: var(--nm-mono); }
+
+  .help table { font-size: 12px; }
+  .help thead th { position: static; background: none; color: var(--nm-n400); border-bottom: 1px solid var(--nm-edge); }
+  .help tbody td { border-top: 0; border-bottom: 1px solid var(--nm-edge-soft); }
+  .help .c1 { color: var(--nm-blue400); font-family: var(--nm-mono); }
+  .help .c2 { font-family: var(--nm-mono); color: var(--nm-n300); }
+  .help .c3 { color: var(--nm-n500); }
+  .help .cmd { font-size: 12px; color: var(--nm-n500); font-family: var(--nm-mono); margin-bottom: 8px; }
+
+  .errblock { border: 1px solid var(--nm-err-edge); border-radius: 4px; background: var(--nm-err-bg); padding: 12px; }
+  .errblock .cmd { font-size: 12px; color: var(--nm-n500); font-family: var(--nm-mono); margin-bottom: 6px; }
+  .errblock .msg { font-size: 14px; color: var(--nm-red400); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <span>Neomanifold — Data Explorer</span>
+    <span class="count">— demo_strategy · spot</span>
+  </div>
+  <div class="links">
+    <a href="editor.html">← Editor</a>
+    <a href="builder.html">Builder</a>
+    <a href="community.html">Community</a>
+    <a href="../portfolio.html">← Portfolio</a>
+    <a href="https://neomatrix.ai">neomatrix.ai</a>
+  </div>
+</div>
+<div class="demo-banner">
+  <strong>SAMPLE DATA</strong> — Illustrative preview of the Neomanifold Data Explorer. Candles are synthetic; the command surface mirrors the live one.
+</div>
+
+<div class="nm-root">
+  <div class="nm-hdr">
+    <div class="l">
+      <a class="back" href="editor.html">← Projects</a>
+      <button class="proj" title="Rename">demo_strategy ✎</button>
+      <span class="ttype">(spot)</span>
+    </div>
+    <nav>
+      <a href="editor.html">Files</a>
+      <span class="on">Data Explorer</span>
+      <span>Sessions</span>
+      <span class="off" title="Settings — coming soon">Settings</span>
+      <span class="nm-lang" title="Language">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>EN
+      </span>
+    </nav>
+  </div>
+
+  <div class="nm-body">
+    <div class="dx">
+      <div class="cmdbar">
+        <div class="row">
+          <span class="slash">/</span>
+          <input id="cmd" placeholder="ohlcv BTCUSDT 1m 240" autocomplete="off" spellcheck="false" />
+          <button class="enter" id="run">Enter</button>
+        </div>
+        <div class="sugg" id="sugg" hidden></div>
+      </div>
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+</div>
+
+<script src="nm_data.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // exactly 4 commands (COMMANDS in DataExplorer) — verbatim usage/description
+  const COMMANDS = [
+    { name: '/ohlcv', usage: '/ohlcv <symbol> [freq] [window]', desc: 'OHLCV candlestick data' },
+    { name: '/funding', usage: '/funding <symbols> [days]', desc: 'Funding rate (futures)' },
+    { name: '/mcap', usage: '/mcap <symbols> [days]', desc: 'Market capitalization' },
+    { name: '/help', usage: '/help', desc: 'Show available commands' },
+  ];
+
+  const results = [];
+  const history = [];
+  let histIdx = -1;
+  let autoplay = true;
+
+  // ── empty state ────────────────────────────────────────────────────────────
+  function renderEmpty() {
+    $('results').innerHTML =
+      '<div class="empty">' +
+      '<div class="t">Data Explorer</div>' +
+      '<p style="margin:0">Type a slash command to fetch market data. Examples:</p>' +
+      ['/ohlcv BTCUSDT 1m 240', '/funding BTCUSDT,ETHUSDT 30', '/mcap BTCUSDT,ETHUSDT 90'].map(ex =>
+        '<button class="ex" data-ex="' + esc(ex) + '"><span class="c">' + esc(ex) + '</span></button>').join('') +
+      '<div class="foot">Tab to autocomplete, arrow keys for history.</div>' +
+      '</div>';
+    $('results').querySelectorAll('[data-ex]').forEach(b =>
+      b.addEventListener('click', () => { cancelAutoplay(); $('cmd').value = b.dataset.ex.replace(/^\//, ''); $('cmd').focus(); }));
+  }
+
+  // ── result renderers ───────────────────────────────────────────────────────
+  function render() {
+    if (!results.length) { renderEmpty(); return; }
+    const wrap = $('results');
+    wrap.innerHTML = '';
+    results.forEach(r => wrap.appendChild(blockEl(r)));
+    wrap.scrollTop = wrap.scrollHeight;
+    // draw canvases after they are in the DOM
+    results.forEach(r => { if (r.type === 'ohlcv' && !r.loading && r.view === 'chart') drawCandles(r); });
+  }
+
+  function blockEl(r) {
+    const el = document.createElement('div');
+    if (r.type === 'error') {
+      el.className = 'errblock';
+      el.innerHTML = '<div class="cmd">/' + esc(r.echo) + '</div><div class="msg">' + esc(r.message) + '</div>';
+      return el;
+    }
+    if (r.type === 'help') {
+      el.className = 'block help';
+      el.innerHTML = '<div class="bd"><div class="cmd">/' + esc(r.echo) + '</div>' +
+        '<table><thead><tr><th>Command</th><th>Usage</th><th>Description</th></tr></thead><tbody>' +
+        COMMANDS.map(c => '<tr><td class="c1">' + esc(c.name) + '</td><td class="c2">' + esc(c.usage) + '</td><td class="c3">' + esc(c.desc) + '</td></tr>').join('') +
+        '</tbody></table></div>';
+      return el;
+    }
+    // data block (ohlcv / funding / mcap)
+    el.className = 'block';
+    const showToggle = !r.loading && r.type === 'ohlcv' && r.rowCount > 0;
+    el.innerHTML =
+      '<div class="hd"><div class="lg"><span class="cmd">/' + esc(r.echo) + '</span>' +
+        (r.loading ? '' : '<span class="cnt">' + r.rowCount + ' rows</span>') + '</div>' +
+        (showToggle ? '<div class="toggle"><button data-v="chart" class="' + (r.view === 'chart' ? 'on' : '') + '">Chart</button><button data-v="table" class="' + (r.view === 'table' ? 'on' : '') + '">Table</button></div>' : '') +
+      '</div>' +
+      '<div class="bd">' + (r.loading ? '<div class="fetching">Fetching...</div>' : bodyHtml(r)) + '</div>';
+    if (showToggle) el.querySelectorAll('[data-v]').forEach(b =>
+      // real app's shared handler flips unconditionally (a bug); we set explicitly
+      b.addEventListener('click', () => { r.view = b.dataset.v; render(); }));
+    return el;
+  }
+
+  function bodyHtml(r) {
+    if (r.rowCount === 0) return '<div class="fetching">No data returned.</div>';
+    if (r.type === 'ohlcv') {
+      if (r.view === 'chart') return '<div class="chart-wrap"><canvas id="cv-' + r.id + '" height="400"></canvas></div>';
+      return ohlcvTable(r);
+    }
+    return flatTable(r); // funding / mcap — rendered as the INTENDED flat table
+  }
+
+  function ohlcvTable(r) {
+    const head = ['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume'];
+    return '<div class="tbl-wrap"><table><thead><tr>' +
+      head.map((h, i) => '<th class="' + (i === 0 ? 'dt' : 'num') + '">' + h + '</th>').join('') +
+      '</tr></thead><tbody>' +
+      r.rows.map(row => '<tr><td class="dt">' + row.datetime.replace('T', ' ').replace(/\.\d+Z$|Z$/, '') + '</td>' +
+        ['open', 'high', 'low', 'close'].map(k => '<td class="num">' + row[k].toFixed(2) + '</td>').join('') +
+        '<td class="num">' + row.volume.toFixed(4) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }
+
+  function flatTable(r) {
+    const cols = Object.keys(r.rows[0]);
+    return '<div class="tbl-wrap"><table><thead><tr>' +
+      cols.map(c => '<th class="' + (typeof r.rows[0][c] === 'number' ? 'num' : (c === 'datetime' ? 'dt' : '')) + '">' + esc(c) + '</th>').join('') +
+      '</tr></thead><tbody>' +
+      r.rows.map(row => '<tr>' + cols.map(c => {
+        const v = row[c];
+        if (typeof v === 'number') return '<td class="num">' + (Math.abs(v) > 1e6 ? v.toExponential(3) : (Number.isInteger(v) ? v : v.toFixed(6))) + '</td>';
+        return '<td class="' + (c === 'datetime' ? 'dt' : '') + '">' + esc(v) + '</td>';
+      }).join('') + '</tr>').join('') +
+      '</tbody></table></div>';
+  }
+
+  // ── hand-rolled candlestick canvas (no Chart.js; matches CandlestickChart.tsx palette) ──
+  function drawCandles(r) {
+    const cv = $('cv-' + r.id);
+    if (!cv) return;
+    const cssW = cv.parentElement.clientWidth || 800;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = cssW * dpr; cv.height = 400 * dpr;
+    cv.style.width = cssW + 'px'; cv.style.height = '400px';
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const W = cssW, H = 400, padL = 56, padR = 12, padT = 12, padB = 24;
+
+    const S = window.getComputedStyle(document.documentElement);
+    const col = n => S.getPropertyValue(n).trim();
+    ctx.fillStyle = col('--nm-chart-bg'); ctx.fillRect(0, 0, W, H);
+
+    const rows = r.rows;
+    let lo = Infinity, hi = -Infinity;
+    rows.forEach(c => { lo = Math.min(lo, c.low); hi = Math.max(hi, c.high); });
+    const pad = (hi - lo) * 0.05 || 1; lo -= pad; hi += pad;
+    const x = i => padL + (i + 0.5) * (W - padL - padR) / rows.length;
+    const y = v => padT + (hi - v) * (H - padT - padB) / (hi - lo);
+
+    // grid + y labels
+    ctx.strokeStyle = col('--nm-chart-grid'); ctx.fillStyle = col('--nm-chart-text');
+    ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let g = 0; g <= 4; g++) {
+      const v = lo + (hi - lo) * g / 4, yy = y(v);
+      ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(W - padR, yy); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillText(v.toFixed(0), padL - 6, yy);
+    }
+    // x labels (first / mid / last)
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [0, Math.floor(rows.length / 2), rows.length - 1].forEach(i => {
+      ctx.fillText(rows[i].datetime.substring(11, 16), x(i), H - padB + 6);
+    });
+
+    const cw = Math.max(1, (W - padL - padR) / rows.length * 0.6);
+    rows.forEach((c, i) => {
+      const up = c.close >= c.open;
+      const color = col(up ? '--nm-candle-up' : '--nm-candle-down');
+      ctx.strokeStyle = color; ctx.fillStyle = color;
+      // wick
+      ctx.beginPath(); ctx.moveTo(x(i), y(c.high)); ctx.lineTo(x(i), y(c.low)); ctx.stroke();
+      // body (no border)
+      const yO = y(c.open), yC = y(c.close);
+      ctx.fillRect(x(i) - cw / 2, Math.min(yO, yC), cw, Math.max(1, Math.abs(yC - yO)));
+    });
+  }
+
+  // ── command execution ──────────────────────────────────────────────────────
+  function parse(raw) {
+    const s = raw.trim().replace(/^\//, '');
+    const parts = s.split(/\s+/).filter(Boolean);
+    return { cmd: '/' + (parts[0] || ''), args: parts.slice(1), echo: s };
+  }
+
+  function execute(raw) {
+    const { cmd, args, echo } = parse(raw);
+    if (echo) { history.unshift(echo); if (history.length > 50) history.pop(); }
+    histIdx = -1;
+
+    const known = COMMANDS.find(c => c.name === cmd);
+    if (!known) {
+      results.push({ type: 'error', echo, message: 'Unknown command: ' + cmd + '. Type /help for available commands.' });
+      render(); return;
+    }
+    if (cmd === '/help') { results.push({ type: 'help', echo }); render(); return; }
+
+    const id = 'r' + (results.length + 1);
+    const rec = { id, type: cmd.slice(1), echo, loading: true, view: 'chart', rowCount: 0, rows: [] };
+    results.push(rec);
+    render();
+
+    setTimeout(() => {
+      if (cmd === '/ohlcv') {
+        const sym = (args[0] || 'BTCUSDT').toUpperCase();
+        const freq = ['1m', '5m', '15m', '1h', '4h', '1d'].includes(args[1]) ? args[1] : '1m';
+        const win = Math.max(1, Math.min(600, parseInt(args[2], 10) || 60));
+        rec.rows = NM_DATA.candles(sym, freq, win);
+      } else if (cmd === '/funding') {
+        const syms = (args[0] || 'BTCUSDT').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        rec.rows = NM_DATA.funding(syms, Math.max(1, parseInt(args[1], 10) || 30));
+      } else {
+        const syms = (args[0] || 'BTCUSDT').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        rec.rows = NM_DATA.mcap(syms, Math.max(1, parseInt(args[1], 10) || 90));
+      }
+      rec.rowCount = rec.rows.length;
+      rec.loading = false;
+      render();
+    }, 400);
+  }
+
+  // ── autocomplete + history ─────────────────────────────────────────────────
+  let sugHi = -1;
+  function currentSuggestions() {
+    const v = $('cmd').value.trim().toLowerCase();
+    const q = '/' + v.split(/\s+/)[0];
+    if (!v || v.includes(' ')) return [];
+    return COMMANDS.filter(c => c.name.startsWith(q) && c.name !== q);
+  }
+  function showSugg() {
+    const list = currentSuggestions();
+    const s = $('sugg');
+    if (!list.length) { s.hidden = true; return; }
+    s.hidden = false;
+    s.innerHTML = list.map((c, i) => '<button data-cmd="' + esc(c.name) + '" class="' + (i === sugHi ? 'hi' : '') + '"><span class="nm">' + esc(c.name) + '</span><span class="ds">' + esc(c.desc) + '</span></button>').join('');
+    s.querySelectorAll('[data-cmd]').forEach(b =>
+      b.addEventListener('mousedown', e => { e.preventDefault(); $('cmd').value = b.dataset.cmd.replace(/^\//, '') + ' '; $('sugg').hidden = true; $('cmd').focus(); }));
+  }
+
+  $('cmd').addEventListener('input', () => { cancelAutoplay(); sugHi = -1; showSugg(); });
+  $('cmd').addEventListener('keydown', e => {
+    const list = currentSuggestions();
+    if (e.key === 'Tab') {
+      e.preventDefault(); cancelAutoplay();
+      if (list.length) { $('cmd').value = list[Math.max(0, sugHi)].name.replace(/^\//, '') + ' '; $('sugg').hidden = true; }
+    } else if (e.key === 'ArrowDown') {
+      if (!$('sugg').hidden && list.length) { e.preventDefault(); sugHi = Math.min(list.length - 1, sugHi + 1); showSugg(); }
+      else if (history.length) { e.preventDefault(); histIdx = Math.min(history.length - 1, histIdx + 1); $('cmd').value = history[histIdx]; }
+    } else if (e.key === 'ArrowUp') {
+      if (!$('sugg').hidden && list.length) { e.preventDefault(); sugHi = Math.max(0, sugHi - 1); showSugg(); }
+      else if (history.length) { e.preventDefault(); histIdx = histIdx <= 0 ? 0 : histIdx - 1; $('cmd').value = history[histIdx] || ''; }
+    } else if (e.key === 'Escape') { $('sugg').hidden = true; }
+    else if (e.key === 'Enter') { $('sugg').hidden = true; const val = $('cmd').value; if (val.trim()) { execute(val); $('cmd').value = ''; } }
+  });
+  $('cmd').addEventListener('blur', () => setTimeout(() => { $('sugg').hidden = true; }, 200));
+  $('run').addEventListener('click', () => { cancelAutoplay(); const val = $('cmd').value; if (val.trim()) { execute(val); $('cmd').value = ''; } });
+
+  // ── autoplay: typewriter /ohlcv on load, cancelled by any interaction ──────
+  let apTimers = [];
+  function cancelAutoplay() {
+    if (!autoplay) return;
+    autoplay = false; apTimers.forEach(clearTimeout); apTimers = [];
+  }
+  function startAutoplay() {
+    const target = 'ohlcv BTCUSDT 1m 240';
+    apTimers.push(setTimeout(function tw(i) {
+      if (!autoplay) return;
+      $('cmd').value = target.slice(0, i);
+      if (i < target.length) apTimers.push(setTimeout(() => tw(i + 1), 45));
+      else apTimers.push(setTimeout(() => { if (autoplay) { autoplay = false; execute(target); $('cmd').value = ''; } }, 350));
+    }, 800, 1));
+  }
+  ['keydown', 'mousedown'].forEach(ev => document.addEventListener(ev, cancelAutoplay, { once: false }));
+
+  window.addEventListener('resize', () => results.forEach(r => { if (r.type === 'ohlcv' && !r.loading && r.view === 'chart') drawCandles(r); }));
+
+  renderEmpty();
+  startAutoplay();
+})();
+</script>
+</body>
+</html>

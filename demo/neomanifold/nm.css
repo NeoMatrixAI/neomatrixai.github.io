@@ -1,0 +1,342 @@
+/* ============================================================
+   nm.css — shared tokens + chrome for the Neomanifold demo pages.
+
+   Every value here is traced to the REAL product, not to a design doc:
+     tailwind.config.ts:7-11  → the only 3 custom colors (panel/panelAlt/edge)
+     globals.css              → has zero CSS variables; the app inlines raw
+                                Tailwind classes, so they are resolved to hex here
+     sessionStatus.ts:4-12    → session badge pairs (single source of truth)
+     RightPanel.tsx:67-84     → the action-rail button colors
+     CandlestickChart.tsx:25-41 → chart palette
+   NOTE: docs/plan/frontend-design-foundation.md proposes a --bg/--primary token
+   layer and Button/Badge/Card primitives. That plan was NEVER implemented (the
+   doc itself says the design system is "전무"). Do not build from it.
+
+   The product is dark-only: no light mode, no theme toggle, no `dark:` variant.
+   ============================================================ */
+:root {
+  /* --- core surface (the entire product identity) --- */
+  --nm-panel:      #1e1e1e;  /* page bg + code bg + recessed inputs */
+  --nm-panel-alt:  #252526;  /* headers, tree, right rail, cards */
+  --nm-edge:       #333333;  /* EVERY border/divider in the app */
+  --nm-fg:         #e4e4e4;  /* body text */
+
+  /* --- neutral ramp (Tailwind neutral-*) --- */
+  --nm-n200: #e5e5e5;
+  --nm-n300: #d4d4d4;
+  --nm-n400: #a3a3a3;  /* the workhorse muted text */
+  --nm-n500: #737373;
+  --nm-n600: #525252;
+  --nm-n700: #404040;
+  --nm-n800: #262626;
+  --nm-n900: #171717;
+
+  /* --- action rail (bg / hover) --- */
+  --nm-save:      #404040;  --nm-save-h:      #525252;
+  --nm-validate:  #1d4ed8;  --nm-validate-h:  #2563eb;
+  --nm-backtest:  #0e7490;  --nm-backtest-h:  #0891b2;
+  --nm-publish:   #7e22ce;  --nm-publish-h:   #9333ea;
+  --nm-run:       #15803d;  --nm-run-h:       #16a34a;
+  --nm-terminate: #b91c1c;  --nm-terminate-h: #dc2626;
+
+  /* --- accents --- */
+  --nm-blue300: #93c5fd; --nm-blue400: #60a5fa; --nm-blue500: #3b82f6;
+  --nm-blue600: #2563eb; --nm-blue700: #1d4ed8; --nm-blue900: #1e3a8a;
+  --nm-green400: #4ade80; --nm-green600: #16a34a; --nm-green700: #15803d;
+  --nm-green800: #166534;
+  --nm-red400: #f87171; --nm-red800: #991b1b; --nm-red900: #7f1d1d;
+  --nm-amber400: #fbbf24;
+  --nm-yellow400: #facc15;
+  --nm-pink400: #f472b6;
+
+  /* --- derived tints (Tailwind /opacity → rgba) --- */
+  --nm-sel:        rgba(30,58,138,0.40);
+  --nm-sel-soft:   rgba(30,58,138,0.30);
+  --nm-handle-h:   rgba(37,99,235,0.60);
+  --nm-log-bg:     rgba(0,0,0,0.40);
+  --nm-edge-soft:  rgba(51,51,51,0.50);
+  --nm-edge-faint: rgba(51,51,51,0.30);
+  --nm-row-hover:  rgba(38,38,38,0.30);
+  --nm-err-edge:   rgba(127,29,29,0.50);
+  --nm-err-bg:     rgba(69,10,10,0.20);
+
+  /* --- session state badges (sessionStatus.ts:4-12) --- */
+  --nm-st-waiting-bg:   #14532d; --nm-st-waiting-fg:   #86efac;
+  --nm-st-preparing-bg: #713f12; --nm-st-preparing-fg: #fde047;
+  --nm-st-running-bg:   #1e3a8a; --nm-st-running-fg:   #93c5fd;
+  --nm-st-trading-bg:   #581c87; --nm-st-trading-fg:   #d8b4fe;
+  --nm-st-error-bg:     #7f1d1d; --nm-st-error-fg:     #fca5a5;
+  --nm-st-fallback-bg:  #262626; --nm-st-fallback-fg:  #d4d4d4;
+  --nm-st-ended-fg:     #a3a3a3;
+  --nm-st-idle-fg:      #737373;
+
+  /* --- candlestick chart (CandlestickChart.tsx:25-41) --- */
+  --nm-chart-bg:    #111111;
+  --nm-chart-text:  #999999;
+  --nm-chart-grid:  #222222;
+  --nm-candle-up:   #26a69a;
+  --nm-candle-down: #ef5350;
+
+  /* --- fake-Monaco syntax (VS Code Dark+, theme "vs-dark") --- */
+  --nm-code-bg:      #1e1e1e; /* vs-dark's bg IS #1e1e1e — a <pre> matches exactly */
+  --nm-code-plain:   #d4d4d4;
+  --nm-code-gutter:  #525252;
+  --nm-code-kw:      #569cd6;
+  --nm-code-str:     #ce9178;
+  --nm-code-comment: #6a9955;
+  --nm-code-fn:      #dcdcaa;
+  --nm-code-num:     #b5cea8;
+  --nm-code-yaml-key:#9cdcfe;
+
+  /* --- type / radius / metrics --- */
+  /* NOT Inter: the real app ships no next/font, it uses the bare system stack. */
+  --nm-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --nm-radius: 4px;     /* Tailwind `rounded` — the default everywhere */
+  --nm-radius-lg: 8px;  /* `rounded-lg` — cards only. No other radii exist. */
+  --nm-handle-w: 4px;
+
+  /* --- inherited demo chrome (keeps these pages siblings of demo/grid.html) --- */
+  --dm-topbar-bg: #111317;
+  --dm-topbar-edge: #2a2d33;
+  --dm-topbar-fg: #d8d9da;
+  --dm-topbar-muted: #8e94a1;
+  --dm-link: #6ea8ff;
+  --dm-banner-from: #2a1f3d;
+  --dm-banner-to: #1f2d3d;
+  --dm-banner-edge: #3a3d55;
+  --dm-banner-fg: #c9b8ff;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  height: 100%; margin: 0;
+  background: var(--nm-panel); color: var(--nm-fg);
+  font-family: var(--nm-font);
+}
+button { font-family: inherit; }
+
+/* ── shared demo chrome (identical to demo/grid.html) ───────────── */
+.topbar {
+  height: 48px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; background: var(--dm-topbar-bg);
+  border-bottom: 1px solid var(--dm-topbar-edge);
+  font-size: 14px; font-weight: 600; color: var(--dm-topbar-fg);
+}
+.topbar .count { margin-left: 8px; color: var(--dm-topbar-muted); font-weight: 400; }
+.topbar .links { display: flex; gap: 16px; }
+.topbar a { color: var(--dm-link); text-decoration: none; font-size: 13px; }
+.topbar a:hover { text-decoration: underline; }
+
+.demo-banner {
+  background: linear-gradient(90deg, var(--dm-banner-from), var(--dm-banner-to));
+  border-bottom: 1px solid var(--dm-banner-edge); color: var(--dm-banner-fg);
+  font-size: 12.5px; text-align: center; padding: 6px 16px;
+}
+.demo-banner strong { color: #fff; }
+
+/* app viewport: 48px topbar + ~30px banner */
+.nm-root { height: calc(100vh - 78px); display: flex; flex-direction: column; }
+
+/* ── editor shell header (page.tsx:520) ─────────────────────────── */
+.nm-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; border-bottom: 1px solid var(--nm-edge);
+  background: var(--nm-panel-alt); font-size: 14px; flex-shrink: 0; gap: 12px;
+}
+.nm-hdr .l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.nm-hdr .back { color: var(--nm-n400); text-decoration: none; white-space: nowrap; }
+.nm-hdr .back:hover { color: #fff; }
+.nm-hdr .proj {
+  background: none; border: 0; padding: 0; cursor: pointer; color: inherit;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.nm-hdr .proj:hover { color: var(--nm-blue400); }
+.nm-hdr .ttype { color: var(--nm-n500); }
+/* the active tab is literally just white — no underline, no pill */
+.nm-hdr nav { display: flex; align-items: center; gap: 16px; color: var(--nm-n400); white-space: nowrap; }
+.nm-hdr nav a, .nm-hdr nav span { color: inherit; text-decoration: none; cursor: pointer; }
+.nm-hdr nav a:hover, .nm-hdr nav span:hover { color: #fff; }
+.nm-hdr nav .on { color: #fff; }
+.nm-hdr nav .off { opacity: .4; cursor: not-allowed; }
+.nm-hdr nav .off:hover { color: var(--nm-n400); }
+.nm-lang {
+  display: inline-flex; align-items: center; gap: 4px; color: var(--nm-n400);
+  font-size: 12px; font-weight: 500; text-transform: uppercase; cursor: pointer;
+}
+.nm-lang:hover { color: #fff; }
+
+.nm-body { flex: 1; display: flex; min-height: 0; }
+
+/* ── resize handle (useResizable.tsx:69) ────────────────────────── */
+.nm-handle {
+  width: var(--nm-handle-w); flex-shrink: 0; cursor: col-resize;
+  background: var(--nm-edge); border: 0; padding: 0;
+}
+.nm-handle:hover { background: var(--nm-handle-h); }
+.nm-handle.row { width: auto; height: var(--nm-handle-w); cursor: row-resize; }
+
+/* ── project tree ───────────────────────────────────────────────── */
+.nm-tree {
+  width: 256px; flex-shrink: 0; border-right: 1px solid var(--nm-edge);
+  background: var(--nm-panel-alt); overflow-y: auto; display: flex; flex-direction: column;
+}
+.nm-tree .phdr {
+  width: 100%; text-align: left; padding: 8px 12px; font-size: 14px; font-weight: 600;
+  border: 0; border-bottom: 1px solid var(--nm-edge); background: none; color: inherit;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.nm-tree .phdr:hover { background: var(--nm-panel); }
+.nm-tree .phdr .glyph { color: var(--nm-n400); }
+.nm-tree .tools {
+  display: flex; gap: 4px; padding: 4px 8px;
+  border-bottom: 1px solid var(--nm-edge); font-size: 12px;
+}
+.nm-tree .tools a {
+  padding: 4px 8px; border-radius: var(--nm-radius);
+  color: var(--nm-blue300); text-decoration: none;
+}
+.nm-tree .tools a:hover { background: var(--nm-panel); }
+.nm-tree ul { list-style: none; margin: 0; padding: 0; }
+.nm-row {
+  display: flex; align-items: center; font-size: 14px; color: var(--nm-n300);
+  cursor: pointer; padding-right: 4px;
+}
+.nm-row:hover { background: var(--nm-panel); }
+.nm-row.active { background: var(--nm-sel); color: #fff; }
+.nm-row .chev { margin-right: 4px; font-size: 12px; width: 16px; text-align: center; }
+.nm-row .fold { color: var(--nm-blue300); margin-right: 4px; }
+/* file icons are 2-char TEXT badges, not glyphs (ProjectTree.tsx:67-71) */
+.nm-row .ic { margin-right: 6px; font-size: 12px; font-family: var(--nm-mono); }
+.nm-row .ic.py { color: var(--nm-yellow400); }
+.nm-row .ic.ym { color: var(--nm-green400); }
+.nm-row .ic.na { color: var(--nm-n500); }
+.nm-row .nm-label {
+  flex: 1; min-width: 0; padding: 4px 0; background: none; border: 0; color: inherit;
+  font-size: 14px; text-align: left; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nm-row .dirty { margin-left: 4px; color: var(--nm-amber400); }
+.nm-row .acts { display: flex; opacity: 0; flex-shrink: 0; }
+.nm-row:hover .acts { opacity: 1; }
+.nm-row .acts button {
+  padding: 0 6px; background: none; border: 0; cursor: pointer;
+  color: var(--nm-n500); font-size: 12px;
+}
+.nm-row .acts .ed:hover { color: var(--nm-blue300); }
+.nm-row .acts .dl:hover { color: #fff; }
+.nm-row .acts .rm:hover { color: var(--nm-red400); }
+
+.nm-ctx {
+  position: fixed; min-width: 9rem; border-radius: var(--nm-radius);
+  border: 1px solid var(--nm-edge); background: var(--nm-panel);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.5); padding: 4px 0;
+  font-size: 14px; z-index: 50;
+}
+.nm-ctx button {
+  display: block; width: 100%; text-align: left; padding: 6px 12px;
+  background: none; border: 0; color: var(--nm-n200); cursor: pointer; font-size: 14px;
+}
+.nm-ctx button:hover { background: var(--nm-panel-alt); }
+
+/* ── fake Monaco ────────────────────────────────────────────────── */
+.nm-code {
+  flex: 1; min-width: 0; min-height: 0; overflow: auto;
+  background: var(--nm-code-bg); display: flex;
+}
+.nm-code pre {
+  margin: 0; padding: 8px 12px 8px 0; font-family: var(--nm-mono); font-size: 13px;
+  line-height: 1.5; color: var(--nm-code-plain); white-space: pre; tab-size: 4;
+}
+.nm-gutter {
+  padding: 8px 8px 8px 12px; font-family: var(--nm-mono); font-size: 13px; line-height: 1.5;
+  color: var(--nm-code-gutter); text-align: right; user-select: none; flex-shrink: 0;
+  white-space: pre; /* keep line numbers stacked vertically, not collapsed to one row */
+}
+.nm-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--nm-n500); font-size: 14px;
+}
+.kw { color: var(--nm-code-kw); }
+.st { color: var(--nm-code-str); }
+.cm { color: var(--nm-code-comment); }
+.fn { color: var(--nm-code-fn); }
+.nu { color: var(--nm-code-num); }
+.yk { color: var(--nm-code-yaml-key); }
+
+/* ── right rail ─────────────────────────────────────────────────── */
+.nm-right {
+  width: 320px; flex-shrink: 0; border-left: 1px solid var(--nm-edge);
+  background: var(--nm-panel-alt); display: flex; flex-direction: column; min-height: 0;
+}
+.nm-rail { padding: 12px; border-bottom: 1px solid var(--nm-edge); display: flex; flex-direction: column; gap: 8px; }
+.nm-rail button {
+  width: 100%; padding: 8px 12px; border-radius: var(--nm-radius); border: 0;
+  color: #fff; font-size: 14px; cursor: pointer; text-align: center;
+}
+.nm-rail button:disabled { opacity: .4; cursor: not-allowed; }
+.b-save { background: var(--nm-save); }       .b-save:not(:disabled):hover { background: var(--nm-save-h); }
+.b-val  { background: var(--nm-validate); }   .b-val:not(:disabled):hover { background: var(--nm-validate-h); }
+.b-bt   { background: var(--nm-backtest); }   .b-bt:not(:disabled):hover { background: var(--nm-backtest-h); }
+.b-pub  { background: var(--nm-publish); }    .b-pub:not(:disabled):hover { background: var(--nm-publish-h); }
+.b-run  { background: var(--nm-run); }        .b-run:not(:disabled):hover { background: var(--nm-run-h); }
+.b-term { background: var(--nm-terminate); }  .b-term:not(:disabled):hover { background: var(--nm-terminate-h); }
+
+.nm-blk { padding: 12px; border-bottom: 1px solid var(--nm-edge); }
+.nm-blk .lbl { font-size: 12px; font-weight: 600; color: var(--nm-n400); margin-bottom: 4px; }
+.nm-out { font-size: 11px; white-space: pre-wrap; max-height: 192px; overflow-y: auto; margin: 0; font-family: var(--nm-mono); }
+
+.nm-vers { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+.nm-ver {
+  padding: 4px 8px; border-radius: var(--nm-radius); cursor: pointer;
+  border: 1px solid transparent; font-size: 12px;
+}
+.nm-ver:hover { background: rgba(255,255,255,.05); }
+.nm-ver.sel { border-color: var(--nm-blue500); background: var(--nm-sel-soft); }
+.nm-ver .r1 { display: flex; justify-content: space-between; }
+.nm-ver .v { color: var(--nm-n300); }
+.nm-ver .d { color: var(--nm-n500); }
+.nm-ver .by { color: var(--nm-n500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.nm-sess { padding: 12px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.nm-badge { font-size: 10px; padding: 2px 6px; border-radius: var(--nm-radius); }
+.nm-meta { font-size: 11px; color: var(--nm-n400); }
+.nm-meta .sid { font-family: var(--nm-mono); }
+
+.nm-log { display: flex; flex-direction: column; gap: 4px; flex: 1; min-height: 0; }
+.nm-log .bar { display: flex; gap: 4px; font-size: 10px; }
+.nm-log .bar input {
+  flex: 1; padding: 2px 6px; border-radius: var(--nm-radius); background: var(--nm-log-bg);
+  border: 1px solid var(--nm-edge); font-size: 12px; color: #fff; font-family: inherit;
+}
+.nm-log .bar input::placeholder { color: var(--nm-n600); }
+.nm-log .bar input:focus { outline: none; border-color: var(--nm-blue500); }
+.nm-log .bar button {
+  padding: 2px 6px; border-radius: var(--nm-radius); font-size: 10px;
+  background: none; cursor: pointer;
+}
+.nm-log .bar button.on { border: 1px solid var(--nm-green600); color: var(--nm-green400); }
+.nm-log .bar button.off { border: 1px solid var(--nm-edge); color: var(--nm-n500); }
+.nm-log pre {
+  margin: 0; font-size: 11px; line-height: 1.35; white-space: pre-wrap; overflow-y: auto;
+  flex: 1; min-height: 0; max-height: 256px; background: var(--nm-log-bg);
+  border-radius: var(--nm-radius); padding: 8px; border: 1px solid var(--nm-edge);
+  font-family: var(--nm-mono);
+}
+.lg-err { color: var(--nm-red400); }
+.lg-wrn { color: var(--nm-yellow400); }
+.lg-dbg { color: var(--nm-n500); }
+
+/* ── responsive: the 3-pane needs ~1100px; never scroll the body sideways ── */
+@media (max-width: 1100px) {
+  .nm-root { height: auto; min-height: calc(100vh - 78px); }
+  .nm-body { flex-direction: column; }
+  .nm-right { width: auto !important; border-left: 0; border-top: 1px solid var(--nm-edge); }
+  .nm-code { min-height: 340px; }
+  .nm-handle { display: none; }
+}
+@media (max-width: 780px) {
+  .nm-tree { width: auto !important; border-right: 0; border-bottom: 1px solid var(--nm-edge); }
+  .nm-tree.collapsed ul, .nm-tree.collapsed .tools { display: none; }
+  .nm-hdr { flex-wrap: wrap; }
+}
