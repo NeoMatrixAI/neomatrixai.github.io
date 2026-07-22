@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trading Dashboard Demo — NeoMatrix AI</title>
+    <title>Strategy Detail — NeoMatrix AI</title>
     <meta name="description" content="A sample single-strategy live trading dashboard. Illustrative data only — mirrors the real Candlestick / Trading / Trading Logs tab layout." />
     <link rel="icon" href="../favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -305,15 +305,15 @@
             chartPanel(grid, 6, 210, 'Long Position', () => pieCfg(S.symbolWeights.long.map(w => w.symbol), S.symbolWeights.long.map(w => w.weight)));
             chartPanel(grid, 6, 210, 'Short Position', () => pieCfg(S.symbolWeights.short.map(w => w.symbol), S.symbolWeights.short.map(w => w.weight)));
 
-            // 8 timeseries
+            // 8 timeseries — real order: PV, Return, Cumulative, NetProfit, Sharpe, Drawdown, GrossExpRatio, Volatility
             chartPanel(grid, 12, 230, 'Portfolio Value (USDT)', () => lineCfg(S.dates, [ds('PV (USDT)', S.pv, '#43e97b', 'rgba(67,233,123,0.08)')], false));
-            chartPanel(grid, 12, 230, 'Portfolio Return vs Benchmark (%)', () => lineCfg(S.dates, [ds('Strategy', S.ts.cumReturn, '#43e97b'), ds('BTC', S.ts.benchRet, '#3b82f6')], true));
-            chartPanel(grid, 12, 230, 'Cumulative Returns (%)', () => lineCfg(S.dates, [ds('Cumulative', S.ts.cumReturn, '#667eea', 'rgba(102,126,234,0.10)')], true));
+            chartPanel(grid, 12, 230, 'Portfolio Return vs Benchmark (%)', () => lineCfg(S.dates, [ds('Portfolio Return (%)', S.ts.cumReturn, '#43e97b'), ds('BTC Return (%)', S.ts.benchRet, '#3b82f6'), ds('Top5 Return (%)', S.ts.top5Ret, '#f59e0b')], true));
+            chartPanel(grid, 12, 230, 'Cumulative Returns', () => lineCfg(S.dates, [ds('Cumulative', S.ts.cumReturn, '#667eea', 'rgba(102,126,234,0.10)')], true));
             chartPanel(grid, 12, 230, 'Total Net Profit per minute', () => ({ type: 'bar', data: { labels: S.dates, datasets: [{ label: 'Net Profit', data: S.ts.netProfitPerMin, backgroundColor: S.ts.netProfitPerMin.map(v => v >= 0 ? 'rgba(67,233,123,0.7)' : 'rgba(245,87,108,0.7)') }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: tsAxis(false) } }));
+            chartPanel(grid, 12, 230, 'Sharpe Ratio', () => lineCfg(S.dates, [ds('Strategy', S.ts.sharpe, '#4facfe'), ds('BTC', S.ts.benchSharpe, '#3b82f6'), ds('Top5', S.ts.top5Sharpe, '#f59e0b')], false));
+            chartPanel(grid, 12, 230, 'Drawdown', () => lineCfg(S.dates, [ds('Strategy', S.dd, '#f5576c', 'rgba(245,87,108,0.18)'), ds('BTC', S.ddBench.btc, '#3b82f6'), ds('Top5', S.ddBench.top5, '#f59e0b')], true));
             chartPanel(grid, 12, 230, 'Gross Exposure Ratio (%)', () => lineCfg(S.dates, [ds('Exposure', S.ts.grossExpRatio, '#fee140')], true));
-            chartPanel(grid, 12, 230, 'Sharpe Ratio (30d rolling)', () => lineCfg(S.dates, [ds('Sharpe', S.ts.sharpe, '#4facfe')], false));
-            chartPanel(grid, 12, 230, 'Drawdown (%)', () => lineCfg(S.dates, [ds('Drawdown', S.dd, '#f5576c', 'rgba(245,87,108,0.18)')], true));
-            chartPanel(grid, 12, 230, 'Volatility (%)', () => lineCfg(S.dates, [ds('Volatility', S.ts.vol, '#fa709a')], true));
+            chartPanel(grid, 12, 230, 'Volatility', () => lineCfg(S.dates, [ds('Strategy', S.ts.vol, '#fa709a'), ds('BTC', S.ts.benchVol, '#3b82f6'), ds('Top5', S.ts.top5Vol, '#f59e0b')], true));
 
             // Historical Data
             rowLabel(grid, 'Historical Data (limit 20)');

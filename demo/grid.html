@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Strategy Grid Demo — NeoMatrix AI</title>
+    <title>Strategy Grid — NeoMatrix AI</title>
     <meta name="description" content="A sample strategy grid. Illustrative data only — this mirrors the live strategy grid layout." />
     <link rel="icon" href="../favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -99,11 +99,14 @@
                 data: {
                     labels: G.dates,
                     datasets: [
-                        { label: s.label, data: s.returnPct,
+                        { label: 'Portfolio Return (%)', data: s.returnPct,
                           borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)',
                           fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
-                        { label: 'BTC (benchmark)', data: G.benchmarkReturn,
+                        { label: 'BTC Return (%)', data: G.benchmarkReturn,
                           borderColor: '#3b82f6', backgroundColor: 'transparent',
+                          fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                        { label: 'Top5 Return (%)', data: G.top5Return,
+                          borderColor: '#f59e0b', backgroundColor: 'transparent',
                           fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
                     ]
                 },

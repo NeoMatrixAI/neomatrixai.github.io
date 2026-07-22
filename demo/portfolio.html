@@ -3,95 +3,90 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Demo — NeoMatrix AI</title>
-    <meta name="description" content="A sample multi-strategy portfolio dashboard. Illustrative data only — this is what your live portfolio overview looks like on NeoMatrix." />
+    <title>Portfolio Overview — NeoMatrix AI</title>
+    <meta name="description" content="A sample multi-strategy portfolio dashboard. Illustrative data only — this mirrors the live Portfolio Overview on NeoMatrix." />
     <link rel="icon" href="../favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="demo_data.js"></script>
     <style>
-        html, body {
-            margin: 0; padding: 0; min-height: 100%;
+        html, body { margin: 0; padding: 0; min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #181b1f; color: #d8d9da;
-        }
+            background-color: #181b1f; color: #d8d9da; }
         *, *::before, *::after { box-sizing: border-box; }
         a { color: #6ea8ff; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
-        .topbar {
-            height: 48px; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33;
-        }
+        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
         .topbar .left { display: flex; align-items: center; gap: 10px; }
-        .topbar .logo {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .topbar .logo { width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 5px; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 13px; color: white;
-        }
+            font-weight: bold; font-size: 13px; color: white; }
         .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
         .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; font-size: 13px; }
         .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
 
-        /* Demo banner */
-        .demo-banner {
-            background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
             border-bottom: 1px solid #3a3d55; color: #c9b8ff;
-            font-size: 12.5px; text-align: center; padding: 7px 16px;
-        }
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
         .demo-banner strong { color: #fff; }
 
-        .container {
-            max-width: 1600px; margin: 0 auto; padding: 12px;
-            display: flex; flex-direction: column; gap: 12px;
-        }
+        .container { max-width: 1600px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
 
+        /* KPI cards */
         .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .kpi-card {
-            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
-            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
-        }
+        .kpi-card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
         .kpi-card .kpi-label { font-size: 11px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
         .kpi-card .kpi-value { font-size: 22px; font-weight: 700; color: #e8e9ea; }
         .kpi-card .kpi-value.positive { color: #43e97b; }
         .kpi-card .kpi-value.negative { color: #f5576c; }
         .kpi-card .kpi-sub { font-size: 11px; color: #6b7280; }
+        .kpi-card .kpi-value .kpi-pct { font-size: 0.6em; font-weight: 600; opacity: 0.8; }
+        .kpi-card .kpi-split { display: flex; gap: 14px; margin-top: 3px; padding-top: 3px; border-top: 1px solid #2a2d33; }
+        .kpi-card .kpi-split-item { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+        .kpi-card .kpi-split-label { font-size: 9px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
+        .kpi-card .kpi-split-val { font-size: 12px; font-weight: 600; color: #e8e9ea; }
+        .kpi-card .kpi-split-val.positive { color: #43e97b; }
+        .kpi-card .kpi-split-val.negative { color: #f5576c; }
 
         .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .row-full { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
-        .panel {
-            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
-            overflow: hidden; display: flex; flex-direction: column;
-        }
-        .panel .panel-hdr {
-            height: 32px; flex: 0 0 32px; display: flex; align-items: center;
+        .panel { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            overflow: hidden; display: flex; flex-direction: column; }
+        .panel .panel-hdr { height: 32px; flex: 0 0 32px; display: flex; align-items: center;
             padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33;
-            font-size: 12px; font-weight: 600; color: #a0a4ae;
-        }
+            font-size: 12px; font-weight: 600; color: #a0a4ae; }
         .panel-chart { height: 340px; position: relative; }
         .panel-chart .chart-wrap { flex: 1; padding: 8px 12px 12px; position: relative; }
 
-        .cards-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
-        }
-        .card {
-            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
-            padding: 14px; cursor: pointer; transition: border-color 0.2s;
-        }
+        /* "?" help icon + hover tooltip */
+        .help { display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: 50%; border: 1px solid #5a5f6a;
+            color: #b8bcc4; font-size: 12px; line-height: 1; cursor: help;
+            position: relative; margin-left: 6px; font-weight: 700; vertical-align: middle; background: #2a2d33; }
+        .help:hover { border-color: #667eea; color: #e8e9ea; }
+        .help .tip { display: none; position: absolute; top: calc(100% + 7px); left: 0; z-index: 60;
+            width: 250px; padding: 9px 11px; background: #1f2329; border: 1px solid #343842;
+            border-radius: 6px; color: #b8bcc4; font-size: 11px; font-weight: 400;
+            line-height: 1.55; text-align: left; box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+        .help:hover .tip { display: block; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px; cursor: pointer; transition: border-color 0.2s; }
         .card:hover { border-color: #667eea; }
         .card .card-label { font-size: 14px; font-weight: 600; color: #e8e9ea; margin-bottom: 6px; }
-        .card .card-env {
-            display: inline-block; padding: 1px 6px; border-radius: 3px;
-            font-size: 11px; font-weight: 500; background: #1f3a2a; color: #73d391;
-        }
+        .card .card-env { display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 11px; font-weight: 500; background: #1f3a2a; color: #73d391; }
         .card .card-metrics { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
         .card .card-metric { display: flex; justify-content: space-between; font-size: 12px; color: #8e94a1; }
         .card .card-metric .val { color: #d8d9da; font-weight: 500; }
 
-        .section-title {
-            font-size: 14px; font-weight: 600; color: #e8e9ea;
-            padding: 8px 0 4px; border-bottom: 1px solid #2a2d33; margin-bottom: 0;
-        }
+        .section-title { font-size: 14px; font-weight: 600; color: #e8e9ea;
+            padding: 8px 0 4px; border-bottom: 1px solid #2a2d33; margin-bottom: 0; }
 
         @media (max-width: 900px) {
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
@@ -108,60 +103,121 @@
         </div>
         <div class="right">
             <a href="grid.html">Strategy Grid &rarr;</a>
-            <a href="https://neomatrix.ai">&larr; neomatrix.ai</a>
+            <a href="https://neomatrix.ai">← neomatrix.ai</a>
         </div>
     </div>
     <div class="demo-banner">
-        <strong>SAMPLE DATA</strong> &mdash; This is an illustrative preview of the live portfolio dashboard. All numbers are synthetic. No real accounts or keys are involved.
+        <strong>SAMPLE DATA</strong> — This is an illustrative preview of the live Portfolio Overview dashboard. All numbers are synthetic. No real accounts or keys are involved.
     </div>
 
     <div class="container">
+        <!-- KPI row 1 — capital → P&L story -->
         <div class="kpi-row">
-            <div class="kpi-card"><span class="kpi-label">Total Portfolio Value</span><span class="kpi-value" id="kpi-pv"></span><span class="kpi-sub" id="kpi-pv-sub"></span></div>
-            <div class="kpi-card"><span class="kpi-label">Total Unrealized PnL</span><span class="kpi-value" id="kpi-pnl"></span><span class="kpi-sub">Unrealized</span></div>
-            <div class="kpi-card"><span class="kpi-label">Total Margin Used</span><span class="kpi-value" id="kpi-margin"></span><span class="kpi-sub" id="kpi-margin-sub"></span></div>
-            <div class="kpi-card"><span class="kpi-label">Available Balance</span><span class="kpi-value" id="kpi-avail"></span><span class="kpi-sub">Cross available</span></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Starting Value</span>
+                <span class="kpi-value" id="kpi-start"></span>
+                <span class="kpi-sub">Initial capital</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total Portfolio Value</span>
+                <span class="kpi-value" id="kpi-pv"></span>
+                <span class="kpi-sub" id="kpi-pv-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total PnL</span>
+                <span class="kpi-value" id="kpi-pnl"></span>
+                <div class="kpi-split">
+                    <div class="kpi-split-item"><span class="kpi-split-label">Unrealized</span><span class="kpi-split-val" id="kpi-pnl-unreal">—</span></div>
+                    <div class="kpi-split-item"><span class="kpi-split-label">Realized</span><span class="kpi-split-val" id="kpi-pnl-realized">—</span></div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Available Balance</span>
+                <span class="kpi-value" id="kpi-avail"></span>
+                <span class="kpi-sub" id="kpi-avail-sub"></span>
+            </div>
         </div>
+        <!-- KPI row 2 — risk metrics -->
         <div class="kpi-row">
-            <div class="kpi-card"><span class="kpi-label">ROE (Aggregated)</span><span class="kpi-value" id="kpi-roe"></span><span class="kpi-sub" id="kpi-roe-sub"></span></div>
-            <div class="kpi-card"><span class="kpi-label">Sharpe Ratio (Ann.)</span><span class="kpi-value" id="kpi-sharpe"></span><span class="kpi-sub" id="kpi-sharpe-sub"></span></div>
-            <div class="kpi-card"><span class="kpi-label">Volatility (Ann.)</span><span class="kpi-value" id="kpi-vol"></span><span class="kpi-sub" id="kpi-vol-sub"></span></div>
-            <div class="kpi-card"><span class="kpi-label">Max Drawdown</span><span class="kpi-value" id="kpi-mdd"></span><span class="kpi-sub" id="kpi-mdd-sub"></span></div>
-        </div>
-
-        <div class="row-2col">
-            <div class="panel panel-chart">
-                <div class="panel-hdr">Aggregated Portfolio Value (USDT)</div>
-                <div class="chart-wrap"><canvas id="chartAggPV"></canvas></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Tracking Error</span>
+                <span class="kpi-value" id="kpi-te"></span>
+                <span class="kpi-sub" id="kpi-te-sub"></span>
             </div>
-            <div class="panel panel-chart">
-                <div class="panel-hdr">Drawdown &mdash; Portfolio vs BTC vs TOP5</div>
-                <div class="chart-wrap"><canvas id="chartAggDD"></canvas></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sharpe Ratio (Ann.)</span>
+                <span class="kpi-value" id="kpi-sharpe"></span>
+                <span class="kpi-sub" id="kpi-sharpe-sub"></span>
             </div>
-        </div>
-
-        <div class="row-2col">
-            <div class="panel panel-chart">
-                <div class="panel-hdr">Sharpe (30d rolling) &mdash; Portfolio vs BTC vs TOP5</div>
-                <div class="chart-wrap"><canvas id="chartAggSh"></canvas></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Volatility (Ann.)</span>
+                <span class="kpi-value" id="kpi-vol"></span>
+                <span class="kpi-sub" id="kpi-vol-sub"></span>
             </div>
-            <div class="panel panel-chart">
-                <div class="panel-hdr">Volatility (30d rolling) &mdash; Portfolio vs BTC vs TOP5</div>
-                <div class="chart-wrap"><canvas id="chartAggVol"></canvas></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Max Drawdown</span>
+                <span class="kpi-value negative" id="kpi-mdd"></span>
+                <span class="kpi-sub" id="kpi-mdd-sub"></span>
             </div>
         </div>
 
+        <!-- Return vs Benchmark | Gross Exposure (Grafana iframes in the live app; Chart.js here) -->
         <div class="row-2col">
             <div class="panel panel-chart">
-                <div class="panel-hdr">Strategy PnL Distribution</div>
+                <div class="panel-hdr">Portfolio Return vs Benchmark (%)<span class="help">?<span class="tip">Cumulative return (%) vs BTC and Top 5 crypto benchmarks, normalized from each strategy's start.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartReturn"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Gross Exposure Ratio (%)<span class="help">?<span class="tip">Total position notional / portfolio value. Higher ratio = more leveraged exposure.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartExposure"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Per-Strategy PV (full width) -->
+        <div class="row-full">
+            <div class="panel panel-chart" style="height:360px">
+                <div class="panel-hdr">Per-Strategy PV (USDT)<span class="help">?<span class="tip">Each strategy's individual portfolio value (USDT) — one labeled line per configured strategy.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartPerStrategy"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PnL Pie | Margin Bar -->
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Strategy PnL Distribution (Real-time)<span class="help">?<span class="tip">Current unrealized profit/loss breakdown per strategy from exchange.</span></span></div>
                 <div class="chart-wrap"><canvas id="chartPnL"></canvas></div>
             </div>
             <div class="panel panel-chart">
-                <div class="panel-hdr">Margin Breakdown (USDT)</div>
+                <div class="panel-hdr">Margin Breakdown (Real-time, USDT)<span class="help">?<span class="tip">Current margin usage per strategy. Shows how much capital is locked in positions.</span></span></div>
                 <div class="chart-wrap"><canvas id="chartMargin"></canvas></div>
             </div>
         </div>
 
+        <!-- Aggregated PV | Aggregated Drawdown -->
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Aggregated PV (USDT) <span id="agg-strategies-info" style="font-size:11px;color:#8e94a1;font-weight:normal"></span><span class="help">?<span class="tip">Sum of all strategies' PV (deposit-adjusted). Dashed line = total deposits (cost basis). PV above the line = net profit.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartAggPV"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Drawdown — Portfolio vs BTC vs TOP5<span class="help">?<span class="tip">Minute-level drawdown, peak-preserving (0% = new-high recovery, deepest point = MDD). Portfolio (red) vs BTC (blue) and Top 5 crypto (orange).</span></span></div>
+                <div class="chart-wrap"><canvas id="chartAggDD"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Sharpe | Volatility (rolling, 3-line) -->
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Sharpe (30d rolling) — Portfolio vs BTC vs TOP5<span class="help">?<span class="tip">Annualized rolling Sharpe — Portfolio vs BTC and Top 5. A 30-day window once 30 days of data exist; the initial warm-up is omitted so the annualized Sharpe never reads as a large transient spike.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartAggSh"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Volatility (30d rolling) — Portfolio vs BTC vs TOP5<span class="help">?<span class="tip">Annualized rolling volatility — Portfolio vs BTC and Top 5. Lower = more stable returns.</span></span></div>
+                <div class="chart-wrap"><canvas id="chartAggVol"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Strategy Cards -->
         <div class="section-title">Strategy Details</div>
         <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -170,82 +226,92 @@
     (function () {
         const D = DEMO.portfolio();
         const strategies = D.strategies;
+        const m = D.metrics;
 
         document.getElementById('stratCount').textContent = `— ${strategies.length} strategies`;
 
         const fmtUsd = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const COLORS = ['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#43e97b','#fa709a','#fee140'];
+        const sgn = v => (v >= 0 ? '+' : '-');
+        const usd = v => fmtUsd(Math.abs(v));
+        const COLORS = ['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#00f2fe','#43e97b','#fa709a','#fee140','#a18cd1','#fbc2eb','#84fab0'];
+        // Per-strategy line palette (Tableau-ish), dashed for the later half so 10 lines stay legible.
+        const STRAT_COLORS = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#17becf','#bab0ac','#d37295'];
         const axis = (pct) => ({
             x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' } },
             y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : v }, grid: { color: '#2a2d33' } }
         });
+        const usdY = { ticks: { color: '#8e94a1', callback: v => '$' + v }, grid: { color: '#2a2d33' } };
         const legend = { labels: { color: '#d8d9da', font: { size: 11 } } };
 
-        // ── KPIs ──
-        const m = D.metrics;
-        document.getElementById('kpi-pv').textContent = `$${fmtUsd(m.pv)}`;
-        document.getElementById('kpi-pv-sub').textContent = `${strategies.length} strategies`;
+        // ── KPI row 1 — capital → PnL ──
+        const start = m.deposits, pv = m.pv, unreal = m.pnl;
+        const totPnl = pv - start, realized = totPnl - unreal, totPct = start > 0 ? totPnl / start * 100 : 0;
+        document.getElementById('kpi-start').textContent = `$${fmtUsd(start)}`;
+        document.getElementById('kpi-pv').textContent = `$${fmtUsd(pv)}`;
+        document.getElementById('kpi-pv-sub').textContent = `Live equity · ${strategies.length} strategies`;
         const pnlEl = document.getElementById('kpi-pnl');
-        pnlEl.textContent = `${m.pnl >= 0 ? '+' : ''}$${fmtUsd(m.pnl)}`;
-        pnlEl.className = `kpi-value ${m.pnl >= 0 ? 'positive' : 'negative'}`;
-        document.getElementById('kpi-margin').textContent = `$${fmtUsd(m.margin)}`;
-        document.getElementById('kpi-margin-sub').textContent = `${(m.margin / m.pv * 100).toFixed(1)}% of PV`;
+        pnlEl.innerHTML = `${sgn(totPnl)}$${usd(totPnl)}<span class="kpi-pct"> (${sgn(totPct)}${Math.abs(totPct).toFixed(2)}%)</span>`;
+        pnlEl.className = `kpi-value ${totPnl >= 0 ? 'positive' : 'negative'}`;
+        const setSplit = (id, v) => { const el = document.getElementById(id); el.textContent = `${sgn(v)}$${usd(v)}`; el.className = `kpi-split-val ${v >= 0 ? 'positive' : 'negative'}`; };
+        setSplit('kpi-pnl-unreal', unreal);
+        setSplit('kpi-pnl-realized', realized);
         document.getElementById('kpi-avail').textContent = `$${fmtUsd(m.avail)}`;
+        document.getElementById('kpi-avail-sub').textContent = `Free · Margin $${fmtUsd(m.margin)} (${(m.margin / pv * 100).toFixed(1)}%)`;
 
-        const roeEl = document.getElementById('kpi-roe');
-        roeEl.textContent = `+${m.roe.toFixed(2)}%`;
-        roeEl.className = 'kpi-value positive';
-        document.getElementById('kpi-roe-sub').textContent = `Final $${fmtUsd(m.pv)} / Deposits $${fmtUsd(m.deposits)}`;
-        document.getElementById('kpi-sharpe').textContent = m.sharpe.toFixed(3);
-        document.getElementById('kpi-sharpe').className = 'kpi-value positive';
+        // ── KPI row 2 — risk ──
+        const shEl = document.getElementById('kpi-sharpe');
+        shEl.textContent = m.sharpe.toFixed(3);
+        shEl.className = `kpi-value ${m.sharpe >= 1 ? 'positive' : ''}`;
         document.getElementById('kpi-sharpe-sub').textContent = `vs BTC ${m.bmSharpeBTC.toFixed(3)} / TOP5 ${m.bmSharpeTOP5.toFixed(3)}`;
         document.getElementById('kpi-vol').textContent = `${m.vol.toFixed(2)}%`;
         document.getElementById('kpi-vol-sub').textContent = `vs BTC ${m.bmVolBTC.toFixed(2)}% / TOP5 ${m.bmVolTOP5.toFixed(2)}%`;
-        const mddEl = document.getElementById('kpi-mdd');
-        mddEl.textContent = `${m.mdd.toFixed(2)}%`;
-        mddEl.className = 'kpi-value negative';
+        document.getElementById('kpi-mdd').textContent = `${m.mdd.toFixed(2)}%`;
         document.getElementById('kpi-mdd-sub').textContent = `vs BTC ${m.bmMddBTC.toFixed(2)}% / TOP5 ${m.bmMddTOP5.toFixed(2)}%`;
+        document.getElementById('agg-strategies-info').textContent = ` (${strategies.length}/${strategies.length} active)`;
 
-        // ── Aggregated PV ──
-        new Chart(document.getElementById('chartAggPV'), {
-            type: 'line',
-            data: {
-                labels: D.dates,
-                datasets: [{
-                    label: 'Aggregated PV (USDT)', data: D.pv,
-                    borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)',
-                    fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1,
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false,
-                plugins: { legend }, scales: { x: axis().x, y: { ticks: { color: '#8e94a1', callback: v => '$' + v }, grid: { color: '#2a2d33' } } } }
-        });
+        // Tracking Error — live-vs-backtest divergence in basis points (1 bp = 0.01%).
+        // Low = tight tracking = healthy (green). The live-validation engine isn't wired in
+        // the real app yet; this is an illustrative example value.
+        document.getElementById('kpi-te').textContent = '8 bp';
+        document.getElementById('kpi-te').className = 'kpi-value positive';
+        document.getElementById('kpi-te-sub').textContent = 'now +2 bp';
 
-        function line3(canvasId, port, btc, top5, pct) {
-            new Chart(document.getElementById(canvasId), {
+        // ── Return vs Benchmark (3-line) ──
+        function line3(id, port, btc, top5, labels, pct) {
+            new Chart(document.getElementById(id), {
                 type: 'line',
-                data: {
-                    labels: D.dates,
-                    datasets: [
-                        { label: 'Portfolio', data: port, borderColor: '#43e97b', fill: false, pointRadius: 0, borderWidth: 2, tension: 0.1 },
-                        { label: 'BTC', data: btc, borderColor: '#3b82f6', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
-                        { label: 'TOP5', data: top5, borderColor: '#f59e0b', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
-                    ]
-                },
+                data: { labels: D.dates, datasets: [
+                    { label: labels[0], data: port, borderColor: '#43e97b', fill: false, pointRadius: 0, borderWidth: 2, tension: 0.1 },
+                    { label: labels[1], data: btc, borderColor: '#3b82f6', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                    { label: labels[2], data: top5, borderColor: '#f59e0b', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.1 },
+                ] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(pct) }
             });
         }
-        line3('chartAggDD', D.dd.port, D.dd.btc, D.dd.top5, true);
-        line3('chartAggSh', D.sharpe.port, D.sharpe.btc, D.sharpe.top5, false);
-        line3('chartAggVol', D.vol.port, D.vol.btc, D.vol.top5, true);
+        line3('chartReturn', D.returnPct.port, D.returnPct.btc, D.returnPct.top5, ['Portfolio Return (%)', 'BTC Return (%)', 'Top5 Return (%)'], true);
 
-        // ── PnL doughnut ──
+        // ── Gross Exposure Ratio (single line) ──
+        new Chart(document.getElementById('chartExposure'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [{ label: 'Exposure Ratio (%)', data: D.exposureRatio,
+                borderColor: '#4facfe', backgroundColor: 'rgba(79,172,254,0.08)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.1 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
+
+        // ── Per-Strategy PV (one line per strategy) ──
+        new Chart(document.getElementById('chartPerStrategy'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: D.perStrategyPV.map((s, i) => ({
+                label: s.label, data: s.pv, borderColor: STRAT_COLORS[i % STRAT_COLORS.length],
+                borderDash: i >= 6 ? [5, 3] : [], fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 })) },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: { x: axis().x, y: usdY } }
+        });
+
+        // ── PnL doughnut (unrealized per strategy) ──
         new Chart(document.getElementById('chartPnL'), {
             type: 'doughnut',
-            data: {
-                labels: strategies.map(s => s.label),
-                datasets: [{ data: strategies.map(s => Math.abs(s.pnl)), backgroundColor: COLORS.slice(0, strategies.length), borderColor: '#181b1f', borderWidth: 2 }]
-            },
+            data: { labels: strategies.map(s => s.label),
+                datasets: [{ data: strategies.map(s => Math.abs(s.pnl)), backgroundColor: COLORS.slice(0, strategies.length), borderColor: '#181b1f', borderWidth: 2 }] },
             options: { responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { position: 'right', labels: { color: '#d8d9da', font: { size: 11 }, padding: 8 } },
                     tooltip: { callbacks: { label: ctx => { const o = strategies[ctx.dataIndex].pnl; return `${ctx.label}: ${o >= 0 ? '+' : ''}${fmtUsd(o)} USDT`; } } } } }
@@ -259,6 +325,31 @@
                 scales: { x: { ticks: { color: '#8e94a1' }, grid: { color: '#2a2d33' } }, y: { ticks: { color: '#d8d9da', font: { size: 11 } }, grid: { display: false } } } }
         });
 
+        // ── Aggregated PV + deposits (cost basis) dashed line ──
+        new Chart(document.getElementById('chartAggPV'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [
+                { label: 'Aggregated PV (USDT)', data: D.pv, borderColor: '#43e97b', backgroundColor: 'rgba(67,233,123,0.08)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+                { label: `Deposits (cost basis) $${fmtUsd(start)}`, data: D.dates.map(() => Math.round(start)), borderColor: '#8e94a1', borderDash: [6, 4], fill: false, pointRadius: 0, borderWidth: 1, tension: 0 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: { x: axis().x, y: usdY } }
+        });
+
+        // ── Aggregated Drawdown (Portfolio fill + BTC + TOP5) ──
+        new Chart(document.getElementById('chartAggDD'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [
+                { label: 'Portfolio', data: D.dd.port, borderColor: '#f5576c', backgroundColor: 'rgba(245,87,108,0.20)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
+                { label: 'BTC', data: D.dd.btc, borderColor: '#3b82f6', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+                { label: 'TOP5', data: D.dd.top5, borderColor: '#f59e0b', fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
+
+        // ── Rolling Sharpe / Volatility (3-line) ──
+        line3('chartAggSh', D.sharpe.port, D.sharpe.btc, D.sharpe.top5, ['Portfolio', 'BTC', 'TOP5'], false);
+        line3('chartAggVol', D.vol.port, D.vol.btc, D.vol.top5, ['Portfolio', 'BTC', 'TOP5'], true);
+
         // ── Strategy cards ──
         const grid = document.getElementById('cardsGrid');
         strategies.forEach(s => {
@@ -267,13 +358,14 @@
             card.onclick = () => { window.location.href = `strategy.html?s=${encodeURIComponent(s.id)}`; };
             card.innerHTML = `
                 <div class="card-label">${s.label}</div>
-                <span class="card-env">${s.env} · ${s.type}</span>
+                <span class="card-env">${s.env} · ${s.type} · ${s.exch}</span>
                 <div class="card-metrics">
                     <div class="card-metric"><span>Equity</span><span class="val">$${fmtUsd(s.equity)}</span></div>
                     <div class="card-metric"><span>Unrealized PnL</span><span class="val" style="color:${s.pnl >= 0 ? '#43e97b' : '#f5576c'}">${s.pnl >= 0 ? '+' : ''}${fmtUsd(s.pnl)}</span></div>
                     <div class="card-metric"><span>Margin</span><span class="val">$${fmtUsd(s.margin)}</span></div>
                     <div class="card-metric"><span>Sharpe</span><span class="val">${s.sharpe.toFixed(3)}</span></div>
                     <div class="card-metric"><span>Drawdown</span><span class="val">${s.mdd.toFixed(2)}%</span></div>
+                    <div class="card-metric"><span>Volatility</span><span class="val">${s.vol.toFixed(2)}%</span></div>
                     <div class="card-metric"><span>Since</span><span class="val">${s.since}</span></div>
                 </div>`;
             grid.appendChild(card);

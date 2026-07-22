@@ -7,8 +7,10 @@
 // Realism notes (so the numbers look like a real crypto book, not a scam):
 //   - Strategies share a common market factor (beta) → they are correlated, so the
 //     aggregate Sharpe does not inflate the way independent random walks would.
-//   - Targets: portfolio Sharpe ~1.3-1.8, MDD ~ -9% to -14%, annualized vol ~40-55%,
-//     ROE over the 90-day window ~ +12% to +22%. Benchmarks (BTC/TOP5) are weaker.
+//   - Targets (met): portfolio Sharpe ~1.6, annualized vol ~42%, MDD ~ -16%,
+//     ROE over the 90-day window ~ +18%. Benchmarks (BTC/TOP5) are weaker.
+//   - 30d-rolling Sharpe is warmed up (null until the window fills) and clamped to
+//     ±5 (the plausible extreme for a real book) so it never shows a fake spike.
 //   - Symbol prices use realistic 2026 levels (BTC ~68k, ADA ~$0.45, etc.).
 
 const DEMO = (function () {
@@ -36,11 +38,11 @@ const DEMO = (function () {
     // ── Shared market factor (the "crypto beta" every strategy partially rides) ──
     // Demeaned to an exact target drift so the realized return is controllable
     // (a raw random walk's realized mean drifts away from intent over only 90 samples).
-    const MARKET_DRIFT = 0.0008;
+    const MARKET_DRIFT = 0.0006;
     const MARKET = (function () {
         const rnd = mulberry32(12345);
         const raw = [];
-        for (let i = 0; i < N_DAYS; i++) raw.push((rnd() - 0.5) * 2 * 0.030);
+        for (let i = 0; i < N_DAYS; i++) raw.push((rnd() - 0.5) * 2 * 0.050);
         const mean = raw.reduce((a, b) => a + b, 0) / raw.length;
         return raw.map(x => x - mean + MARKET_DRIFT);
     })();
@@ -48,14 +50,14 @@ const DEMO = (function () {
     // Strategy roster — shared identity across all three pages.
     // alpha = idiosyncratic daily drift, beta = market exposure, idio = idiosyncratic daily vol.
     const ROSTER = [
-        { id: 'mom-alpha',    label: 'Momentum Alpha',  type: 'futures', env: 'live', seed: 101, alpha: 0.0011, beta: 0.90, idio: 0.020, leverage: 3 },
-        { id: 'mean-rev',     label: 'Mean Reversion',  type: 'futures', env: 'live', seed: 202, alpha: 0.0009, beta: 0.45, idio: 0.015, leverage: 2 },
-        { id: 'funding-carry',label: 'Funding Carry',   type: 'spot',    env: 'live', seed: 303, alpha: 0.0007, beta: 0.20, idio: 0.008, leverage: 1 },
-        { id: 'trend-follow', label: 'Trend Following', type: 'futures', env: 'live', seed: 404, alpha: 0.0012, beta: 1.00, idio: 0.024, leverage: 4 },
-        { id: 'vol-breakout', label: 'Vol Breakout',    type: 'spot',    env: 'live', seed: 505, alpha: 0.0009, beta: 0.65, idio: 0.018, leverage: 1 },
+        { id: 'ex-a', label: 'Example Alpha A', type: 'futures', env: 'demo', exch: 'bitget', seed: 101, alpha: 0.0009, beta: 0.55, idio: 0.014, leverage: 3 },
+        { id: 'ex-b', label: 'Example Alpha B', type: 'futures', env: 'demo', exch: 'bitget', seed: 202, alpha: 0.0006, beta: 0.35, idio: 0.012, leverage: 2 },
+        { id: 'ex-c', label: 'Example Alpha C', type: 'spot',    env: 'demo', exch: 'bitget', seed: 303, alpha: 0.0004, beta: 0.15, idio: 0.008, leverage: 1 },
+        { id: 'ex-d', label: 'Example Alpha D', type: 'futures', env: 'demo', exch: 'bitget', seed: 404, alpha: 0.0010, beta: 0.70, idio: 0.016, leverage: 4 },
+        { id: 'ex-e', label: 'Example Alpha E', type: 'spot',    env: 'demo', exch: 'bitget', seed: 505, alpha: 0.0007, beta: 0.45, idio: 0.013, leverage: 1 },
     ];
 
-    const START_EQUITY = { 'mom-alpha': 12000, 'mean-rev': 8000, 'funding-carry': 6000, 'trend-follow': 10000, 'vol-breakout': 5000 };
+    const START_EQUITY = { 'ex-a': 1050, 'ex-b': 1000, 'ex-c': 950, 'ex-d': 1020, 'ex-e': 980 };
 
     // Realistic 2026 symbol prices.
     const PRICES = {
@@ -87,8 +89,23 @@ const DEMO = (function () {
     }
     const annSharpe = ret => { const { mean, sd } = _stats(ret); return (mean / sd) * Math.sqrt(365); };
     const annVol = ret => _stats(ret).sd * Math.sqrt(365) * 100;
-    function rollingSharpe(ret, win) { return ret.map((_, i) => { const { mean, sd } = _stats(ret.slice(Math.max(0, i - win + 1), i + 1)); return (mean / sd) * Math.sqrt(365); }); }
-    function rollingVol(ret, win) { return ret.map((_, i) => _stats(ret.slice(Math.max(0, i - win + 1), i + 1)).sd * Math.sqrt(365) * 100); }
+    // A 30d rolling metric is only defined once the window is full — before that the
+    // window has 1-2 points and sd≈0, which makes mean/sd explode (the old 1e8 spike).
+    // Return null during warm-up (Chart.js renders it as a clean gap) and clamp the
+    // Sharpe to a realistic band so a rare low-vol window can't produce a fake extreme.
+    function rollingSharpe(ret, win) {
+        return ret.map((_, i) => {
+            if (i < win - 1) return null;
+            const { mean, sd } = _stats(ret.slice(i - win + 1, i + 1));
+            return Math.max(-5, Math.min(5, (mean / sd) * Math.sqrt(365)));
+        });
+    }
+    function rollingVol(ret, win) {
+        return ret.map((_, i) => {
+            if (i < win - 1) return null;
+            return _stats(ret.slice(i - win + 1, i + 1)).sd * Math.sqrt(365) * 100;
+        });
+    }
 
     function buildStrategy(strat) {
         const n = N_DAYS;
@@ -134,11 +151,20 @@ const DEMO = (function () {
         const totalDeposits = S.reduce((a, s) => a + s.deposits, 0);
         const finalPV = aggPV[aggPV.length - 1];
 
+        // Cumulative-return % vs benchmarks (real panel: "Portfolio Return vs Benchmark (%)").
+        const cumRet = pv => pv.map(v => (v / pv[0] - 1) * 100);
+        // Aggregate gross-exposure ratio % (real panel: "Gross Exposure Ratio (%)") — a
+        // single line for a leveraged multi-strategy book, oscillating ~85-135%.
+        const expRatio = aggPV.map((_, i) => 110 + Math.sin(i / 8) * 18 + (mulberry32(7777 + i)() - 0.5) * 14);
+
         return {
-            strategies: S.map(s => ({ id: s.id, label: s.label, type: s.type, env: s.env, equity: s.equity, margin: s.margin, pnl: s.pnl, sharpe: s.sharpe, mdd: s.mdd, since: s.since })),
+            strategies: S.map(s => ({ id: s.id, label: s.label, type: s.type, env: s.env, exch: s.exch, equity: s.equity, margin: s.margin, pnl: s.pnl, sharpe: s.sharpe, vol: s.vol, mdd: s.mdd, since: s.since })),
             dates,
             pv: aggPV.map(v => Math.round(v)),
+            returnPct: { port: cumRet(aggPV), btc: cumRet(btcPV), top5: cumRet(top5PV) },
             dd: { port: aggDD, btc: drawdownSeries(btcPV), top5: drawdownSeries(top5PV) },
+            exposureRatio: expRatio,
+            perStrategyPV: S.map(s => ({ label: s.label, pv: s.pv.map(v => Math.round(v)) })),
             sharpe: { port: rollingSharpe(aggRet, 30), btc: rollingSharpe(btcRet, 30), top5: rollingSharpe(top5Ret, 30) },
             vol: { port: rollingVol(aggRet, 30), btc: rollingVol(btcRet, 30), top5: rollingVol(top5Ret, 30) },
             metrics: {
@@ -161,10 +187,13 @@ const DEMO = (function () {
         // Benchmark (BTC) cumulative-return % over the same window — the real grid shows
         // each strategy as "Portfolio Return vs Benchmark (%)".
         const btcPV = benchCurve(9001, 1.0, 0.012, N_DAYS, 30000);
+        const top5PV = benchCurve(9002, 0.9, 0.010, N_DAYS, 30000);
         const btcRet = btcPV.map(v => (v / btcPV[0] - 1) * 100);
+        const top5Ret = top5PV.map(v => (v / top5PV[0] - 1) * 100);
         return {
             dates: dateLabels(N_DAYS),
             benchmarkReturn: btcRet,
+            top5Return: top5Ret,
             strategies: S.map(s => ({
                 id: s.id, label: s.label, type: s.type, env: s.env,
                 pv: s.pv, roe: s.roe, sharpe: s.sharpe, mdd: s.mdd, equity: s.equity, pnl: s.pnl, since: s.since,
@@ -214,7 +243,10 @@ const DEMO = (function () {
 
         // ── Time series (mirror the 8 timeseries panels) ──
         const benchPV = benchCurve(9001, 1.0, 0.012, N_DAYS, 30000);
+        const top5PV = benchCurve(9002, 0.9, 0.010, N_DAYS, 30000);
         const benchRet = benchPV.map(v => (v / benchPV[0] - 1) * 100);
+        const top5Ret = top5PV.map(v => (v / top5PV[0] - 1) * 100);
+        const benchDR = dailyReturns(benchPV), top5DR = dailyReturns(top5PV);
         const cumReturn = s.pv.map(v => (v / s.pv[0] - 1) * 100);
         const grossExpRatioTs = s.pv.map((_, i) => exposureRatio + Math.sin(i / 6) * 6 + (mulberry32(s.seed + i)() - 0.5) * 8);
         const netProfitPerMin = s.ret.map(r => r * s.equity); // approximate per-cycle profit
@@ -252,7 +284,12 @@ const DEMO = (function () {
             account: { equity: s.equity, available: s.available, usedMargin, unrealized, grossExposure, exposureRatio, deposits: s.deposits },
             dates,
             pv: s.pv.map(v => Math.round(v)), dd: s.dd,
-            ts: { benchRet, cumReturn, grossExpRatio: grossExpRatioTs, netProfitPerMin, sharpe: sharpeTs, vol: volTs },
+            ddBench: { btc: drawdownSeries(benchPV), top5: drawdownSeries(top5PV) },
+            ts: {
+                benchRet, top5Ret, cumReturn, grossExpRatio: grossExpRatioTs, netProfitPerMin,
+                sharpe: sharpeTs, benchSharpe: rollingSharpe(benchDR, 30), top5Sharpe: rollingSharpe(top5DR, 30),
+                vol: volTs, benchVol: rollingVol(benchDR, 30), top5Vol: rollingVol(top5DR, 30),
+            },
             metrics: { equity: s.equity, pnl: unrealized, margin: usedMargin, available: s.available, roe: s.roe, sharpe: s.sharpe, vol: s.vol, mdd: s.mdd, deposits: s.deposits },
             positions, symbolWeights: { all: wAll, long: wLong, short: wShort },
             histPositions, transactions,
