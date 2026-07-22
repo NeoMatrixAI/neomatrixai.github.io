@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Compositor — what's coming to NeoMatrix</title>
+  <meta name="description" content="A simple look at the compositor: run many trading strategies inside one account, and still see how each one is doing. What's coming, how it works, and the plan." />
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff; --fg: #0a0a0a; --muted: #6b6b6b; --line: #e5e5e5;
+      --soft: #f6f6f6; --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6; letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: var(--fg); text-decoration: none; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 24px 96px; }
+    section { scroll-margin-top: 80px; }
+
+    /* Nav (matches the main site) */
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 8px 0 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); z-index: 10; }
+    .nav .left { display: flex; align-items: center; }
+    .brand { font-weight: 800; letter-spacing: 0.04em; font-size: 24px; white-space: nowrap; }
+    .jump { display: flex; gap: 18px; font-size: 14px; white-space: nowrap; }
+    .jump a { color: #555; } .jump a:hover { color: var(--fg); }
+    @media (max-width: 1040px) { .jump { display: none; } }
+    .cta { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--fg);
+      padding: 9px 14px; border-radius: 999px; font-weight: 600; transition: all .15s ease; }
+    .cta:hover { background: var(--fg); color: var(--bg); }
+
+    /* Hero */
+    .hero { padding: 56px 0 20px; }
+    .kicker { font-size: 13px; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); }
+    h1 { font-size: clamp(40px, 9vw, 88px); line-height: .95; margin: 14px 0 20px; letter-spacing: -0.02em; }
+    .lede { font-size: clamp(17px, 2.4vw, 23px); color: #1a1a1a; max-width: 40ch; }
+    .plan-tag { margin-top: 18px; font-size: 14px; color: var(--muted); }
+    .plan-tag .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--fg);
+      display: inline-block; margin-right: 8px; vertical-align: middle; }
+    .btns { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+    .btn { border: 1px solid var(--fg); padding: 13px 20px; border-radius: 12px; font-weight: 700; transition: all .15s ease; }
+    .btn:hover { background: var(--fg); color: var(--bg); }
+    .btn.ghost { border-color: var(--line); }
+    .btn.ghost:hover { border-color: var(--fg); }
+
+    /* Section rhythm */
+    .sec { padding: 44px 0 8px; border-top: 1px solid var(--line); margin-top: 44px; }
+    .sec .tag { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--muted); }
+    .sec h2 { font-size: clamp(26px, 4vw, 38px); letter-spacing: -.01em; margin: 8px 0 10px; line-height: 1.05; }
+    .sec .p { font-size: 17px; color: #222; max-width: 62ch; margin: 0 0 6px; }
+    .sec .p.big { font-size: clamp(18px, 2.2vw, 22px); color: var(--fg); }
+    .muted { color: var(--muted); }
+
+    /* Mixer visual */
+    .mixer { margin: 26px 0 8px; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 28px 20px; background: var(--soft); }
+    .channels { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .channel { width: 128px; text-align: center; }
+    .ch-name { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+    .meter { height: 74px; width: 100%; border: 1px solid var(--line); border-radius: 8px;
+      background: var(--bg); position: relative; overflow: hidden; }
+    .meter i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--fg); display: block; }
+    .ch-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+    .mix-arrow { text-align: center; color: var(--muted); font-size: 14px; letter-spacing: .06em;
+      margin: 16px 0; text-transform: uppercase; }
+    .mix-arrow b { color: var(--fg); }
+    .master { border: 2px solid var(--fg); border-radius: 12px; padding: 16px 18px; text-align: center; background: var(--bg); }
+    .master .mt { font-weight: 800; font-size: 18px; }
+    .master .ms { font-size: 13.5px; color: var(--muted); margin-top: 3px; }
+
+    /* Before / after */
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+    .ba-col { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .ba-col .cap { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-bottom: 14px; }
+    .ba-viz { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; min-height: 92px; margin-bottom: 14px; }
+    .acct { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; background: var(--soft); }
+    .acct .a-h { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .acct .chip { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 11px; margin-top: 5px; background: var(--bg); }
+    .acct.one { border-color: var(--fg); border-width: 2px; background: var(--bg); }
+    .acct.one .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-width: 260px; }
+    .ba-col p { margin: 0; font-size: 14.5px; color: #222; }
+    @media (max-width: 680px) { .ba { grid-template-columns: 1fr; } }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+    .step { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .step .n { width: 34px; height: 34px; border-radius: 999px; background: var(--fg); color: var(--bg);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
+    .step p { margin: 0; font-size: 15px; }
+    @media (max-width: 680px) { .steps { grid-template-columns: 1fr; } }
+    .aside { margin-top: 16px; font-size: 14.5px; color: var(--muted); }
+
+    /* Combine example */
+    .combine { display: flex; align-items: center; justify-content: center; gap: 18px;
+      flex-wrap: wrap; margin: 24px 0 6px; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 24px 16px; background: var(--soft); }
+    .cbox { text-align: center; }
+    .cbox .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    .cbox .val { font-size: 26px; font-weight: 800; margin-top: 4px; }
+    .cbox .sub { font-size: 12px; color: var(--muted); }
+    .csign { font-size: 26px; color: var(--muted); font-weight: 800; }
+    .cbox.out { border: 2px solid var(--fg); border-radius: 12px; padding: 12px 18px; background: var(--bg); }
+
+    /* Structure: 1 account -> many groups -> many strategies each */
+    .org { border: 2px solid var(--fg); border-radius: 14px; padding: 16px; margin-top: 22px; background: var(--bg); }
+    .org-h { font-weight: 800; font-size: 15px; }
+    .org-h span { font-weight: 400; color: var(--muted); font-size: 13px; }
+    .org-groups { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .org-group { flex: 1; min-width: 150px; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--soft); }
+    .org-group .g-h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+    .org-strats { display: flex; flex-wrap: wrap; gap: 6px; }
+    .s-chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; background: var(--bg); }
+
+    /* Timeline */
+    .tl { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+    .tl-item { display: grid; grid-template-columns: 44px 1fr; gap: 16px; align-items: start;
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+    .tl-num { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--fg);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
+    .tl-body h3 { margin: 0 0 4px; font-size: 17px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .tl-body p { margin: 0; color: #222; font-size: 15px; }
+    .pill { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--fg);
+      border: 1px solid var(--fg); border-radius: 999px; padding: 2px 9px; font-weight: 700; }
+    @media (max-width: 560px) { .tl-item { grid-template-columns: 36px 1fr; gap: 12px; padding: 14px; }
+      .tl-num { width: 36px; height: 36px; font-size: 16px; } }
+
+    footer { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 12px;
+      color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 560px) {
+      .wrap { padding-left: 18px; padding-right: 18px; }
+      .brand { font-size: 18px; } .cta { padding: 8px 12px; }
+      .hero { padding-top: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="left">
+        <a href="index.html" style="display:flex;align-items:center">
+          <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:48px; margin-right:8px; vertical-align:middle;">
+          <span class="brand">NeoMatrix AI</span>
+        </a>
+      </div>
+      <div class="jump">
+        <a href="#idea">The idea</a>
+        <a href="#change">What's changing</a>
+        <a href="#structure">Structure</a>
+        <a href="#how">How it works</a>
+        <a href="#plan">The plan</a>
+        <a href="index.html">← Home</a>
+      </div>
+      <a class="cta" href="https://github.com/NeoMatrixAI" target="_blank" aria-label="Get started">Get Started →</a>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="kicker">the compositor · what's coming to NeoMatrix</div>
+      <h1>One account.<br/>Every strategy.</h1>
+      <p class="lede">Today, each strategy needs its own account — so you can only run a few. Soon, <strong>one account will run as many strategies as you want</strong>, and still show you how each one is doing.</p>
+      <div class="plan-tag"><span class="dot"></span>A preview of the next version. Everything here is on the way — not live yet.</div>
+      <div class="btns">
+        <a class="btn" href="#idea">See how it works</a>
+        <a class="btn ghost" href="#plan">Jump to the plan</a>
+      </div>
+    </header>
+
+    <!-- THE IDEA (mixer) -->
+    <section class="sec" id="idea">
+      <div class="tag">the idea</div>
+      <h2>It works like a mixing board.</h2>
+      <p class="p big">Each strategy is a <strong>channel</strong>. They all get mixed down into <strong>one real set of trades</strong> — the only thing the exchange sees. But every channel keeps its own meter, so you always know how each strategy is doing on its own.</p>
+
+      <div class="mixer" aria-label="Many strategies mix into one account, each keeping its own meter">
+        <div class="channels">
+          <div class="channel">
+            <div class="ch-name">Strategy A</div>
+            <div class="meter"><i style="height:72%"></i></div>
+            <div class="ch-note">its own meter</div>
+          </div>
+          <div class="channel">
+            <div class="ch-name">Strategy B</div>
+            <div class="meter"><i style="height:40%"></i></div>
+            <div class="ch-note">its own meter</div>
+          </div>
+          <div class="channel">
+            <div class="ch-name">Strategy C</div>
+            <div class="meter"><i style="height:58%"></i></div>
+            <div class="ch-note">its own meter</div>
+          </div>
+        </div>
+        <div class="mix-arrow">↓ &nbsp; <b>mixed together</b> &nbsp; ↓</div>
+        <div class="master">
+          <div class="mt">Your account</div>
+          <div class="ms">one real set of trades — the only thing the exchange sees</div>
+        </div>
+      </div>
+      <p class="aside">That's the whole idea. Everything below is just the details of how it stays honest.</p>
+    </section>
+
+    <!-- WHAT'S CHANGING -->
+    <section class="sec" id="change">
+      <div class="tag">what's changing</div>
+      <h2>You won't be limited by accounts anymore.</h2>
+      <p class="p">Exchanges only give you a few accounts, and today each strategy needs its own. So you run out of accounts long before you run out of ideas. The compositor puts many strategies into a single account — so you can run as many as you like.</p>
+      <div class="ba">
+        <div class="ba-col">
+          <div class="cap">Today</div>
+          <div class="ba-viz">
+            <div class="acct"><div class="a-h">Account 1</div><span class="chip">Strategy A</span></div>
+            <div class="acct"><div class="a-h">Account 2</div><span class="chip">Strategy B</span></div>
+            <div class="acct"><div class="a-h">Account 3</div><span class="chip">Strategy C</span></div>
+          </div>
+          <p>One strategy per account — and you only get a handful. You hit a wall fast.</p>
+        </div>
+        <div class="ba-col">
+          <div class="cap">With the compositor</div>
+          <div class="ba-viz">
+            <div class="acct one"><div class="a-h">One account</div>
+              <div class="chips">
+                <span class="chip">A</span><span class="chip">B</span><span class="chip">C</span>
+                <span class="chip">D</span><span class="chip">E</span><span class="chip">F</span>
+                <span class="chip">G</span><span class="chip">…</span>
+              </div>
+            </div>
+          </div>
+          <p>As many strategies as you want, all in one account — each still scored on its own.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT'S ORGANIZED -->
+    <section class="sec" id="structure">
+      <div class="tag">how it's organized</div>
+      <h2>Inside that account: groups, and strategies.</h2>
+      <p class="p">There are three levels, and it's simple. Your <strong>one real account</strong> holds several <strong>groups</strong>. Each group holds as many <strong>strategies</strong> as you want. Groups are just a way to organize — say, a calm group and an aggressive one — and you get a scorecard for each group too, not only for each strategy.</p>
+      <div class="org" aria-label="One account holds many groups; each group holds many strategies">
+        <div class="org-h">Your account &nbsp;<span>· the one real account · holds many groups</span></div>
+        <div class="org-groups">
+          <div class="org-group">
+            <div class="g-h">Group 1 · holds many strategies</div>
+            <div class="org-strats"><span class="s-chip">Strategy A</span><span class="s-chip">B</span><span class="s-chip">C</span></div>
+          </div>
+          <div class="org-group">
+            <div class="g-h">Group 2</div>
+            <div class="org-strats"><span class="s-chip">Strategy D</span><span class="s-chip">E</span></div>
+          </div>
+          <div class="org-group">
+            <div class="g-h">Group … (as many as you want)</div>
+            <div class="org-strats"><span class="s-chip">…</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="aside">In one line: <strong>1 account → many groups → many strategies in each</strong>. (If you're technical: the account is a <em>fund</em>, a group is a <em>portfolio</em>, a strategy is an <em>alpha</em> — but the names don't matter here.)</p>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="sec" id="how">
+      <div class="tag">how it works</div>
+      <h2>Every minute, three things happen.</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><p>Each active strategy decides what it wants to trade right now.</p></div>
+        <div class="step"><div class="n">2</div><p>The compositor mixes them all into a <strong>single order</strong>.</p></div>
+        <div class="step"><div class="n">3</div><p>That one order goes to your account — the same way it does today.</p></div>
+      </div>
+      <p class="aside">Meanwhile, each strategy's own scorecard updates — minute by minute, just like your account does now. And there are safety checks built in: it never over-invests, it never force-sells a strategy that hit an error, and an empty signal never wipes your account.</p>
+    </section>
+
+    <!-- TRUST -->
+    <section class="sec" id="trust">
+      <div class="tag">the honest part</div>
+      <h2>Can you trust each strategy's numbers?</h2>
+      <p class="p">Yes — and here's why. Since strategies share one account, their trades combine. If one buys a coin and another sells the same coin, the account only holds the difference:</p>
+
+      <div class="combine" aria-label="Strategy A buys 3, strategy B sells 1, the account holds 2, both still scored in full">
+        <div class="cbox"><div class="lab">Strategy A</div><div class="val">buys 3</div><div class="sub">scored in full</div></div>
+        <div class="csign">+</div>
+        <div class="cbox"><div class="lab">Strategy B</div><div class="val">sells 1</div><div class="sub">scored in full</div></div>
+        <div class="csign">→</div>
+        <div class="cbox out"><div class="lab">Your account holds</div><div class="val">2</div><div class="sub">what really trades</div></div>
+      </div>
+
+      <p class="p" style="margin-top:16px">The account only trades the net — but <strong>both strategies are still scored in full</strong>, so you always know which one is actually working. Then every minute we add all the scorecards back up and compare them to your real account. If there's any small difference — from fees or timing — <strong>we show it. We never hide it.</strong></p>
+    </section>
+
+    <!-- THE PLAN -->
+    <section class="sec" id="plan">
+      <div class="tag">the plan</div>
+      <h2>It arrives in steps.</h2>
+      <p class="p">Here's the order we're building it in — each step adds something you can actually use.</p>
+      <div class="tl">
+        <div class="tl-item">
+          <div class="tl-num">1</div>
+          <div class="tl-body">
+            <h3>More exchanges <span class="pill">up first</span></h3>
+            <p>Trade on more than one exchange — Bitget and Binance to start — tested end to end before it goes live.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">2</div>
+          <div class="tl-body">
+            <h3>The core: many strategies, one account</h3>
+            <p>The heart of it — mixing many strategies into one order, with the safety checks. If you only run one strategy, nothing about it changes.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">3</div>
+          <div class="tl-body">
+            <h3>A scorecard for everything</h3>
+            <p>Every strategy gets its own minute-by-minute record, checked against your real account so the numbers always add up.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">4</div>
+          <div class="tl-body">
+            <h3>New dashboards</h3>
+            <p>See your account, and each strategy on its own — with your past history carried over, no gaps.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">5</div>
+          <div class="tl-body">
+            <h3>Automatic balancing</h3>
+            <p>The system can shift money between strategies by your rules — all on paper, with no surprise trades.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">6</div>
+          <div class="tl-body">
+            <h3>The switch-over</h3>
+            <p>A careful move to the new version with no gap in your history — rehearsed first, then switched on.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLOSE -->
+    <section class="sec" id="close" style="text-align:center">
+      <p class="p big" style="margin:0 auto">Want to see what runs on top of it today?</p>
+      <div class="btns" style="justify-content:center; margin-top:18px">
+        <a class="btn" href="index.html#neomanifold">Explore the demos</a>
+        <a class="btn ghost" href="index.html#data">See the data behind it</a>
+      </div>
+    </section>
+
+    <footer>
+      <div>© <span id="y"></span> NeoMatrix Inc. · <a href="index.html">Home</a></div>
+      <div><a href="index.html#contact">Contact</a> · The compositor is on the way — this page tracks the plan.</div>
+    </footer>
+  </div>
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>
