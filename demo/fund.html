@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fund Overview (Compositor Preview) — NeoMatrix AI</title>
+    <meta name="description" content="A sample of the upcoming v3 compositor Fund dashboard: one real account, many portfolios, many alphas — every layer scored, every gap shown. Illustrative data only." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="compositor_data.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da; }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: #6ea8ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .logo { width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 13px; color: white; }
+        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .topbar .count { margin-left: 8px; color: #8e94a1; font-weight: 400; font-size: 13px; }
+        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .demo-banner strong { color: #fff; }
+
+        /* v3 rule, stated on the page itself: the split is modeled, the total is real. */
+        .virtual-banner { background: #1a2030; border-bottom: 1px solid #2c3a55; color: #9fb4d8;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .virtual-banner strong { color: #cfe0ff; }
+
+        .container { max-width: 1600px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+        /* KPI cards */
+        .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+        .kpi-card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+        .kpi-card .kpi-label { font-size: 11px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 20px; font-weight: 700; color: #e8e9ea; }
+        .kpi-card .kpi-value.positive { color: #43e97b; }
+        .kpi-card .kpi-value.negative { color: #f5576c; }
+        .kpi-card .kpi-sub { font-size: 11px; color: #6b7280; }
+        .kpi-card.virtual { border-style: dashed; border-color: #3a4a6b; }
+        .badge-virtual { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 3px;
+            font-size: 9px; font-weight: 700; letter-spacing: .05em; vertical-align: middle;
+            background: #22304a; color: #9fb4d8; border: 1px solid #3a4a6b; }
+        .badge-real { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 3px;
+            font-size: 9px; font-weight: 700; letter-spacing: .05em; vertical-align: middle;
+            background: #1f3a2a; color: #73d391; border: 1px solid #2c5a3c; }
+
+        .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .row-full { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .panel { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            overflow: hidden; display: flex; flex-direction: column; }
+        .panel .panel-hdr { min-height: 32px; flex: 0 0 auto; display: flex; align-items: center;
+            padding: 4px 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33;
+            font-size: 12px; font-weight: 600; color: #a0a4ae; gap: 8px; flex-wrap: wrap; }
+        .panel-chart { height: 340px; position: relative; }
+        .panel-chart .chart-wrap { flex: 1; padding: 8px 12px 12px; position: relative; min-height: 0; }
+        .panel-hdr .spacer { flex: 1; }
+
+        /* "?" help icon + hover tooltip (same as portfolio.html) */
+        .help { display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: 50%; border: 1px solid #5a5f6a;
+            color: #b8bcc4; font-size: 12px; line-height: 1; cursor: help;
+            position: relative; font-weight: 700; vertical-align: middle; background: #2a2d33; flex: 0 0 auto; }
+        .help:hover { border-color: #667eea; color: #e8e9ea; }
+        .help .tip { display: none; position: absolute; top: calc(100% + 7px); right: -10px; z-index: 60;
+            width: 270px; padding: 9px 11px; background: #1f2329; border: 1px solid #343842;
+            border-radius: 6px; color: #b8bcc4; font-size: 11px; font-weight: 400;
+            line-height: 1.55; text-align: left; box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+        .help:hover .tip { display: block; }
+
+        /* Composition table (view ② + §"summary first, drill on demand") */
+        .comp table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .comp th, .comp td { text-align: right; padding: 6px 10px; border-bottom: 1px solid #23262c; white-space: nowrap; }
+        .comp th:first-child, .comp td:first-child { text-align: left; }
+        .comp th { color: #8e94a1; font-weight: 500; font-size: 10px; text-transform: uppercase; background: #16181c; position: sticky; top: 0; }
+        .comp .pf-row { cursor: pointer; background: #14171c; font-weight: 600; color: #e8e9ea; }
+        .comp .pf-row:hover { background: #1a1e25; }
+        .comp .pf-row .caret { display: inline-block; width: 14px; color: #8e94a1; transition: transform .15s; }
+        .comp .pf-row.open .caret { transform: rotate(90deg); }
+        .comp .inst-row { color: #b8bcc4; display: none; }
+        .comp .inst-row.show { display: table-row; }
+        .comp .inst-row td:first-child { padding-left: 28px; }
+        .comp .cash-row td { color: #9fb4d8; font-style: italic; }
+        .comp .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: baseline; }
+        td.pos { color: #43e97b; } td.neg { color: #f5576c; }
+        .scroll { overflow: auto; }
+
+        /* Small pill buttons (alpha selector, D/W/M toggle) */
+        .pill-btn { border: 1px solid #2a2d33; background: transparent; color: #a0a4ae;
+            border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600;
+            cursor: pointer; font-family: inherit; }
+        .pill-btn:hover { border-color: #667eea; color: #e8e9ea; }
+        .pill-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+
+        /* Allocation history (view ④) */
+        .alloc { padding: 10px 12px; overflow-y: auto; }
+        .alloc .batch { border: 1px solid #23262c; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+        .alloc .b-hdr { display: flex; align-items: baseline; gap: 10px; padding: 7px 10px;
+            background: #16181c; border-bottom: 1px solid #23262c; flex-wrap: wrap; }
+        .alloc .b-ts { font-size: 11px; color: #8e94a1; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .alloc .b-scope { font-size: 11px; font-weight: 700; color: #c9b8ff; }
+        .alloc .b-reason { font-size: 11.5px; color: #b8bcc4; flex-basis: 100%; }
+        .alloc table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .alloc td { padding: 4px 10px; border-bottom: 1px solid #1c1f24; }
+        .alloc td:last-child { text-align: right; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .alloc .delta-up { color: #43e97b; } .alloc .delta-dn { color: #f5576c; } .alloc .delta-eq { color: #6b7280; }
+
+        .section-title { font-size: 14px; font-weight: 600; color: #e8e9ea;
+            padding: 8px 0 4px; border-bottom: 1px solid #2a2d33; }
+        .section-title .sub { font-size: 11.5px; color: #8e94a1; font-weight: 400; margin-left: 8px; }
+
+        @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .row-2col { grid-template-columns: 1fr; } .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <div class="logo">N</div>
+            <span class="title">Fund Overview — Compositor Preview</span>
+            <span class="count" id="fundMeta"></span>
+        </div>
+        <div class="right">
+            <a href="portfolio.html">Portfolio (today's view)</a>
+            <a href="../roadmap.html">Roadmap</a>
+            <a href="https://neomatrix.ai">← neomatrix.ai</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> — An illustrative preview of the upcoming v3 <strong>compositor</strong> Fund dashboard. All numbers are synthetic. No real accounts or keys are involved.
+    </div>
+    <div class="virtual-banner">
+        <strong>HOW TO READ THIS</strong> — One real account runs every strategy. The <strong>fund total is measured</strong> from the exchange; the split into portfolios and alphas is a <strong>virtual book</strong> (modeled). Every minute the virtual books are added back up against the real account — and any gap is shown, never hidden.
+    </div>
+
+    <div class="container">
+        <!-- KPI row -->
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <span class="kpi-label">Measured PV<span class="badge-real">REAL</span></span>
+                <span class="kpi-value" id="kpi-measured"></span>
+                <span class="kpi-sub">the one real account, from the exchange</span>
+            </div>
+            <div class="kpi-card virtual">
+                <span class="kpi-label">Fund Virtual PV<span class="badge-virtual">VIRTUAL</span></span>
+                <span class="kpi-value" id="kpi-virtual"></span>
+                <span class="kpi-sub" id="kpi-virtual-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Reconciliation Gap</span>
+                <span class="kpi-value" id="kpi-recon"></span>
+                <span class="kpi-sub" id="kpi-recon-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">ROE (90d)</span>
+                <span class="kpi-value" id="kpi-roe"></span>
+                <span class="kpi-sub" id="kpi-roe-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sharpe (Ann.)</span>
+                <span class="kpi-value" id="kpi-sharpe"></span>
+                <span class="kpi-sub" id="kpi-sharpe-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Max Drawdown</span>
+                <span class="kpi-value negative" id="kpi-mdd"></span>
+                <span class="kpi-sub">measured, minute-level peak-preserving</span>
+            </div>
+        </div>
+
+        <!-- View ① + ② : composition + virtual vs measured -->
+        <div class="section-title">① · ② Fund — measured account vs virtual portfolios</div>
+        <div class="row-2col">
+            <div class="panel" style="height:340px">
+                <div class="panel-hdr">Fund Composition (click a portfolio to drill down)
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">The fund holds portfolios; each portfolio holds alpha instances. The unallocated residue is a visible virtual-cash row — nothing is hidden. Summary first, instances on demand (built for thousands of instances).</span></span>
+                </div>
+                <div class="comp scroll" style="flex:1" id="compBody"></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Fund Virtual PV vs Measured Account (USDT)
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Green = the real account (measured). Dashed blue = the sum of every virtual book + virtual cash. The thin gap between them is the operating cost — fees, slippage, funding timing — broken out below.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartVvsM"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Portfolio Virtual PV ×3 + Virtual Cash (USDT)<span class="badge-virtual">VIRTUAL</span>
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Each portfolio's virtual book, minute-tracked (daily here). The step mid-window is the virtual reallocation: capital is re-sliced on paper — no real order is fired, the fund line stays continuous.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartPfVirtual"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Reconciliation — Actual = Latent + Operating Cost
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">The honest-numbers check: latent PnL (what the virtual books say) + operating cost (fees, slippage, funding timing) = actual PnL (what the account really made). The three lines always add up — the gap has a name and a number.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartRecon"></canvas></div>
+            </div>
+        </div>
+
+        <!-- View ③ : alpha instances -->
+        <div class="section-title">③ Alpha instances<span class="sub">same alpha = same color · dash pattern = portfolio</span></div>
+        <div class="row-full">
+            <div class="panel panel-chart" style="height:360px">
+                <div class="panel-hdr">Alpha Instance Return (%)<span class="badge-virtual">VIRTUAL</span>
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Every alpha instance, scored in full on its own virtual book. The same alpha running in two portfolios keeps the same color with a different dash — their paths differ slightly because each portfolio rebalances on its own clock.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartInstances"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Same Alpha, Different Portfolio
+                    <span id="cmpBtns" style="display:flex;gap:6px"></span>
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Isolates one alpha that runs in several portfolios. Because each instance keeps its own virtual book, you can compare how the same idea performs under different allocation and rebalancing contexts.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartCompare"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Trade Activity — count &amp; turnover
+                    <span id="actBtns" style="display:flex;gap:6px">
+                        <button class="pill-btn active" data-g="D">Daily</button>
+                        <button class="pill-btn" data-g="W">Weekly</button>
+                        <button class="pill-btn" data-g="M">Monthly</button>
+                    </span>
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Bars: trades per instance (stacked, colored by alpha). Line: total turnover in USDT (right axis). Rolls up instance → portfolio → fund; here shown at fund level with per-instance stacks.</span></span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
+            </div>
+        </div>
+
+        <!-- View ④ : allocation history -->
+        <div class="section-title">④ Allocation history<span class="sub">append-only · two layers · when, why, how much</span></div>
+        <div class="row-2col">
+            <div class="panel" style="height:380px">
+                <div class="panel-hdr">2nd layer — Fund → Portfolios
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">Every fund-level reallocation, append-only: timestamp, the reason it was made, and each portfolio's weight before → after. Reallocations are virtual — booked on paper, applied at the next cycle, no surprise trades.</span></span>
+                </div>
+                <div class="alloc" style="flex:1" id="allocPortfolio"></div>
+            </div>
+            <div class="panel" style="height:380px">
+                <div class="panel-hdr">1st layer — Portfolio → Alphas
+                    <span class="spacer"></span>
+                    <span class="help">?<span class="tip">The same append-only history one level down: how each portfolio split its slice across its alpha instances, with the reason for every change.</span></span>
+                </div>
+                <div class="alloc" style="flex:1" id="allocSleeve"></div>
+            </div>
+        </div>
+
+        <div style="font-size:12px;color:#6b7280;padding:2px 2px 10px">
+            This preview mirrors the four views of the upcoming compositor Fund dashboard — the real one runs on live virtual books, minute by minute.
+            New here? <a href="../roadmap.html">Read the compositor roadmap →</a>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const D = COMP.fund();
+        const fmt = (v, d = 0) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const sgn = v => (v >= 0 ? '+' : '-');
+        const PF_DASH = { 'pf-core': [], 'pf-carry': [6, 3], 'pf-tail': [2, 2] };
+        const allInst = D.portfolios.flatMap(p => p.instances);
+
+        document.getElementById('fundMeta').textContent =
+            `— ${D.fundLabel} · ${D.portfolios.length} portfolios · ${allInst.length} alpha instances · ${D.account}`;
+
+        const axis = (pct) => ({
+            x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' } },
+            y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : '$' + fmt(v) }, grid: { color: '#2a2d33' } }
+        });
+        const legend = { labels: { color: '#d8d9da', font: { size: 11 } } };
+
+        // ── KPI ──
+        const m = D.metrics;
+        document.getElementById('kpi-measured').textContent = `$${fmt(m.measured)}`;
+        document.getElementById('kpi-virtual').textContent = `$${fmt(m.virtual)}`;
+        document.getElementById('kpi-virtual-sub').textContent =
+            `Σ ${D.portfolios.length} portfolio books + virtual cash $${fmt(m.cash)}`;
+        const reconEl = document.getElementById('kpi-recon');
+        reconEl.textContent = `${m.reconBp.toFixed(1)} bp`;
+        reconEl.className = 'kpi-value ' + (Math.abs(m.reconBp) < 100 ? 'positive' : 'negative');
+        document.getElementById('kpi-recon-sub').textContent =
+            `operating cost ${sgn(m.opCost)}$${fmt(Math.abs(m.opCost))} — shown, never hidden`;
+        const roeEl = document.getElementById('kpi-roe');
+        roeEl.textContent = `${sgn(m.roe)}${Math.abs(m.roe).toFixed(2)}%`;
+        roeEl.className = 'kpi-value ' + (m.roe >= 0 ? 'positive' : 'negative');
+        document.getElementById('kpi-roe-sub').textContent = `on $${fmt(D.capital)} starting capital`;
+        const shEl = document.getElementById('kpi-sharpe');
+        shEl.textContent = m.sharpe.toFixed(3);
+        shEl.className = 'kpi-value ' + (m.sharpe >= 1 ? 'positive' : '');
+        document.getElementById('kpi-sharpe-sub').textContent = `virtual book ${m.vSharpe.toFixed(3)}`;
+        document.getElementById('kpi-mdd').textContent = `${m.mdd.toFixed(2)}%`;
+
+        // ── View ② — Composition (summary first, drill on demand) ──
+        (function composition() {
+            const body = document.getElementById('compBody');
+            const rows = [];
+            rows.push(`<table><thead><tr>
+                <th>Portfolio / Alpha</th><th>Alloc</th><th>Equity (virt.)</th><th>Sharpe</th><th>MDD</th><th>Trades 90d</th><th>Turnover 90d</th>
+            </tr></thead><tbody>`);
+            D.portfolios.forEach((p, pi) => {
+                const eq = p.pv[p.pv.length - 1];
+                rows.push(`<tr class="pf-row" data-pf="${p.id}">
+                    <td><span class="caret">▸</span>${p.label}</td>
+                    <td>${(p.alloc1 * 100).toFixed(0)}%</td>
+                    <td>$${fmt(eq)}</td>
+                    <td>${p.sharpe.toFixed(2)}</td>
+                    <td class="neg">${p.mdd.toFixed(1)}%</td>
+                    <td>${fmt(p.instances.reduce((a, s) => a + s.tradesTotal, 0))}</td>
+                    <td>$${fmt(p.instances.reduce((a, s) => a + s.turnoverTotal, 0))}</td>
+                </tr>`);
+                p.instances.forEach(s => {
+                    rows.push(`<tr class="inst-row" data-of="${p.id}">
+                        <td><span class="dot" style="background:${s.color}"></span>${s.alphaLabel} <span style="color:#6b7280">· ${s.freq}</span></td>
+                        <td>${(s.w1 * 100).toFixed(0)}%</td>
+                        <td>$${fmt(s.equity)}</td>
+                        <td>${s.sharpe.toFixed(2)}</td>
+                        <td class="neg">${s.mdd.toFixed(1)}%</td>
+                        <td>${fmt(s.tradesTotal)}</td>
+                        <td>$${fmt(s.turnoverTotal)}</td>
+                    </tr>`);
+                });
+            });
+            const lastBatch = D.allocPortfolio[D.allocPortfolio.length - 1];
+            const cashPct = lastBatch.rows.find(r => r.target.startsWith('Virtual Cash')).after;
+            rows.push(`<tr class="cash-row">
+                <td>Virtual Cash (unallocated)</td><td>${cashPct}%</td>
+                <td>$${fmt(m.cash)}</td><td>—</td><td>—</td><td>—</td><td>—</td>
+            </tr>`);
+            rows.push('</tbody></table>');
+            body.innerHTML = rows.join('');
+            body.querySelectorAll('.pf-row').forEach(tr => {
+                tr.onclick = () => {
+                    tr.classList.toggle('open');
+                    body.querySelectorAll(`.inst-row[data-of="${tr.dataset.pf}"]`)
+                        .forEach(r => r.classList.toggle('show'));
+                };
+            });
+            // open the first portfolio by default so the drill-down is discoverable
+            body.querySelector('.pf-row').click();
+        })();
+
+        // ── Chart: Virtual vs Measured ──
+        new Chart(document.getElementById('chartVvsM'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [
+                { label: 'Measured PV (real account)', data: D.measuredPV, borderColor: '#43e97b',
+                  backgroundColor: 'rgba(67,233,123,0.07)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
+                { label: 'Fund Virtual PV (Σ books + cash)', data: D.virtualPV, borderColor: '#6ea8ff',
+                  borderDash: [6, 4], fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+                { label: `Deposits $${fmt(D.capital)}`, data: D.dates.map(() => D.capital), borderColor: '#8e94a1',
+                  borderDash: [2, 4], fill: false, pointRadius: 0, borderWidth: 1, tension: 0 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
+        });
+
+        // ── Chart: Portfolio virtual books + cash ──
+        const PF_COLORS = { 'pf-core': '#667eea', 'pf-carry': '#43e97b', 'pf-tail': '#f59e0b' };
+        new Chart(document.getElementById('chartPfVirtual'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [
+                ...D.portfolios.map(p => ({
+                    label: p.label, data: p.pv, borderColor: PF_COLORS[p.id],
+                    fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })),
+                { label: 'Virtual Cash', data: D.cashPV, borderColor: '#8e94a1', borderDash: [3, 3],
+                  fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
+        });
+
+        // ── Chart: Reconciliation (Actual = Latent + OpCost) ──
+        new Chart(document.getElementById('chartRecon'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: [
+                { label: 'Actual PnL (account)', data: D.actualPnl, borderColor: '#43e97b',
+                  backgroundColor: 'rgba(67,233,123,0.07)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
+                { label: 'Latent PnL (virtual books)', data: D.latentPnl, borderColor: '#6ea8ff',
+                  borderDash: [6, 4], fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+                { label: 'Operating Cost (cum.)', data: D.cumOpCost, borderColor: '#f5576c',
+                  backgroundColor: 'rgba(245,87,108,0.10)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.05 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
+        });
+
+        // ── View ③ — all instances (%), color by alpha, dash by portfolio ──
+        new Chart(document.getElementById('chartInstances'), {
+            type: 'line',
+            data: { labels: D.dates, datasets: allInst.map(s => ({
+                label: `${s.alphaLabel} @ ${s.pfLabel}`, data: s.retPct,
+                borderColor: s.color, borderDash: PF_DASH[s.pfId] || [],
+                fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 })) },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
+
+        // ── View ③ — same-alpha comparison (only alphas with 2+ instances) ──
+        const counts = {};
+        allInst.forEach(s => { counts[s.alphaId] = (counts[s.alphaId] || 0) + 1; });
+        const multi = D.alphas.filter(a => counts[a.id] >= 2);
+        let cmpChart = null;
+        function renderCompare(alphaId) {
+            const sel = allInst.filter(s => s.alphaId === alphaId);
+            if (cmpChart) cmpChart.destroy();
+            cmpChart = new Chart(document.getElementById('chartCompare'), {
+                type: 'line',
+                data: { labels: D.dates, datasets: sel.map(s => ({
+                    label: `@ ${s.pfLabel} (${(s.w1 * 100).toFixed(0)}%)`, data: s.retPct,
+                    borderColor: s.color, borderDash: PF_DASH[s.pfId] || [],
+                    fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })) },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+            });
+        }
+        const cmpBtns = document.getElementById('cmpBtns');
+        multi.forEach((a, i) => {
+            const b = document.createElement('button');
+            b.className = 'pill-btn' + (i === 0 ? ' active' : '');
+            b.textContent = a.label;
+            b.onclick = () => {
+                cmpBtns.querySelectorAll('.pill-btn').forEach(x => x.classList.toggle('active', x === b));
+                renderCompare(a.id);
+            };
+            cmpBtns.appendChild(b);
+        });
+        renderCompare(multi[0].id);
+
+        // ── View ③ — trade activity (stacked bars + turnover line, D/W/M) ──
+        function bucket(granularity) {
+            // group day indices into buckets: D=1, W=7, M=30
+            const size = granularity === 'D' ? 1 : granularity === 'W' ? 7 : 30;
+            const labels = [], idx = [];
+            for (let s = 0; s < D.dates.length; s += size) {
+                labels.push(D.dates[s]);
+                idx.push([s, Math.min(s + size, D.dates.length)]);
+            }
+            return { labels, idx };
+        }
+        let actChart = null;
+        function renderActivity(granularity) {
+            const { labels, idx } = bucket(granularity);
+            const sum = arr => idx.map(([a, b]) => arr.slice(a, b).reduce((x, y) => x + y, 0));
+            if (actChart) actChart.destroy();
+            actChart = new Chart(document.getElementById('chartActivity'), {
+                data: { labels, datasets: [
+                    ...allInst.map(s => ({
+                        type: 'bar', label: `${s.alphaLabel} @ ${s.pfLabel}`, data: sum(s.trades),
+                        backgroundColor: s.color + 'B3', stack: 'trades', yAxisID: 'y' })),
+                    { type: 'line', label: 'Turnover (USDT)', data: sum(allInst.reduce(
+                        (acc, s) => acc.map((v, i) => v + s.turnover[i]), D.dates.map(() => 0))),
+                      borderColor: '#fee140', pointRadius: 0, borderWidth: 1.8, tension: 0.1, yAxisID: 'y2' },
+                ] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d8d9da', font: { size: 9 }, boxWidth: 9 } } },
+                    scales: {
+                        x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' }, stacked: true },
+                        y: { ticks: { color: '#8e94a1' }, grid: { color: '#2a2d33' }, stacked: true,
+                             title: { display: true, text: 'trades', color: '#8e94a1', font: { size: 10 } } },
+                        y2: { position: 'right', ticks: { color: '#fee140', callback: v => '$' + fmt(v) }, grid: { display: false } },
+                    } }
+            });
+        }
+        document.querySelectorAll('#actBtns .pill-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('#actBtns .pill-btn').forEach(x => x.classList.toggle('active', x === b));
+                renderActivity(b.dataset.g);
+            };
+        });
+        renderActivity('D');
+
+        // ── View ④ — allocation batches (append-only, when/why/how much) ──
+        function renderAlloc(elId, batches) {
+            const el = document.getElementById(elId);
+            el.innerHTML = batches.slice().reverse().map(b => {
+                const rows = b.rows.map(r => {
+                    const delta = r.before === null ? null : r.after - r.before;
+                    const cls = delta === null ? 'delta-eq' : delta > 0 ? 'delta-up' : delta < 0 ? 'delta-dn' : 'delta-eq';
+                    const dTxt = delta === null ? 'new' : (delta === 0 ? '=' : (delta > 0 ? '+' : '') + delta + '%p');
+                    return `<tr><td>${r.target}</td>
+                        <td>${r.before === null ? '—' : r.before + '%'} → <b>${r.after}%</b>
+                        <span class="${cls}" style="margin-left:6px">${dTxt}</span></td></tr>`;
+                }).join('');
+                return `<div class="batch">
+                    <div class="b-hdr"><span class="b-ts">${b.ts}</span>
+                        ${b.portfolio ? `<span class="b-scope">${b.portfolio}</span>` : '<span class="b-scope">Fund</span>'}
+                        <span class="b-reason">${b.reason}</span></div>
+                    <table>${rows}</table></div>`;
+            }).join('');
+        }
+        renderAlloc('allocPortfolio', D.allocPortfolio);
+        renderAlloc('allocSleeve', D.allocSleeve);
+    })();
+    </script>
+</body>
+</html>
