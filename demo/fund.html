@@ -133,7 +133,9 @@
             <span class="count" id="fundMeta"></span>
         </div>
         <div class="right">
-            <a href="portfolio.html">Portfolio (today's view)</a>
+            <a href="fund_portfolio_grid.html">Portfolio Grid</a>
+            <a href="fund_alpha_grid.html">Alpha Grid</a>
+            <a href="portfolio.html">Today's view (v2)</a>
             <a href="../roadmap.html">Roadmap</a>
             <a href="https://neomatrix.ai">← neomatrix.ai</a>
         </div>
@@ -164,7 +166,7 @@
                 <span class="kpi-sub" id="kpi-recon-sub"></span>
             </div>
             <div class="kpi-card">
-                <span class="kpi-label">ROE (90d)</span>
+                <span class="kpi-label">ROE (since inception)</span>
                 <span class="kpi-value" id="kpi-roe"></span>
                 <span class="kpi-sub" id="kpi-roe-sub"></span>
             </div>
@@ -216,13 +218,13 @@
             </div>
         </div>
 
-        <!-- View ③ : alpha instances -->
-        <div class="section-title">③ Alpha instances<span class="sub">same alpha = same color · dash pattern = portfolio</span></div>
+        <!-- View ③ : alphas (unique) -->
+        <div class="section-title">③ Alphas<span class="sub">one curve per unique alpha — portfolios change the scale, never the shape</span></div>
         <div class="row-full">
             <div class="panel panel-chart" style="height:360px">
-                <div class="panel-hdr">Alpha Instance Return (%)<span class="badge-virtual">VIRTUAL</span>
+                <div class="panel-hdr">Alpha Return (%) — unique alphas<span class="badge-virtual">VIRTUAL</span>
                     <span class="spacer"></span>
-                    <span class="help">?<span class="tip">Every alpha instance, scored in full on its own virtual book. The same alpha running in two portfolios keeps the same color with a different dash — their paths differ slightly because each portfolio rebalances on its own clock.</span></span>
+                    <span class="help">?<span class="tip">The signal is computed once per unique alpha, so every portfolio running it gets the exact same %-curve. Click an alpha in the composition table (or the Alpha Grid) for its own dashboard.</span></span>
                 </div>
                 <div class="chart-wrap"><canvas id="chartInstances"></canvas></div>
             </div>
@@ -230,12 +232,11 @@
 
         <div class="row-2col">
             <div class="panel panel-chart">
-                <div class="panel-hdr">Same Alpha, Different Portfolio
-                    <span id="cmpBtns" style="display:flex;gap:6px"></span>
+                <div class="panel-hdr">Capital Deployed per Alpha (USDT, stacked by portfolio)
                     <span class="spacer"></span>
-                    <span class="help">?<span class="tip">Isolates one alpha that runs in several portfolios. Because each instance keeps its own virtual book, you can compare how the same idea performs under different allocation and rebalancing contexts.</span></span>
+                    <span class="help">?<span class="tip">The instance dimension: the same alpha can run in several portfolios — same curve, different capital. Each bar is one unique alpha; the stacks show which portfolios its capital sits in right now.</span></span>
                 </div>
-                <div class="chart-wrap"><canvas id="chartCompare"></canvas></div>
+                <div class="chart-wrap"><canvas id="chartCapital"></canvas></div>
             </div>
             <div class="panel panel-chart">
                 <div class="panel-hdr">Trade Activity — count &amp; turnover
@@ -245,7 +246,7 @@
                         <button class="pill-btn" data-g="M">Monthly</button>
                     </span>
                     <span class="spacer"></span>
-                    <span class="help">?<span class="tip">Bars: trades per instance (stacked, colored by alpha). Line: total turnover in USDT (right axis). Rolls up instance → portfolio → fund; here shown at fund level with per-instance stacks.</span></span>
+                    <span class="help">?<span class="tip">Bars: trades per unique alpha (stacked, all its instances combined). Line: total turnover in USDT (right axis). Rolls up alpha → portfolio → fund.</span></span>
                 </div>
                 <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
             </div>
@@ -281,7 +282,6 @@
         const D = COMP.fund();
         const fmt = (v, d = 0) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
         const sgn = v => (v >= 0 ? '+' : '-');
-        const PF_DASH = { 'pf-core': [], 'pf-carry': [6, 3], 'pf-tail': [2, 2] };
         const allInst = D.portfolios.flatMap(p => p.instances);
 
         document.getElementById('fundMeta').textContent =
@@ -319,28 +319,28 @@
             const body = document.getElementById('compBody');
             const rows = [];
             rows.push(`<table><thead><tr>
-                <th>Portfolio / Alpha</th><th>Alloc</th><th>Equity (virt.)</th><th>Sharpe</th><th>MDD</th><th>Trades 90d</th><th>Turnover 90d</th>
+                <th>Portfolio / Alpha</th><th>Alloc</th><th>Equity (virt.)</th><th>Sharpe</th><th>MDD</th><th>Trades 90d</th><th>Turnover 90d (%)</th>
             </tr></thead><tbody>`);
             D.portfolios.forEach((p, pi) => {
                 const eq = p.pv[p.pv.length - 1];
                 rows.push(`<tr class="pf-row" data-pf="${p.id}">
-                    <td><span class="caret">▸</span>${p.label}</td>
+                    <td><span class="caret">▸</span><a href="fund_portfolio.html?p=${encodeURIComponent(p.id)}" onclick="event.stopPropagation()">${p.label}</a></td>
                     <td>${(p.alloc1 * 100).toFixed(0)}%</td>
                     <td>$${fmt(eq)}</td>
                     <td>${p.sharpe.toFixed(2)}</td>
                     <td class="neg">${p.mdd.toFixed(1)}%</td>
                     <td>${fmt(p.instances.reduce((a, s) => a + s.tradesTotal, 0))}</td>
-                    <td>$${fmt(p.instances.reduce((a, s) => a + s.turnoverTotal, 0))}</td>
+                    <td>${fmt(p.turnoverPct)}%</td>
                 </tr>`);
                 p.instances.forEach(s => {
                     rows.push(`<tr class="inst-row" data-of="${p.id}">
-                        <td><span class="dot" style="background:${s.color}"></span>${s.alphaLabel} <span style="color:#6b7280">· ${s.freq}</span></td>
+                        <td><span class="dot" style="background:${s.color}"></span><a href="fund_alpha.html?a=${encodeURIComponent(s.alphaId)}">${s.alphaLabel}</a> <span style="color:#6b7280">· ${s.freq}</span></td>
                         <td>${(s.w1 * 100).toFixed(0)}%</td>
                         <td>$${fmt(s.equity)}</td>
                         <td>${s.sharpe.toFixed(2)}</td>
                         <td class="neg">${s.mdd.toFixed(1)}%</td>
                         <td>${fmt(s.tradesTotal)}</td>
-                        <td>$${fmt(s.turnoverTotal)}</td>
+                        <td>${fmt(s.turnoverPct)}%</td>
                     </tr>`);
                 });
             });
@@ -405,45 +405,31 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
         });
 
-        // ── View ③ — all instances (%), color by alpha, dash by portfolio ──
+        // ── View ③ — unique alpha curves (%). One alpha, one curve — by construction. ──
         new Chart(document.getElementById('chartInstances'), {
             type: 'line',
-            data: { labels: D.dates, datasets: allInst.map(s => ({
-                label: `${s.alphaLabel} @ ${s.pfLabel}`, data: s.retPct,
-                borderColor: s.color, borderDash: PF_DASH[s.pfId] || [],
-                fill: false, pointRadius: 0, borderWidth: 1.5, tension: 0.05 })) },
+            data: { labels: D.dates, datasets: D.alphas.map(a => ({
+                label: a.label, data: a.retPct, borderColor: a.color,
+                fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })) },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
         });
 
-        // ── View ③ — same-alpha comparison (only alphas with 2+ instances) ──
-        const counts = {};
-        allInst.forEach(s => { counts[s.alphaId] = (counts[s.alphaId] || 0) + 1; });
-        const multi = D.alphas.filter(a => counts[a.id] >= 2);
-        let cmpChart = null;
-        function renderCompare(alphaId) {
-            const sel = allInst.filter(s => s.alphaId === alphaId);
-            if (cmpChart) cmpChart.destroy();
-            cmpChart = new Chart(document.getElementById('chartCompare'), {
-                type: 'line',
-                data: { labels: D.dates, datasets: sel.map(s => ({
-                    label: `@ ${s.pfLabel} (${(s.w1 * 100).toFixed(0)}%)`, data: s.retPct,
-                    borderColor: s.color, borderDash: PF_DASH[s.pfId] || [],
-                    fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })) },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
-            });
-        }
-        const cmpBtns = document.getElementById('cmpBtns');
-        multi.forEach((a, i) => {
-            const b = document.createElement('button');
-            b.className = 'pill-btn' + (i === 0 ? ' active' : '');
-            b.textContent = a.label;
-            b.onclick = () => {
-                cmpBtns.querySelectorAll('.pill-btn').forEach(x => x.classList.toggle('active', x === b));
-                renderCompare(a.id);
-            };
-            cmpBtns.appendChild(b);
+        // ── View ③ — capital deployed per alpha, stacked by portfolio (the instance dimension) ──
+        const PF_COLORS2 = { 'pf-core': '#667eea', 'pf-carry': '#43e97b', 'pf-tail': '#f59e0b' };
+        new Chart(document.getElementById('chartCapital'), {
+            type: 'bar',
+            data: { labels: D.alphas.map(a => a.label),
+                datasets: D.portfolios.map(p => ({
+                    label: p.label,
+                    data: D.alphas.map(a => {
+                        const b = a.byPortfolio.find(x => x.pfId === p.id);
+                        return b ? b.equity : 0;
+                    }),
+                    backgroundColor: PF_COLORS2[p.id] + 'B3', stack: 'cap', borderRadius: 3 })) },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend },
+                scales: { x: { ticks: { color: '#8e94a1', callback: v => '$' + fmt(v) }, grid: { color: '#2a2d33' }, stacked: true },
+                          y: { ticks: { color: '#d8d9da', font: { size: 11 } }, grid: { display: false }, stacked: true } } }
         });
-        renderCompare(multi[0].id);
 
         // ── View ③ — trade activity (stacked bars + turnover line, D/W/M) ──
         function bucket(granularity) {
@@ -463,9 +449,11 @@
             if (actChart) actChart.destroy();
             actChart = new Chart(document.getElementById('chartActivity'), {
                 data: { labels, datasets: [
-                    ...allInst.map(s => ({
-                        type: 'bar', label: `${s.alphaLabel} @ ${s.pfLabel}`, data: sum(s.trades),
-                        backgroundColor: s.color + 'B3', stack: 'trades', yAxisID: 'y' })),
+                    ...D.alphas.map(a => ({
+                        type: 'bar', label: a.label,
+                        data: sum(allInst.filter(s => s.alphaId === a.id).reduce(
+                            (acc, s) => acc.map((v, i) => v + s.trades[i]), D.dates.map(() => 0))),
+                        backgroundColor: a.color + 'B3', stack: 'trades', yAxisID: 'y' })),
                     { type: 'line', label: 'Turnover (USDT)', data: sum(allInst.reduce(
                         (acc, s) => acc.map((v, i) => v + s.turnover[i]), D.dates.map(() => 0))),
                       borderColor: '#fee140', pointRadius: 0, borderWidth: 1.8, tension: 0.1, yAxisID: 'y2' },
