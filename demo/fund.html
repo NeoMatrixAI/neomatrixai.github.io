@@ -219,10 +219,10 @@
         </div>
 
         <!-- View ③ : alphas (unique) -->
-        <div class="section-title">③ Alphas<span class="sub">one curve per unique alpha — portfolios change the scale, never the shape</span></div>
+        <div class="section-title">③ Alphas<span class="sub">one waveform per unique alpha — instances differ by capital and start date, never by shape</span></div>
         <div class="row-full">
             <div class="panel panel-chart" style="height:360px">
-                <div class="panel-hdr">Alpha Return (%) — unique alphas<span class="badge-virtual">VIRTUAL</span>
+                <div class="panel-hdr">Alpha Return (%) vs BTC — unique alphas<span class="badge-virtual">VIRTUAL</span>
                     <span class="spacer"></span>
                     <span class="help">?<span class="tip">The signal is computed once per unique alpha, so every portfolio running it gets the exact same %-curve. Click an alpha in the composition table (or the Alpha Grid) for its own dashboard.</span></span>
                 </div>
@@ -319,13 +319,14 @@
             const body = document.getElementById('compBody');
             const rows = [];
             rows.push(`<table><thead><tr>
-                <th>Portfolio / Alpha</th><th>Alloc</th><th>Equity (virt.)</th><th>Sharpe</th><th>MDD</th><th>Trades 90d</th><th>Turnover 90d (%)</th>
+                <th>Portfolio / Alpha</th><th>Alloc</th><th>Since</th><th>Equity (virt.)</th><th>Sharpe</th><th>MDD</th><th>Trades</th><th>Turnover (%)</th>
             </tr></thead><tbody>`);
             D.portfolios.forEach((p, pi) => {
                 const eq = p.pv[p.pv.length - 1];
                 rows.push(`<tr class="pf-row" data-pf="${p.id}">
                     <td><span class="caret">▸</span><a href="fund_portfolio.html?p=${encodeURIComponent(p.id)}" onclick="event.stopPropagation()">${p.label}</a></td>
-                    <td>${(p.alloc1 * 100).toFixed(0)}%</td>
+                    <td>${(p.allocNow * 100).toFixed(0)}%</td>
+                    <td style="color:#8e94a1">${p.since}</td>
                     <td>$${fmt(eq)}</td>
                     <td>${p.sharpe.toFixed(2)}</td>
                     <td class="neg">${p.mdd.toFixed(1)}%</td>
@@ -335,7 +336,8 @@
                 p.instances.forEach(s => {
                     rows.push(`<tr class="inst-row" data-of="${p.id}">
                         <td><span class="dot" style="background:${s.color}"></span><a href="fund_alpha.html?a=${encodeURIComponent(s.alphaId)}">${s.alphaLabel}</a> <span style="color:#6b7280">· ${s.freq}</span></td>
-                        <td>${(s.w1 * 100).toFixed(0)}%</td>
+                        <td>${(s.wNow * 100).toFixed(0)}%</td>
+                        <td style="color:#8e94a1">${s.since}</td>
                         <td>$${fmt(s.equity)}</td>
                         <td>${s.sharpe.toFixed(2)}</td>
                         <td class="neg">${s.mdd.toFixed(1)}%</td>
@@ -348,6 +350,7 @@
             const cashPct = lastBatch.rows.find(r => r.target.startsWith('Virtual Cash')).after;
             rows.push(`<tr class="cash-row">
                 <td>Virtual Cash (unallocated)</td><td>${cashPct}%</td>
+                <td style="color:#8e94a1">${D.dates[0]}</td>
                 <td>$${fmt(m.cash)}</td><td>—</td><td>—</td><td>—</td><td>—</td>
             </tr>`);
             rows.push('</tbody></table>');
@@ -405,12 +408,16 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
         });
 
-        // ── View ③ — unique alpha curves (%). One alpha, one curve — by construction. ──
+        // ── View ③ — unique alpha curves (%) + BTC benchmark. One alpha, one curve. ──
         new Chart(document.getElementById('chartInstances'), {
             type: 'line',
-            data: { labels: D.dates, datasets: D.alphas.map(a => ({
-                label: a.label, data: a.retPct, borderColor: a.color,
-                fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })) },
+            data: { labels: D.dates, datasets: [
+                ...D.alphas.map(a => ({
+                    label: a.label, data: a.retPct, borderColor: a.color,
+                    fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })),
+                { label: 'BTC', data: D.btcRetPct, borderColor: '#8e94a1', borderDash: [5, 4],
+                  fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
+            ] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
         });
 

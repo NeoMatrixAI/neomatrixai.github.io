@@ -99,7 +99,7 @@
         <strong>SAMPLE DATA</strong> — An illustrative preview of the v3 per-alpha dashboard. All positions, fills and numbers are synthetic.
     </div>
     <div class="virtual-banner">
-        <strong>ONE ALPHA, ONE CURVE</strong> — The signal is computed once per unique alpha, so every portfolio running it gets the exact same %-curve. What differs per portfolio is scale — allocated capital, absolute PnL, turnover — shown in the instances table below.
+        <strong>ONE ALPHA, ONE SIGNAL</strong> — The signal is computed once per unique alpha, so every instance rides the same waveform. But portfolios launch at different times, so each instance compounds from its own start date and cumulative returns differ per portfolio. The split is exact — every instance keeps its own forward book from its own inception.
     </div>
 
     <div class="container">
@@ -115,9 +115,9 @@
                 <span class="kpi-sub" id="kpi-cycle-sub"></span>
             </div>
             <div class="kpi-card">
-                <span class="kpi-label">Return (since inception)</span>
+                <span class="kpi-label">Return (since first run)</span>
                 <span class="kpi-value" id="kpi-roe"></span>
-                <span class="kpi-sub">chained — capital moves excluded</span>
+                <span class="kpi-sub" id="kpi-roe-sub">master track record — capital moves excluded</span>
             </div>
             <div class="kpi-card">
                 <span class="kpi-label">Sharpe (Ann.)</span>
@@ -138,18 +138,24 @@
 
         <div class="row-2col">
             <div class="panel panel-chart">
-                <div class="panel-hdr">Capital Deployed in this Alpha (USDT, all portfolios) — steps at reallocation are capital moves</div>
+                <div class="panel-hdr">Instance Virtual PV (USDT) — one line per portfolio, from its own start</div>
                 <div class="chart-wrap"><canvas id="chartPV"></canvas></div>
             </div>
             <div class="panel panel-chart">
-                <div class="panel-hdr">Return (%) vs the other alphas in the pool</div>
+                <div class="panel-hdr">Return (%) vs the rest of the pool + BTC benchmark</div>
                 <div class="chart-wrap"><canvas id="chartVsPool"></canvas></div>
             </div>
         </div>
 
-        <div class="panel" style="min-height:120px">
-            <div class="panel-hdr">Instances — where this alpha's capital sits (the scale dimension)</div>
-            <div class="tbl" id="instTable"></div>
+        <div class="row-2col">
+            <div class="panel" style="min-height:280px">
+                <div class="panel-hdr">Instances — where this alpha's capital sits, since when</div>
+                <div class="tbl" id="instTable"></div>
+            </div>
+            <div class="panel panel-chart" style="height:280px">
+                <div class="panel-hdr">Return since each instance's own start (%) — same waveform, different inception</div>
+                <div class="chart-wrap"><canvas id="chartInstReturns"></canvas></div>
+            </div>
         </div>
 
         <div class="row-2col">
@@ -222,6 +228,7 @@
         const roeEl = document.getElementById('kpi-roe');
         roeEl.textContent = `${sgn(K.roe)}${Math.abs(K.roe).toFixed(2)}%`;
         roeEl.className = 'kpi-value ' + (K.roe >= 0 ? 'positive' : 'negative');
+        document.getElementById('kpi-roe-sub').textContent = `master track record since ${M.since}`;
         const shEl = document.getElementById('kpi-sharpe');
         shEl.textContent = K.sharpe.toFixed(3);
         shEl.className = 'kpi-value ' + (K.sharpe >= 1 ? 'positive' : '');
@@ -230,40 +237,71 @@
         document.getElementById('kpi-act').textContent = `${fmt(K.tradesTotal)} trades`;
         document.getElementById('kpi-act-sub').textContent = `turnover ${fmt(K.turnoverPct)}% of capital`;
 
-        // ── Capital deployed (aggregated PV) ──
+        // ── Instance virtual PV — one line per portfolio, never merged ──
+        // Time axis starts at this alpha's earliest inception — never at the fund's
+        // day 0. Cross-series comparisons (other alphas, BTC) are re-based to 0% at
+        // that same day; series that begin even later keep their own 0-anchor.
+        const startIdx = A.dates.indexOf(M.since);
+        const L = A.dates.slice(startIdx);
+        const crop = arr => arr.slice(startIdx);
+        const rebase = arr => {
+            const b = arr[startIdx];
+            if (b === null || b === undefined) return arr.slice(startIdx);
+            const base = 1 + b / 100;
+            return arr.slice(startIdx).map(v => v === null ? null : ((1 + v / 100) / base - 1) * 100);
+        };
+
+        const PF_COLORS_PV = { 'pf-core': '#667eea', 'pf-carry': '#43e97b', 'pf-tail': '#f59e0b' };
         new Chart(document.getElementById('chartPV'), {
             type: 'line',
-            data: { labels: A.dates, datasets: [
-                { label: 'Capital in this alpha (USDT)', data: A.pv, borderColor: M.color,
-                  backgroundColor: M.color + '14', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
-            ] },
+            data: { labels: L, datasets: A.instances.map(s => ({
+                label: `@ ${s.pfLabel} · since ${s.since}`, data: crop(s.pv),
+                borderColor: PF_COLORS_PV[s.pfId] || M.color,
+                backgroundColor: (PF_COLORS_PV[s.pfId] || M.color) + '10',
+                fill: A.instances.length === 1, pointRadius: 0, borderWidth: 1.8, tension: 0.05 })) },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
         });
 
-        // ── Return vs the rest of the pool ──
+        // ── Return vs the rest of the pool (all re-based at this alpha's start) ──
         new Chart(document.getElementById('chartVsPool'), {
             type: 'line',
-            data: { labels: A.dates, datasets: [
-                { label: `${M.label} (%)`, data: A.retPct, borderColor: M.color,
+            data: { labels: L, datasets: [
+                { label: `${M.label} (%)`, data: crop(A.retPct), borderColor: M.color,
                   fill: false, pointRadius: 0, borderWidth: 2.4, tension: 0.05 },
                 ...A.otherAlphas.map(o => ({
-                    label: o.label, data: o.retPct, borderColor: o.color + '77',
+                    label: o.label, data: rebase(o.retPct), borderColor: o.color + '77',
                     fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 })),
+                { label: `BTC since ${M.since}`, data: rebase(A.btcRetPct), borderColor: '#8e94a1', borderDash: [5, 4],
+                  fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
             ] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
         });
 
-        // ── Instances table (the scale dimension) ──
+        // ── Instances table (scale + inception, per portfolio) ──
         document.getElementById('instTable').innerHTML = `<table>
-            <thead><tr><th>Portfolio</th><th>Weight in portfolio</th><th>Equity (virtual)</th><th>Cum PnL</th><th>Turnover 90d</th><th></th></tr></thead>
+            <thead><tr><th>Portfolio</th><th>Since</th><th>Weight</th><th>Equity (virtual)</th><th>Return (since start)</th><th>MDD</th><th>Cum PnL</th><th>Turnover</th><th></th></tr></thead>
             <tbody>${A.instances.map(s => `<tr>
                 <td>${s.pfLabel}</td>
-                <td>${(s.w1 * 100).toFixed(0)}%</td>
+                <td style="color:#8e94a1">${s.since}</td>
+                <td>${(s.wNow * 100).toFixed(0)}%</td>
                 <td>$${fmt(s.equity)}</td>
+                <td class="${s.roe >= 0 ? 'pos' : 'neg'}">${s.roe >= 0 ? '+' : ''}${s.roe.toFixed(2)}%</td>
+                <td class="neg">${s.mdd.toFixed(1)}%</td>
                 <td class="${s.cumPnl >= 0 ? 'pos' : 'neg'}">${s.cumPnl >= 0 ? '+' : ''}$${fmt(Math.abs(s.cumPnl))}</td>
                 <td>${fmt(s.turnoverPct)}%</td>
-                <td><a href="fund_portfolio.html?p=${encodeURIComponent(s.pfId)}">open portfolio &#8599;</a></td>
+                <td><a href="fund_portfolio.html?p=${encodeURIComponent(s.pfId)}">open &#8599;</a></td>
             </tr>`).join('')}</tbody></table>`;
+
+        // ── Per-instance return curves: same waveform, re-based at each inception ──
+        const PF_COLORS = { 'pf-core': '#667eea', 'pf-carry': '#43e97b', 'pf-tail': '#f59e0b' };
+        new Chart(document.getElementById('chartInstReturns'), {
+            type: 'line',
+            data: { labels: L, datasets: A.instances.map(s => ({
+                label: `@ ${s.pfLabel} · since ${s.since}`, data: crop(s.retPct),
+                borderColor: PF_COLORS[s.pfId] || M.color,
+                fill: false, pointRadius: 0, borderWidth: 1.8, tension: 0.05, spanGaps: false })) },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
 
         // ── Target vs achieved weights ──
         new Chart(document.getElementById('chartWeights'), {
@@ -279,13 +317,14 @@
                           y: { ticks: { color: '#8e94a1', callback: v => v.toFixed(0) + '%' }, grid: { color: '#2a2d33' } } } }
         });
 
-        // ── Trade activity (D/W/M) ──
+        // ── Trade activity (D/W/M) — axis from this alpha's first run ──
+        const actDates = L, actTrades = crop(A.trades), actTurnover = crop(A.turnover);
         function bucket(g) {
             const size = g === 'D' ? 1 : g === 'W' ? 7 : 30;
             const labels = [], idx = [];
-            for (let s = 0; s < A.dates.length; s += size) {
-                labels.push(A.dates[s]);
-                idx.push([s, Math.min(s + size, A.dates.length)]);
+            for (let s = 0; s < actDates.length; s += size) {
+                labels.push(actDates[s]);
+                idx.push([s, Math.min(s + size, actDates.length)]);
             }
             return { labels, idx };
         }
@@ -296,9 +335,9 @@
             if (actChart) actChart.destroy();
             actChart = new Chart(document.getElementById('chartActivity'), {
                 data: { labels, datasets: [
-                    { type: 'bar', label: 'Trades', data: sum(A.trades),
+                    { type: 'bar', label: 'Trades', data: sum(actTrades),
                       backgroundColor: M.color + 'B3', yAxisID: 'y' },
-                    { type: 'line', label: 'Turnover (USDT)', data: sum(A.turnover),
+                    { type: 'line', label: 'Turnover (USDT)', data: sum(actTurnover),
                       borderColor: '#fee140', pointRadius: 0, borderWidth: 1.8, tension: 0.1, yAxisID: 'y2' },
                 ] },
                 options: { responsive: true, maintainAspectRatio: false,

@@ -68,7 +68,7 @@
         </div>
     </div>
     <div class="demo-banner">
-        <strong>SAMPLE DATA</strong> &mdash; Every unique alpha in the pool. <strong>One alpha, one curve</strong> — running it in more portfolios changes its scale, never its shape. Gray dashed = fund virtual return. All numbers are synthetic.
+        <strong>SAMPLE DATA</strong> &mdash; One line <strong>per portfolio instance</strong>, never merged: the same alpha in two portfolios starts on different dates, so each line compounds from its own inception (line color = portfolio). Gray dashed = BTC benchmark. All numbers are synthetic.
     </div>
 
     <div class="filterbar">
@@ -80,6 +80,7 @@
     <script>
     (function () {
         const F = COMP.fund();
+        const allInst = F.portfolios.flatMap(p => p.instances);
         const params = new URLSearchParams(location.search);
         let filter = params.get('p') || 'all';
 
@@ -99,7 +100,28 @@
             document.getElementById('count').textContent =
                 `— ${sel.length} unique alphas${pfLabel} · ${F.fundLabel}`;
 
+            const PF_COLORS = { 'pf-core': '#667eea', 'pf-carry': '#43e97b', 'pf-tail': '#f59e0b' };
             sel.forEach((a, idx) => {
+                // NEVER one merged curve: every instance (portfolio) of the alpha is
+                // its own line, compounding from its own start date.
+                // "All" → one line per portfolio running it; filter → just that one.
+                const insts = allInst.filter(s => s.alphaId === a.id && (filter === 'all' || s.pfId === filter));
+                // The cell's time axis starts at the earliest inception among the
+                // shown instances — never at the fund's day 0. BTC is re-based to
+                // 0% at that same day so the comparison shares one starting point.
+                const startIdx = Math.min(...insts.map(s => s.startDay));
+                const cellDates = F.dates.slice(startIdx);
+                const btcBase = 1 + F.btcRetPct[startIdx] / 100;
+                const btcData = F.btcRetPct.slice(startIdx).map(v => ((1 + v / 100) / btcBase - 1) * 100);
+                const instDatasets = insts.map(s => ({
+                    label: `@ ${s.pfLabel} · since ${s.since}`, data: s.retPct.slice(startIdx),
+                    borderColor: PF_COLORS[s.pfId] || a.color,
+                    backgroundColor: (PF_COLORS[s.pfId] || a.color) + '10',
+                    fill: insts.length === 1, pointRadius: 0, borderWidth: 1.8, tension: 0.05,
+                }));
+                const badge = filter === 'all'
+                    ? insts.map(s => `${s.pfLabel.split(' ')[0]} ${s.since}`).join(' · ') + ` · $${fmt(a.equity)}`
+                    : `in ${insts[0].pfLabel} · since ${insts[0].since} · $${fmt(insts[0].equity)} (${(insts[0].wNow * 100).toFixed(0)}% of pf)`;
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 const hdr = document.createElement('div');
@@ -109,7 +131,7 @@
                         <span class="dot" style="background:${a.color}"></span>
                         <span class="label">${a.label}</span>
                         <span class="sub">${a.freq}</span>
-                        <span class="w">${a.nInstances} portfolio${a.nInstances > 1 ? 's' : ''} · $${fmt(a.equity)}</span>
+                        <span class="w">${badge}</span>
                     </div>
                     <a href="fund_alpha.html?a=${encodeURIComponent(a.id)}">Open alpha &#8599;</a>`;
                 const body = document.createElement('div');
@@ -124,12 +146,10 @@
                 charts.push(new Chart(canvas, {
                     type: 'line',
                     data: {
-                        labels: F.dates,
+                        labels: cellDates,
                         datasets: [
-                            { label: 'Alpha Return (%)', data: a.retPct,
-                              borderColor: a.color, backgroundColor: a.color + '14',
-                              fill: true, pointRadius: 0, borderWidth: 1.8, tension: 0.05 },
-                            { label: 'Fund Virtual (%)', data: F.virtualRetPct,
+                            ...instDatasets,
+                            { label: `BTC (%) since ${F.dates[startIdx]}`, data: btcData,
                               borderColor: '#8e94a1', borderDash: [5, 4],
                               fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
                         ]

@@ -240,35 +240,43 @@
         document.getElementById('kpi-vol').textContent = `${k.vol.toFixed(2)}%`;
         document.getElementById('kpi-mdd').textContent = `${k.mdd.toFixed(2)}%`;
 
+        // Time axis starts at THIS portfolio's launch day — never at the fund's
+        // day 0. The fund-virtual comparison line is re-based to 0% at that day.
+        const startIdx = P.dates.indexOf(P.meta.since);
+        const L = P.dates.slice(startIdx);
+        const crop = arr => arr.slice(startIdx);
+        const fvBase = 1 + P.fundVirtualRetPct[startIdx] / 100;
+        const fundRet = P.fundVirtualRetPct.slice(startIdx).map(v => ((1 + v / 100) / fvBase - 1) * 100);
+
         // ── PV vs allocated capital ──
         new Chart(document.getElementById('chartPV'), {
             type: 'line',
-            data: { labels: P.dates, datasets: [
-                { label: 'Virtual PV (USDT)', data: P.pv, borderColor: '#667eea',
+            data: { labels: L, datasets: [
+                { label: 'Virtual PV (USDT)', data: crop(P.pv), borderColor: '#667eea',
                   backgroundColor: 'rgba(102,126,234,0.08)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
-                { label: 'Allocated capital', data: P.cap, borderColor: '#8e94a1', borderDash: [6, 4],
+                { label: 'Allocated capital', data: crop(P.cap), borderColor: '#8e94a1', borderDash: [6, 4],
                   fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0 },
             ] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
         });
 
-        // ── Return vs fund virtual ──
+        // ── Return vs fund virtual (re-based at this portfolio's launch) ──
         new Chart(document.getElementById('chartRet'), {
             type: 'line',
-            data: { labels: P.dates, datasets: [
-                { label: `${P.meta.label} (%)`, data: P.retPct, borderColor: '#43e97b',
+            data: { labels: L, datasets: [
+                { label: `${P.meta.label} (%)`, data: crop(P.retPct), borderColor: '#43e97b',
                   backgroundColor: 'rgba(67,233,123,0.07)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
-                { label: 'Fund Virtual (%)', data: P.fundVirtualRetPct, borderColor: '#8e94a1',
+                { label: `Fund Virtual (%) since ${P.meta.since}`, data: fundRet, borderColor: '#8e94a1',
                   borderDash: [5, 4], fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
             ] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
         });
 
-        // ── Instance curves (alphas are unique within one portfolio) ──
+        // ── Instance curves (each alpha from the day THIS portfolio adopted it) ──
         new Chart(document.getElementById('chartInstances'), {
             type: 'line',
-            data: { labels: P.dates, datasets: P.instances.map(s => ({
-                label: s.alphaLabel, data: s.retPct, borderColor: s.color,
+            data: { labels: L, datasets: P.instances.map(s => ({
+                label: `${s.alphaLabel} · since ${s.since}`, data: crop(s.retPct), borderColor: s.color,
                 fill: false, pointRadius: 0, borderWidth: 1.6, tension: 0.05 })) },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
         });
@@ -291,9 +299,9 @@
         function bucket(g) {
             const size = g === 'D' ? 1 : g === 'W' ? 7 : 30;
             const labels = [], idx = [];
-            for (let s = 0; s < P.dates.length; s += size) {
-                labels.push(P.dates[s]);
-                idx.push([s, Math.min(s + size, P.dates.length)]);
+            for (let s = 0; s < L.length; s += size) {
+                labels.push(L[s]);
+                idx.push([s, Math.min(s + size, L.length)]);
             }
             return { labels, idx };
         }
@@ -305,10 +313,10 @@
             actChart = new Chart(document.getElementById('chartActivity'), {
                 data: { labels, datasets: [
                     ...P.instances.map(s => ({
-                        type: 'bar', label: s.alphaLabel, data: sum(s.trades),
+                        type: 'bar', label: s.alphaLabel, data: sum(crop(s.trades)),
                         backgroundColor: s.color + 'B3', stack: 'trades', yAxisID: 'y' })),
                     { type: 'line', label: 'Turnover (USDT)',
-                      data: sum(P.instances.reduce((acc, s) => acc.map((v, i) => v + s.turnover[i]), P.dates.map(() => 0))),
+                      data: sum(crop(P.instances.reduce((acc, s) => acc.map((v, i) => v + s.turnover[i]), P.dates.map(() => 0)))),
                       borderColor: '#fee140', pointRadius: 0, borderWidth: 1.8, tension: 0.1, yAxisID: 'y2' },
                 ] },
                 options: { responsive: true, maintainAspectRatio: false,
@@ -353,7 +361,7 @@
             card.onclick = () => { window.location.href = `fund_alpha.html?a=${encodeURIComponent(s.alphaId)}`; };
             card.innerHTML = `
                 <div class="card-label"><span class="dot" style="background:${s.color}"></span>${s.alphaLabel}</div>
-                <span class="card-env">${(s.w1 * 100).toFixed(0)}% of portfolio · ${s.freq}</span>
+                <span class="card-env">${(s.wNow * 100).toFixed(0)}% of portfolio · ${s.freq} · since ${s.since}</span>
                 <div class="card-metrics">
                     <div class="card-metric"><span>Equity (virtual)</span><span class="val">$${fmt(s.equity)}</span></div>
                     <div class="card-metric"><span>Cum PnL</span><span class="val" style="color:${s.cumPnl >= 0 ? '#43e97b' : '#f5576c'}">${s.cumPnl >= 0 ? '+' : ''}${fmt(s.cumPnl)}</span></div>

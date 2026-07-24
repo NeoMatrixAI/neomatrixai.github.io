@@ -83,7 +83,7 @@
             hdr.innerHTML = `
                 <div class="left">
                     <span class="label">${p.label}</span>
-                    <span class="alloc">${(p.alloc1 * 100).toFixed(0)}% of fund</span>
+                    <span class="alloc">${(p.allocNow * 100).toFixed(0)}% of fund · since ${p.since}</span>
                     <span class="badge">VIRTUAL</span>
                 </div>
                 <a href="fund_portfolio.html?p=${encodeURIComponent(p.id)}">Open portfolio &#8599;</a>`;
@@ -98,16 +98,18 @@
             cell.appendChild(body);
             grid.appendChild(cell);
 
+            // The cell's time axis starts at the portfolio's own launch day.
+            const startIdx = F.dates.indexOf(p.since);
             new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: F.dates,
+                    labels: F.dates.slice(startIdx),
                     datasets: [
-                        { label: 'Virtual PV (USDT)', data: p.pv,
+                        { label: 'Virtual PV (USDT)', data: p.pv.slice(startIdx),
                           borderColor: PF_COLORS[p.id] || '#667eea',
                           backgroundColor: (PF_COLORS[p.id] || '#667eea') + '14',
                           fill: true, pointRadius: 0, borderWidth: 1.8, tension: 0.05 },
-                        { label: 'Allocated capital', data: p.cap,
+                        { label: 'Allocated capital', data: p.cap.slice(startIdx),
                           borderColor: '#8e94a1', borderDash: [6, 4],
                           fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0 },
                     ]

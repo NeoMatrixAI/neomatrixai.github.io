@@ -8,22 +8,23 @@
 //
 // The whole point of the compositor preview is that the numbers ADD UP, so this
 // module enforces the v3 accounting identities exactly, by construction:
-//   1. sum(instance PV)                    == portfolio virtual PV      (per portfolio)
+//   1. sum(instance PV)                    == portfolio virtual PV      (per portfolio, while it exists)
 //   2. sum(portfolio virtual PV) + cash    == fund virtual PV
 //   3. fund virtual PV + operating cost    == measured (real) PV        (recon: L-P)
-//   4. same alpha, any portfolio           == same %-return curve
-// Identity 4 is a v3 model fact: the signal (weights) is computed once per UNIQUE
-// alpha (union-cycle dedup, alpha-level forward state), and every instance fills
-// the same weights at the same prices — so instances of one alpha differ only in
-// SCALE (allocated capital, absolute PnL/turnover, allocation history), never in
-// shape. That is why the alpha dashboard is keyed by unique alpha, with instances
-// as a table inside it.
+//   4. same alpha, any portfolio           == same daily-return WAVEFORM over any
+//      common window — but NOT the same cumulative curve. Portfolios launch at
+//      different times (a v3 fact: users add portfolios / register alphas whenever
+//      they want), so each instance compounds from its own start date. The split
+//      "alpha made X% in A, Y% in B" is exact because every instance keeps its own
+//      forward book from its own inception — it is never reverse-engineered from
+//      the netted account.
 //
-// Reallocation is virtual (no real transfers): on the reallocation day the fund
-// total is re-sliced to the new weights — instance PV steps, the fund line doesn't.
-// Risk metrics (Sharpe / vol / MDD) are computed on FLOW-ADJUSTED return streams,
-// so the reallocation capital step never reads as a fake gain or drawdown.
-// Turnover is reported as % of average allocated capital (cumulative over the window).
+// Timeline in this sample: Core Momentum launches day 0, Defensive Carry is added
+// day 20, Tail Hedge day 40, and one fund-level virtual reallocation happens day 65.
+// Reallocation is virtual (no real transfers): the fund total is re-sliced on paper,
+// instance PV steps, the fund line doesn't. Risk metrics (Sharpe / vol / MDD) are
+// computed on FLOW-ADJUSTED return streams over each book's own lifetime.
+// Turnover is reported as % of average allocated capital (cumulative over lifetime).
 
 const COMP = (function () {
     function mulberry32(seed) {
@@ -38,7 +39,6 @@ const COMP = (function () {
     const N_DAYS = 90;
     const END = new Date(Date.UTC(2026, 4, 31)); // fixed "today" = 2026-05-31 (same as demo_data.js)
     const FUND_CAPITAL = 250000;                  // USDT — one real account
-    const REALLOC_DAY = 45;                       // the one mid-window virtual reallocation
 
     function dateLabels(n) {
         const out = [];
@@ -84,9 +84,8 @@ const COMP = (function () {
         volb:  ['SOLUSDT', 'AVAXUSDT', 'DOGEUSDT', 'LINKUSDT'],
     };
 
-    // One shared daily-return stream per unique alpha. Identity 4: every instance
-    // of an alpha rides EXACTLY this stream — no per-portfolio noise, because the
-    // signal is computed once per unique alpha and virtual fills share price & time.
+    // One shared daily-return stream per unique alpha (the signal). Identity 4:
+    // every instance of an alpha rides EXACTLY this waveform over common windows.
     const ALPHA_RET = (function () {
         const out = {};
         ALPHAS.forEach(a => {
@@ -96,89 +95,118 @@ const COMP = (function () {
         return out;
     })();
 
-    // ── Portfolios (2nd-layer allocation targets) + instances (1st layer) ──
-    // w0 = weight before the reallocation, w1 = after. Unallocated residue = virtual cash.
-    const PORTFOLIOS = [
-        {
-            id: 'pf-core', label: 'Core Momentum', alloc0: 0.45, alloc1: 0.38,
-            instances: [
-                { alpha: 'mom',  w0: 0.40, w1: 0.35 },
-                { alpha: 'btct', w0: 0.35, w1: 0.35 },
-                { alpha: 'volb', w0: 0.25, w1: 0.30 },
-            ],
-        },
-        {
-            id: 'pf-carry', label: 'Defensive Carry', alloc0: 0.35, alloc1: 0.33,
-            instances: [
-                { alpha: 'carry', w0: 0.50, w1: 0.50 },
-                { alpha: 'mr',    w0: 0.30, w1: 0.30 },
-                { alpha: 'mom',   w0: 0.20, w1: 0.20 },   // same alpha as pf-core → same curve, different scale
-            ],
-        },
-        {
-            id: 'pf-tail', label: 'Tail Hedge', alloc0: 0.15, alloc1: 0.22,
-            instances: [
-                { alpha: 'volb', w0: 0.60, w1: 0.55 },    // same alpha as pf-core
-                { alpha: 'btct', w0: 0.40, w1: 0.45 },    // same alpha as pf-core
-            ],
-        },
+    // BTC benchmark — the alpha-level reference line (v2 convention: "does this
+    // signal beat just holding the market"). The fund itself is NOT used as an
+    // alpha benchmark: it contains the alpha (self-inclusion) and mixes risk levels.
+    const BTC_RET_PCT = (function () {
+        const rnd = mulberry32(9001);
+        const pv = [1];
+        for (let i = 1; i < N_DAYS; i++) pv.push(pv[i - 1] * (1 + 0.0002 + 1.0 * MARKET[i] + (rnd() - 0.5) * 2 * 0.012));
+        return pv.map(v => (v / pv[0] - 1) * 100);
+    })();
+
+    // ── Portfolio & allocation timeline ──
+    // TWO independent kinds of events, because that is how v3 actually behaves:
+    //   - a PORTFOLIO is added whenever the user wants (2nd-layer allocation), and
+    //   - an ALPHA is added to (or re-weighted inside) a portfolio whenever the
+    //     user wants (1st-layer allocation) — mid-life, not only at launch.
+    // So an instance's inception = the day THAT portfolio started running THAT
+    // alpha. Alphas inside one portfolio can have different inceptions, and the
+    // same alpha in two portfolios almost never shares one.
+    // Every event carries the FULL allocation snapshot (Σ alloc + cash == 1);
+    // `weights` only lists portfolios whose internal split changes that day.
+    const PF_META = [
+        { id: 'pf-core',  label: 'Core Momentum',   startDay: 0 },
+        { id: 'pf-carry', label: 'Defensive Carry', startDay: 20 },
+        { id: 'pf-tail',  label: 'Tail Hedge',      startDay: 40 },
     ];
-    const CASH_W0 = 0.05, CASH_W1 = 0.07; // §"nothing hidden": the unallocated slice is a visible virtual-cash row
+    const PF_BY_ID = Object.fromEntries(PF_META.map(p => [p.id, p]));
+    const EVENTS = [
+        { day: 0,  cash: 0.45, alloc: { 'pf-core': 0.55 },
+          weights: { 'pf-core': { mom: 0.45, btct: 0.55 } },
+          reason: 'Fund launch — Core Momentum only, cash held for later portfolios' },
+        { day: 12, cash: 0.45, alloc: { 'pf-core': 0.55 },
+          weights: { 'pf-core': { mom: 0.40, btct: 0.35, volb: 0.25 } },
+          reason: 'Vol Breakout alpha added to Core Momentum' },
+        { day: 20, cash: 0.15, alloc: { 'pf-core': 0.55, 'pf-carry': 0.30 },
+          weights: { 'pf-carry': { carry: 0.60, mr: 0.40 } },
+          reason: 'Defensive Carry portfolio added from cash' },
+        { day: 40, cash: 0.05, alloc: { 'pf-core': 0.55, 'pf-carry': 0.30, 'pf-tail': 0.10 },
+          weights: { 'pf-tail': { volb: 0.60, btct: 0.40 } },
+          reason: 'Tail Hedge portfolio added from cash' },
+        { day: 52, cash: 0.05, alloc: { 'pf-core': 0.55, 'pf-carry': 0.30, 'pf-tail': 0.10 },
+          weights: { 'pf-carry': { carry: 0.50, mr: 0.30, mom: 0.20 } },
+          reason: 'Momentum alpha added to Defensive Carry' },
+        { day: 65, cash: 0.07, alloc: { 'pf-core': 0.45, 'pf-carry': 0.28, 'pf-tail': 0.20 },
+          weights: { 'pf-core': { mom: 0.35, btct: 0.35, volb: 0.30 },
+                     'pf-tail': { volb: 0.55, btct: 0.45 } },
+          reason: 'Q2 risk review — trim core momentum, extend tail hedge into the summer chop' },
+    ];
+    const REALLOC_DAY = 65;
 
     let _cache = null;
     function build() {
         if (_cache) return _cache;
 
-        // Instance state: current virtual capital (PV), plus per-day series.
+        const instMap = {};          // key: pfId/alphaId → instance state
         const inst = [];
-        PORTFOLIOS.forEach((pf, pi) => {
-            pf.instances.forEach(it => {
-                inst.push({
-                    pfId: pf.id, pfLabel: pf.label, pfIdx: pi,
-                    alphaId: it.alpha, alpha: ALPHA_BY_ID[it.alpha],
-                    w0: it.w0, w1: it.w1,
-                    pv: [], trades: [], turnover: [],
-                    cur: FUND_CAPITAL * pf.alloc0 * it.w0,
-                    cumPnl: 0,
-                });
-            });
-        });
+        let cashVal = FUND_CAPITAL;  // everything starts as cash until the launch batch
+        let curAlloc = {}, curW = {}, curCashW = 1;
+        const pfCapNow = {};
 
-        let cash = FUND_CAPITAL * CASH_W0;
         const cashPV = [];
-        const pfPV = PORTFOLIOS.map(() => []);
-        const pfRet = PORTFOLIOS.map(() => []);   // flow-adjusted daily returns per portfolio
-        const pfCap = PORTFOLIOS.map(() => []);   // allocated-capital reference line (steps at realloc)
-        let pfCapNow = PORTFOLIOS.map(pf => FUND_CAPITAL * pf.alloc0);
+        const pfPV = {}, pfRet = {}, pfCap = {};
+        PF_META.forEach(p => { pfPV[p.id] = []; pfRet[p.id] = []; pfCap[p.id] = []; });
         const virtualPV = [], measuredPV = [], cumOpCostArr = [];
         let cumOpCost = 0;
         const tradeRnd = mulberry32(31415);
 
         for (let i = 0; i < N_DAYS; i++) {
-            // Virtual reallocation (F20): re-slice the fund total to the new weights.
-            // No real transfer happens — the fund line stays continuous, instances step.
-            if (i === REALLOC_DAY) {
-                const total = inst.reduce((a, s) => a + s.cur, 0) + cash;
-                cash = total * CASH_W1;
-                inst.forEach(s => {
-                    const pf = PORTFOLIOS[s.pfIdx];
-                    s.cur = total * pf.alloc1 * s.w1;
+            const ev = EVENTS.find(e => e.day === i);
+            if (ev) {
+                curCashW = ev.cash;
+                curAlloc = { ...ev.alloc };
+                Object.entries(ev.weights).forEach(([pfId, w]) => { curW[pfId] = { ...w }; });
+                // Virtual re-slice (F20): no real transfer, the fund total is re-cut.
+                const total = inst.reduce((a, s) => a + s.cur, 0) + cashVal;
+                cashVal = total * curCashW;
+                Object.entries(curAlloc).forEach(([pfId, alloc]) => {
+                    pfCapNow[pfId] = total * alloc;
+                    Object.entries(curW[pfId]).forEach(([alphaId, w]) => {
+                        const key = pfId + '/' + alphaId;
+                        if (!instMap[key]) {
+                            instMap[key] = {
+                                key, pfId, pfLabel: PF_BY_ID[pfId].label, alphaId,
+                                alpha: ALPHA_BY_ID[alphaId], startDay: i, w0: w, wNow: w,
+                                pv: Array(i).fill(null), ret: Array(i).fill(null),
+                                trades: Array(i).fill(0), turnover: Array(i).fill(0),
+                                cur: 0, cumPnl: 0,
+                            };
+                            inst.push(instMap[key]);
+                        }
+                        instMap[key].wNow = w;
+                        instMap[key].cur = total * alloc * w;
+                    });
                 });
-                pfCapNow = PORTFOLIOS.map(pf => total * pf.alloc1);
             }
 
-            const pfPrev = PORTFOLIOS.map((_, pi) => inst.filter(s => s.pfIdx === pi).reduce((a, s) => a + s.cur, 0));
-            const pfPnlDay = PORTFOLIOS.map(() => 0);
+            const pfPrev = {};
+            PF_META.forEach(p => { pfPrev[p.id] = inst.filter(s => s.pfId === p.id).reduce((a, s) => a + s.cur, 0); });
+            const pfPnlDay = {};
+            PF_META.forEach(p => { pfPnlDay[p.id] = 0; });
 
             let dayTurnover = 0;
             inst.forEach(s => {
-                const r = ALPHA_RET[s.alphaId][i];       // Identity 4: the shared alpha stream, exactly
+                // A newly opened book starts FLAT: PV(t0) = allocated capital, return 0
+                // (same as the real seeding semantics). Its first return accrues from t0+1.
+                const r = s.startDay === i ? 0 : ALPHA_RET[s.alphaId][i];   // the shared alpha waveform, exactly
                 const prev = s.cur;
                 s.cur = prev * (1 + r);
                 const pnlDay = s.cur - prev;
                 s.cumPnl += pnlDay;
-                pfPnlDay[s.pfIdx] += pnlDay;
+                pfPnlDay[s.pfId] += pnlDay;
                 s.pv.push(s.cur);
+                s.ret.push(r);
                 // Trade activity: count scales with the alpha's cadence, turnover with capital.
                 const n = Math.max(1, Math.round(s.alpha.tradesPerDay * (0.6 + tradeRnd() * 0.8)));
                 const to = s.cur * (0.05 + tradeRnd() * 0.25) * (n / s.alpha.tradesPerDay);
@@ -187,14 +215,20 @@ const COMP = (function () {
                 dayTurnover += to;
             });
 
-            PORTFOLIOS.forEach((pf, pi) => {
-                pfPV[pi].push(inst.filter(s => s.pfIdx === pi).reduce((a, s) => a + s.cur, 0));
-                pfRet[pi].push(pfPnlDay[pi] / pfPrev[pi]);   // flow-free (pfPrev is post-realloc)
-                pfCap[pi].push(pfCapNow[pi]);
+            PF_META.forEach(p => {
+                if (i >= p.startDay) {
+                    pfPV[p.id].push(inst.filter(s => s.pfId === p.id).reduce((a, s) => a + s.cur, 0));
+                    pfRet[p.id].push(pfPrev[p.id] > 0 ? pfPnlDay[p.id] / pfPrev[p.id] : 0);
+                    pfCap[p.id].push(pfCapNow[p.id]);
+                } else {
+                    pfPV[p.id].push(null);
+                    pfRet[p.id].push(null);
+                    pfCap[p.id].push(null);
+                }
             });
-            cashPV.push(cash);
+            cashPV.push(cashVal);
 
-            const v = inst.reduce((a, s) => a + s.cur, 0) + cash;
+            const v = inst.reduce((a, s) => a + s.cur, 0) + cashVal;
             virtualPV.push(v);
 
             // Operating cost (fees + slippage + funding timing) — proportional to turnover.
@@ -204,7 +238,7 @@ const COMP = (function () {
             measuredPV.push(v + cumOpCost);
         }
 
-        _cache = { inst, cash, cashPV, pfPV, pfRet, pfCap, virtualPV, measuredPV, cumOpCostArr };
+        _cache = { inst, cashVal, cashPV, pfPV, pfRet, pfCap, virtualPV, measuredPV, cumOpCostArr };
         return _cache;
     }
 
@@ -218,97 +252,99 @@ const COMP = (function () {
     }
     const annSharpe = ret => { const { mean, sd } = _stats(ret); return (mean / sd) * Math.sqrt(365); };
     const annVol = ret => _stats(ret).sd * Math.sqrt(365) * 100;
-    // Cumulative % return since inception, robust to the virtual-reallocation capital
-    // step: chain daily returns instead of dividing PV by PV[0].
-    const chainPct = ret => { const out = []; let c = 1; ret.forEach(r => { c *= (1 + r); out.push((c - 1) * 100); }); return out; };
-    const chainIndex = ret => { const out = []; let c = 1; ret.forEach(r => { c *= (1 + r); out.push(c); }); return out; };
-    // Flow-adjusted MDD: drawdown of the chained return index, not of the raw PV
-    // (a reallocation capital step must never read as a gain or a drawdown).
-    const chainMdd = ret => Math.min(...drawdownSeries(chainIndex(ret)));
     const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+    // Cumulative % return chained from a start day; null before it (Chart.js gap).
+    // The inception day is a 0% ANCHOR (the book opens flat at PV = capital);
+    // returns accrue from startDay+1. Chaining daily returns keeps it exact
+    // across virtual-reallocation capital steps.
+    function chainPctFrom(ret, startDay) {
+        const out = []; let c = 1;
+        for (let i = 0; i < N_DAYS; i++) {
+            if (i < startDay) { out.push(null); continue; }
+            if (i > startDay && ret[i] !== null && ret[i] !== undefined) c *= (1 + ret[i]);
+            out.push((c - 1) * 100);
+        }
+        return out;
+    }
+    // Flow-adjusted MDD over a lifetime slice: drawdown of the chained return index
+    // (anchored at 1.0 on the inception day).
+    function chainMddFrom(ret, startDay) {
+        const idx = [1]; let c = 1;
+        for (let i = startDay + 1; i < N_DAYS; i++) { c *= (1 + ret[i]); idx.push(c); }
+        return Math.min(...drawdownSeries(idx));
+    }
+    const lifeSlice = (arr, startDay) => arr.slice(startDay).filter(v => v !== null);
 
-    // ── Allocation history (append-only batches, 2 layers — mirrors the real fund.html view ④) ──
+    // ── Allocation history (append-only batches, 2 layers — derived from the SAME
+    //    timeline the engine runs, so the tables and the curves can never disagree) ──
     const d = i => DATES[i];
-    const ALLOC_PORTFOLIO = [
-        {
-            ts: d(0) + ' 00:00', layer: 'portfolio', reason: 'Initial allocation — fund launch',
-            rows: [
-                { target: 'Core Momentum', before: null, after: 45 },
-                { target: 'Defensive Carry', before: null, after: 35 },
-                { target: 'Tail Hedge', before: null, after: 15 },
-                { target: 'Virtual Cash (unallocated)', before: null, after: 5 },
-            ],
-        },
-        {
-            ts: d(REALLOC_DAY) + ' 00:05', layer: 'portfolio', reason: 'Q2 risk review — trim core momentum, extend tail hedge into the summer chop',
-            rows: [
-                { target: 'Core Momentum', before: 45, after: 38 },
-                { target: 'Defensive Carry', before: 35, after: 33 },
-                { target: 'Tail Hedge', before: 15, after: 22 },
-                { target: 'Virtual Cash (unallocated)', before: 5, after: 7 },
-            ],
-        },
-    ];
-    const ALLOC_SLEEVE = [
-        {
-            ts: d(0) + ' 00:00', layer: 'alpha', portfolio: 'Core Momentum', reason: 'Initial allocation',
-            rows: [
-                { target: 'Momentum', before: null, after: 40 },
-                { target: 'BTC Trend', before: null, after: 35 },
-                { target: 'Vol Breakout', before: null, after: 25 },
-            ],
-        },
-        {
-            ts: d(0) + ' 00:00', layer: 'alpha', portfolio: 'Defensive Carry', reason: 'Initial allocation',
-            rows: [
-                { target: 'Funding Carry', before: null, after: 50 },
-                { target: 'Mean Reversion', before: null, after: 30 },
-                { target: 'Momentum', before: null, after: 20 },
-            ],
-        },
-        {
-            ts: d(0) + ' 00:00', layer: 'alpha', portfolio: 'Tail Hedge', reason: 'Initial allocation',
-            rows: [
-                { target: 'Vol Breakout', before: null, after: 60 },
-                { target: 'BTC Trend', before: null, after: 40 },
-            ],
-        },
-        {
-            ts: d(REALLOC_DAY) + ' 00:05', layer: 'alpha', portfolio: 'Core Momentum', reason: 'Momentum decay on the 30d window — rotate toward breakout',
-            rows: [
-                { target: 'Momentum', before: 40, after: 35 },
-                { target: 'BTC Trend', before: 35, after: 35 },
-                { target: 'Vol Breakout', before: 25, after: 30 },
-            ],
-        },
-        {
-            ts: d(REALLOC_DAY) + ' 00:05', layer: 'alpha', portfolio: 'Tail Hedge', reason: 'Rebalance hedge legs after the tail sleeve grew',
-            rows: [
-                { target: 'Vol Breakout', before: 60, after: 55 },
-                { target: 'BTC Trend', before: 40, after: 45 },
-            ],
-        },
-    ];
+    const CASH_LABEL = 'Virtual Cash (unallocated)';
+    const ALLOC_PORTFOLIO = (function () {
+        let prev = null;
+        const batches = [];
+        EVENTS.forEach(ev => {
+            // Alpha-only events (weights change, 2nd-layer split unchanged) do not
+            // produce a portfolio-layer batch.
+            const changed = !prev || prev.cash !== ev.cash ||
+                PF_META.some(p => (prev.alloc[p.id] || 0) !== (ev.alloc[p.id] || 0));
+            if (changed) {
+                const rows = [];
+                PF_META.forEach(p => {
+                    const after = ev.alloc[p.id];
+                    if (after === undefined) return;
+                    const before = prev && prev.alloc[p.id] !== undefined ? Math.round(prev.alloc[p.id] * 100) : null;
+                    rows.push({ target: p.label, before, after: Math.round(after * 100) });
+                });
+                rows.push({ target: CASH_LABEL, before: prev ? Math.round(prev.cash * 100) : null, after: Math.round(ev.cash * 100) });
+                batches.push({ ts: d(ev.day) + (ev.day === REALLOC_DAY ? ' 00:05' : ' 00:00'), layer: 'portfolio', reason: ev.reason, rows });
+            }
+            prev = ev;
+        });
+        return batches;
+    })();
+    const ALLOC_SLEEVE = (function () {
+        const prevW = {};
+        const batches = [];
+        EVENTS.forEach(ev => {
+            Object.entries(ev.weights).forEach(([pfId, w]) => {
+                const rows = Object.entries(w).map(([alphaId, after]) => ({
+                    target: ALPHA_BY_ID[alphaId].label,
+                    before: prevW[pfId] && prevW[pfId][alphaId] !== undefined ? Math.round(prevW[pfId][alphaId] * 100) : null,
+                    after: Math.round(after * 100),
+                }));
+                batches.push({
+                    ts: d(ev.day) + (ev.day === REALLOC_DAY ? ' 00:05' : ' 00:00'),
+                    layer: 'alpha', portfolio: PF_BY_ID[pfId].label,
+                    reason: prevW[pfId] ? ev.reason : 'Initial allocation',
+                    rows,
+                });
+                prevW[pfId] = { ...w };
+            });
+        });
+        return batches;
+    })();
 
     // ── Shared shaping ──
-    function shapeInstance(s, pf) {
+    function shapeInstance(s) {
         const ret = ALPHA_RET[s.alphaId];
+        const retPct = chainPctFrom(ret, s.startDay);
+        const lifeRet = ret.slice(s.startDay + 1);   // first return accrues the day after inception
+        const lifePv = lifeSlice(s.pv, s.startDay);
         return {
-            key: pf.id + '/' + s.alphaId,
-            alphaId: s.alphaId, alphaLabel: s.alpha.label, color: s.alpha.color, freq: s.alpha.freq,
-            pfId: pf.id, pfLabel: pf.label,
-            w0: s.w0, w1: s.w1,
-            pv: s.pv.map(v => Math.round(v)),
-            retPct: chainPct(ret),
+            key: s.key, alphaId: s.alphaId, alphaLabel: s.alpha.label, color: s.alpha.color, freq: s.alpha.freq,
+            pfId: s.pfId, pfLabel: s.pfLabel,
+            startDay: s.startDay, since: DATES[s.startDay],
+            w0: s.w0, wNow: s.wNow,
+            pv: s.pv.map(v => v === null ? null : Math.round(v)),
+            retPct,
             trades: s.trades, turnover: s.turnover.map(v => Math.round(v)),
-            equity: s.pv[s.pv.length - 1],
+            equity: s.cur,
             cumPnl: Math.round(s.cumPnl),
-            roe: chainPct(ret)[N_DAYS - 1],
-            sharpe: annSharpe(ret), vol: annVol(ret), mdd: chainMdd(ret),
+            roe: retPct[N_DAYS - 1],                        // since ITS inception — differs per instance
+            sharpe: annSharpe(lifeRet), vol: annVol(lifeRet), mdd: chainMddFrom(ret, s.startDay),
             tradesTotal: s.trades.reduce((a, b) => a + b, 0),
             turnoverTotal: Math.round(s.turnover.reduce((a, b) => a + b, 0)),
-            // Turnover as % of average allocated capital (cumulative over the window)
-            turnoverPct: s.turnover.reduce((a, b) => a + b, 0) / mean(s.pv) * 100,
+            turnoverPct: s.turnover.reduce((a, b) => a + b, 0) / mean(lifePv) * 100,
         };
     }
 
@@ -318,36 +354,43 @@ const COMP = (function () {
         const mRet = dailyReturns(B.measuredPV);
         const vRet = dailyReturns(B.virtualPV);
         const mDD = drawdownSeries(B.measuredPV);
+        const lastEv = EVENTS[EVENTS.length - 1];
 
-        const portfolios = PORTFOLIOS.map((pf, pi) => {
-            const pv = B.pfPV[pi];
-            const ret = B.pfRet[pi];   // flow-adjusted
-            const own = B.inst.filter(s => s.pfIdx === pi);
+        const portfolios = PF_META.map(p => {
+            const own = B.inst.filter(s => s.pfId === p.id);
+            const ret = B.pfRet[p.id];
+            const lifeRet = lifeSlice(ret, p.startDay).slice(1);   // launch day is the flat anchor
+            const lifePv = lifeSlice(B.pfPV[p.id], p.startDay);
             return {
-                id: pf.id, label: pf.label, alloc0: pf.alloc0, alloc1: pf.alloc1,
-                pv: pv.map(v => Math.round(v)),
-                cap: B.pfCap[pi].map(v => Math.round(v)),
-                retPct: chainPct(ret),
+                id: p.id, label: p.label, startDay: p.startDay, since: DATES[p.startDay],
+                allocNow: lastEv.alloc[p.id],
+                pv: B.pfPV[p.id].map(v => v === null ? null : Math.round(v)),
+                cap: B.pfCap[p.id].map(v => v === null ? null : Math.round(v)),
+                retPct: chainPctFrom(ret.map(r => r === null ? 0 : r), p.startDay),
                 cumPnl: Math.round(own.reduce((a, s) => a + s.cumPnl, 0)),
-                sharpe: annSharpe(ret), vol: annVol(ret), mdd: chainMdd(ret),
-                turnoverPct: own.reduce((a, s) => a + s.turnover.reduce((x, y) => x + y, 0), 0) / mean(pv) * 100,
-                instances: own.map(s => shapeInstance(s, pf)),
+                sharpe: annSharpe(lifeRet), vol: annVol(lifeRet),
+                mdd: chainMddFrom(ret.map(r => r === null ? 0 : r), p.startDay),
+                turnoverPct: own.reduce((a, s) => a + s.turnover.reduce((x, y) => x + y, 0), 0) / mean(lifePv) * 100,
+                instances: own.map(shapeInstance),
             };
         });
 
-        // Unique-alpha rollup (the Alpha Pool view): one curve per alpha, capital summed
-        // across its instances.
+        // Unique-alpha rollup (the Alpha Pool view): the master curve starts at the
+        // alpha's EARLIEST instance (its live track record), capital summed across
+        // instances.
         const alphas = ALPHAS.map(a => {
             const own = B.inst.filter(s => s.alphaId === a.id);
-            const pvAgg = DATES.map((_, i) => own.reduce((x, s) => x + s.pv[i], 0));
+            if (!own.length) return null;
+            const earliest = Math.min(...own.map(s => s.startDay));
             return {
                 id: a.id, label: a.label, color: a.color, freq: a.freq,
-                retPct: chainPct(ALPHA_RET[a.id]),
-                equity: pvAgg[N_DAYS - 1],
+                startDay: earliest, since: DATES[earliest],
+                retPct: chainPctFrom(ALPHA_RET[a.id], earliest),
+                equity: own.reduce((x, s) => x + s.cur, 0),
                 nInstances: own.length,
-                byPortfolio: own.map(s => ({ pfId: s.pfId, pfLabel: s.pfLabel, equity: Math.round(s.cur) })),
+                byPortfolio: own.map(s => ({ pfId: s.pfId, pfLabel: s.pfLabel, equity: Math.round(s.cur), since: DATES[s.startDay] })),
             };
-        });
+        }).filter(Boolean);
 
         const finalV = B.virtualPV[N_DAYS - 1], finalM = B.measuredPV[N_DAYS - 1];
         return {
@@ -356,6 +399,7 @@ const COMP = (function () {
             virtualPV: B.virtualPV.map(v => Math.round(v)),
             measuredPV: B.measuredPV.map(v => Math.round(v)),
             virtualRetPct: B.virtualPV.map(v => (v / FUND_CAPITAL - 1) * 100),
+            btcRetPct: BTC_RET_PCT,
             cashPV: B.cashPV.map(v => Math.round(v)),
             cumOpCost: B.cumOpCostArr.map(v => Math.round(v)),
             latentPnl: B.virtualPV.map(v => Math.round(v - FUND_CAPITAL)),
@@ -371,7 +415,7 @@ const COMP = (function () {
                 roe: (finalM / FUND_CAPITAL - 1) * 100,
                 sharpe: annSharpe(mRet), vol: annVol(mRet), mdd: Math.min(...mDD),
                 vSharpe: annSharpe(vRet),
-                cash: B.cash,
+                cash: B.cashVal,
             },
         };
     }
@@ -382,12 +426,12 @@ const COMP = (function () {
         const p = F.portfolios.find(x => x.id === id) || F.portfolios[0];
         return {
             dates: DATES, reallocDay: REALLOC_DAY, fundLabel: F.fundLabel,
-            meta: { id: p.id, label: p.label, alloc0: p.alloc0, alloc1: p.alloc1 },
+            meta: { id: p.id, label: p.label, since: p.since, allocNow: p.allocNow },
             pv: p.pv, cap: p.cap, retPct: p.retPct,
             fundVirtualRetPct: F.virtualRetPct,
             kpi: {
                 pv: p.pv[N_DAYS - 1], cap: p.cap[N_DAYS - 1],
-                allocNow: p.alloc1 * 100, cumPnl: p.cumPnl,
+                allocNow: p.allocNow * 100, cumPnl: p.cumPnl,
                 sharpe: p.sharpe, vol: p.vol, mdd: p.mdd,
                 instances: p.instances.length,
                 tradesTotal: p.instances.reduce((a, s) => a + s.tradesTotal, 0),
@@ -400,20 +444,25 @@ const COMP = (function () {
     }
 
     // ── Public shape: one UNIQUE alpha (fund_alpha.html) ──
-    // Keyed by alphaId — the signal, curve and risk numbers exist once per alpha;
-    // the portfolio dimension appears as an instances table (scale, not shape).
+    // Keyed by alphaId — the signal and its master track record exist once per
+    // alpha. The portfolio dimension appears as an instances table + per-instance
+    // "return since its own start" curves (scale AND inception differ; shape doesn't).
     function alphaDetail(alphaId) {
         const F = fund();
         const a = ALPHA_BY_ID[alphaId] ? ALPHA_BY_ID[alphaId] : ALPHAS[0];
         const B = build();
         const own = B.inst.filter(s => s.alphaId === a.id);
-        const ownShaped = F.portfolios.flatMap(p => p.instances).filter(s => s.alphaId === a.id);
+        const ownShaped = own.map(shapeInstance);
+        const earliest = Math.min(...own.map(s => s.startDay));
         const ret = ALPHA_RET[a.id];
-        const retPct = chainPct(ret);
-        const pvAgg = DATES.map((_, i) => own.reduce((x, s) => x + s.pv[i], 0));
+        const retPct = chainPctFrom(ret, earliest);
+        const pvAgg = DATES.map((_, i) => {
+            const alive = own.filter(s => s.pv[i] !== null);
+            return alive.length ? alive.reduce((x, s) => x + s.pv[i], 0) : null;
+        });
         const trades = DATES.map((_, i) => own.reduce((x, s) => x + s.trades[i], 0));
         const turnover = DATES.map((_, i) => own.reduce((x, s) => x + s.turnover[i], 0));
-        const turnoverTotal = turnover.reduce((x, y) => x + y, 0);
+        const lifeRet = ret.slice(earliest + 1);
         const seed = a.id.split('').reduce((h, c) => (h * 131 + c.charCodeAt(0)) | 0, 7);
         const rnd = mulberry32(seed);
 
@@ -422,7 +471,7 @@ const COMP = (function () {
         const symbols = ALPHA_SYMBOLS[a.id];
         const raw = symbols.map(() => 0.4 + rnd());
         const gross = raw.reduce((x, y) => x + y, 0);
-        const totalEquity = pvAgg[N_DAYS - 1];
+        const totalEquity = own.reduce((x, s) => x + s.cur, 0);
         const positions = symbols.map((sym, i) => {
             const w = raw[i] / gross;                                  // achieved |weight|
             const target = Math.max(0.02, w + (rnd() - 0.5) * 0.06);   // cycle target, slightly off
@@ -458,21 +507,23 @@ const COMP = (function () {
         return {
             dates: DATES, reallocDay: REALLOC_DAY, fundLabel: F.fundLabel,
             meta: { id: a.id, label: a.label, color: a.color, freq: a.freq, cycleH: a.cycleH,
-                    nInstances: own.length,
+                    nInstances: own.length, since: DATES[earliest],
                     lastCycle: fmtDt(lastCycle), nextCycle: fmtDt(lastCycle + a.cycleH * 3600000) },
             kpi: {
                 equity: totalEquity,
                 cumPnl: Math.round(own.reduce((x, s) => x + s.cumPnl, 0)),
-                roe: retPct[N_DAYS - 1],                    // since inception, chained
-                sharpe: annSharpe(ret), vol: annVol(ret), mdd: chainMdd(ret),
+                roe: retPct[N_DAYS - 1],                    // master track record, since first run
+                sharpe: annSharpe(lifeRet), vol: annVol(lifeRet), mdd: chainMddFrom(ret, earliest),
                 tradesTotal: trades.reduce((x, y) => x + y, 0),
-                turnoverPct: turnoverTotal / mean(pvAgg) * 100,
+                turnoverPct: turnover.reduce((x, y) => x + y, 0) / mean(lifeSlice(pvAgg, earliest)) * 100,
             },
-            pv: pvAgg.map(v => Math.round(v)), retPct, trades, turnover: turnover.map(v => Math.round(v)),
-            instances: ownShaped,                            // the scale dimension, as a table
+            pv: pvAgg.map(v => v === null ? null : Math.round(v)),
+            retPct, trades, turnover: turnover.map(v => Math.round(v)),
+            btcRetPct: BTC_RET_PCT,
+            instances: ownShaped,                            // scale + inception, per portfolio
             otherAlphas: F.alphas.filter(x => x.id !== a.id),
             positions, fills, allocEvents,
-            roster: ALPHAS.map(x => ({ id: x.id, label: x.label })),
+            roster: F.alphas.map(x => ({ id: x.id, label: x.label })),
         };
     }
 
