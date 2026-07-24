@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alpha Grid (Compositor Preview) — NeoMatrix AI</title>
+    <meta name="description" content="A sample v3 compositor alpha grid — every unique alpha in the pool at a glance. One alpha, one curve; portfolios only change the scale. Illustrative data only." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="compositor_data.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da; }
+        .topbar {
+            height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33;
+            font-size: 14px; font-weight: 600;
+        }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .count { color: #8e94a1; font-weight: 400; }
+        .topbar a { color: #6ea8ff; text-decoration: none; font-size: 13px; }
+        .topbar a:hover { text-decoration: underline; }
+        .topbar .links { display: flex; gap: 16px; }
+
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 6px 16px; }
+        .demo-banner strong { color: #fff; }
+
+        .filterbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; font-size: 12px; color: #8e94a1; }
+        .pill-btn { border: 1px solid #2a2d33; background: transparent; color: #a0a4ae;
+            border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 600;
+            cursor: pointer; font-family: inherit; }
+        .pill-btn:hover { border-color: #667eea; color: #e8e9ea; }
+        .pill-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
+        .cell {
+            background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            display: flex; flex-direction: column; overflow: hidden; height: 300px;
+        }
+        .cell .hdr {
+            height: 36px; flex: 0 0 36px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33; font-size: 13px;
+        }
+        .cell .hdr .left { display: flex; align-items: center; min-width: 0; gap: 8px; }
+        .cell .hdr .dot { width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+        .cell .hdr .label { font-weight: 600; color: #e8e9ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cell .hdr .sub { color: #8e94a1; font-weight: 400; font-size: 12px; white-space: nowrap; }
+        .cell .hdr .w { padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 500; background: #22304a; color: #9fb4d8; }
+        .cell .hdr a { color: #6ea8ff; text-decoration: none; font-size: 12px; white-space: nowrap; }
+        .cell .hdr a:hover { text-decoration: underline; }
+        .cell .body { flex: 1 1 auto; position: relative; padding: 6px 10px 10px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <span>Alpha Grid — Compositor Preview</span>
+            <span class="count" id="count"></span>
+        </div>
+        <div class="links">
+            <a href="fund_portfolio_grid.html">&larr; Portfolio Grid</a>
+            <a href="fund.html">Fund</a>
+            <a href="https://neomatrix.ai">neomatrix.ai</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> &mdash; Every unique alpha in the pool. <strong>One alpha, one curve</strong> — running it in more portfolios changes its scale, never its shape. Gray dashed = fund virtual return. All numbers are synthetic.
+    </div>
+
+    <div class="filterbar">
+        <span>Runs in:</span>
+        <span id="pfFilters" style="display:flex;gap:6px"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+
+    <script>
+    (function () {
+        const F = COMP.fund();
+        const params = new URLSearchParams(location.search);
+        let filter = params.get('p') || 'all';
+
+        const grid = document.getElementById('grid');
+        const filtersEl = document.getElementById('pfFilters');
+        const charts = [];
+        const fmt = v => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+        function render() {
+            charts.forEach(c => c.destroy());
+            charts.length = 0;
+            grid.innerHTML = '';
+            const sel = filter === 'all' ? F.alphas
+                : F.alphas.filter(a => a.byPortfolio.some(b => b.pfId === filter));
+            const pfLabel = filter === 'all' ? '' :
+                ' · in ' + F.portfolios.find(p => p.id === filter).label;
+            document.getElementById('count').textContent =
+                `— ${sel.length} unique alphas${pfLabel} · ${F.fundLabel}`;
+
+            sel.forEach((a, idx) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const hdr = document.createElement('div');
+                hdr.className = 'hdr';
+                hdr.innerHTML = `
+                    <div class="left">
+                        <span class="dot" style="background:${a.color}"></span>
+                        <span class="label">${a.label}</span>
+                        <span class="sub">${a.freq}</span>
+                        <span class="w">${a.nInstances} portfolio${a.nInstances > 1 ? 's' : ''} · $${fmt(a.equity)}</span>
+                    </div>
+                    <a href="fund_alpha.html?a=${encodeURIComponent(a.id)}">Open alpha &#8599;</a>`;
+                const body = document.createElement('div');
+                body.className = 'body';
+                const canvas = document.createElement('canvas');
+                canvas.id = `chart-${idx}`;
+                body.appendChild(canvas);
+                cell.appendChild(hdr);
+                cell.appendChild(body);
+                grid.appendChild(cell);
+
+                charts.push(new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: F.dates,
+                        datasets: [
+                            { label: 'Alpha Return (%)', data: a.retPct,
+                              borderColor: a.color, backgroundColor: a.color + '14',
+                              fill: true, pointRadius: 0, borderWidth: 1.8, tension: 0.05 },
+                            { label: 'Fund Virtual (%)', data: F.virtualRetPct,
+                              borderColor: '#8e94a1', borderDash: [5, 4],
+                              fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#d8d9da', font: { size: 10 }, boxWidth: 10 } } },
+                        scales: {
+                            x: { ticks: { color: '#8e94a1', maxTicksLimit: 6 }, grid: { color: '#23262c' } },
+                            y: { ticks: { color: '#8e94a1', callback: v => v.toFixed(0) + '%' }, grid: { color: '#23262c' } }
+                        }
+                    }
+                }));
+            });
+        }
+
+        // Filter pills: All + one per portfolio (membership filter)
+        const options = [{ id: 'all', label: 'All' }, ...F.portfolios.map(p => ({ id: p.id, label: p.label }))];
+        options.forEach(o => {
+            const b = document.createElement('button');
+            b.className = 'pill-btn' + (o.id === filter ? ' active' : '');
+            b.textContent = o.label;
+            b.onclick = () => {
+                filter = o.id;
+                filtersEl.querySelectorAll('.pill-btn').forEach(x => x.classList.toggle('active', x === b));
+                history.replaceState(null, '', filter === 'all' ? location.pathname : '?p=' + encodeURIComponent(filter));
+                render();
+            };
+            filtersEl.appendChild(b);
+        });
+
+        render();
+    })();
+    </script>
+</body>
+</html>

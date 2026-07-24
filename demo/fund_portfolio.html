@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Detail (Compositor Preview) — NeoMatrix AI</title>
+    <meta name="description" content="A sample v3 compositor per-portfolio dashboard: one virtual portfolio book, its alpha instances, contribution and allocation history. Illustrative data only." />
+    <link rel="icon" href="../favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="compositor_data.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #181b1f; color: #d8d9da; }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: #6ea8ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar { height: 48px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; background: #111317; border-bottom: 1px solid #2a2d33; }
+        .topbar .left { display: flex; align-items: center; gap: 10px; }
+        .topbar .logo { width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 13px; color: white; }
+        .topbar .title { font-size: 15px; font-weight: 600; color: #e8e9ea; }
+        .topbar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .topbar select { background: #111317; border: 1px solid #2a2d33; border-radius: 4px;
+            color: #d8d9da; padding: 4px 8px; font-size: 12px; font-family: inherit; }
+
+        .demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d);
+            border-bottom: 1px solid #3a3d55; color: #c9b8ff;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .demo-banner strong { color: #fff; }
+        .virtual-banner { background: #1a2030; border-bottom: 1px solid #2c3a55; color: #9fb4d8;
+            font-size: 12.5px; text-align: center; padding: 7px 16px; }
+        .virtual-banner strong { color: #cfe0ff; }
+
+        .container { max-width: 1600px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+        .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+        .kpi-card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+        .kpi-card .kpi-label { font-size: 11px; color: #8e94a1; font-weight: 500; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 20px; font-weight: 700; color: #e8e9ea; }
+        .kpi-card .kpi-value.positive { color: #43e97b; }
+        .kpi-card .kpi-value.negative { color: #f5576c; }
+        .kpi-card .kpi-sub { font-size: 11px; color: #6b7280; }
+        .badge-virtual { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 3px;
+            font-size: 9px; font-weight: 700; letter-spacing: .05em; vertical-align: middle;
+            background: #22304a; color: #9fb4d8; border: 1px solid #3a4a6b; }
+
+        .row-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .row-full { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .panel { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            overflow: hidden; display: flex; flex-direction: column; }
+        .panel .panel-hdr { min-height: 32px; flex: 0 0 auto; display: flex; align-items: center;
+            padding: 4px 12px; background: #1a1d22; border-bottom: 1px solid #2a2d33;
+            font-size: 12px; font-weight: 600; color: #a0a4ae; gap: 8px; flex-wrap: wrap; }
+        .panel-chart { height: 330px; position: relative; }
+        .panel-chart .chart-wrap { flex: 1; padding: 8px 12px 12px; position: relative; min-height: 0; }
+        .panel-hdr .spacer { flex: 1; }
+
+        .pill-btn { border: 1px solid #2a2d33; background: transparent; color: #a0a4ae;
+            border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600;
+            cursor: pointer; font-family: inherit; }
+        .pill-btn:hover { border-color: #667eea; color: #e8e9ea; }
+        .pill-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+
+        .alloc { padding: 10px 12px; overflow-y: auto; }
+        .alloc .batch { border: 1px solid #23262c; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+        .alloc .b-hdr { display: flex; align-items: baseline; gap: 10px; padding: 7px 10px;
+            background: #16181c; border-bottom: 1px solid #23262c; flex-wrap: wrap; }
+        .alloc .b-ts { font-size: 11px; color: #8e94a1; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .alloc .b-reason { font-size: 11.5px; color: #b8bcc4; flex-basis: 100%; }
+        .alloc table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .alloc td { padding: 4px 10px; border-bottom: 1px solid #1c1f24; }
+        .alloc td:last-child { text-align: right; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .alloc .delta-up { color: #43e97b; } .alloc .delta-dn { color: #f5576c; } .alloc .delta-eq { color: #6b7280; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .card { background: #111317; border: 1px solid #2a2d33; border-radius: 6px;
+            padding: 14px; cursor: pointer; transition: border-color 0.2s; }
+        .card:hover { border-color: #667eea; }
+        .card .card-label { font-size: 14px; font-weight: 600; color: #e8e9ea; margin-bottom: 6px; }
+        .card .card-label .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
+        .card .card-env { display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 11px; font-weight: 500; background: #22304a; color: #9fb4d8; }
+        .card .card-metrics { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .card .card-metric { display: flex; justify-content: space-between; font-size: 12px; color: #8e94a1; }
+        .card .card-metric .val { color: #d8d9da; font-weight: 500; }
+
+        .section-title { font-size: 14px; font-weight: 600; color: #e8e9ea;
+            padding: 8px 0 4px; border-bottom: 1px solid #2a2d33; }
+
+        @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .row-2col { grid-template-columns: 1fr; } .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="left">
+            <div class="logo">N</div>
+            <span class="title" id="title">Portfolio Detail</span>
+        </div>
+        <div class="right">
+            <select id="pfSelect"></select>
+            <a href="fund_portfolio_grid.html">&larr; Portfolio Grid</a>
+            <a href="fund.html">Fund</a>
+            <a id="alphaGridLink" href="fund_alpha_grid.html">Alpha Grid &rarr;</a>
+        </div>
+    </div>
+    <div class="demo-banner">
+        <strong>SAMPLE DATA</strong> — An illustrative preview of the v3 per-portfolio dashboard. All numbers are synthetic.
+    </div>
+    <div class="virtual-banner">
+        <strong>VIRTUAL BOOK</strong> — This portfolio is a slice of the one real account, tracked as its own book. Its risk numbers are computed on flow-adjusted returns, so allocation changes never read as gains or drawdowns.
+    </div>
+
+    <div class="container">
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <span class="kpi-label">Virtual PV<span class="badge-virtual">VIRTUAL</span></span>
+                <span class="kpi-value" id="kpi-pv"></span>
+                <span class="kpi-sub" id="kpi-pv-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Allocated Capital</span>
+                <span class="kpi-value" id="kpi-cap"></span>
+                <span class="kpi-sub" id="kpi-cap-sub"></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Cumulative PnL (90d)</span>
+                <span class="kpi-value" id="kpi-pnl"></span>
+                <span class="kpi-sub">sum of instance daily PnL</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sharpe (Ann.)</span>
+                <span class="kpi-value" id="kpi-sharpe"></span>
+                <span class="kpi-sub">flow-adjusted returns</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Volatility (Ann.)</span>
+                <span class="kpi-value" id="kpi-vol"></span>
+                <span class="kpi-sub">flow-adjusted returns</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Max Drawdown</span>
+                <span class="kpi-value negative" id="kpi-mdd"></span>
+                <span class="kpi-sub">on the chained return index</span>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Virtual PV vs Allocated Capital (USDT)</div>
+                <div class="chart-wrap"><canvas id="chartPV"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Portfolio Return vs Fund Virtual (%)</div>
+                <div class="chart-wrap"><canvas id="chartRet"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-full">
+            <div class="panel panel-chart" style="height:340px">
+                <div class="panel-hdr">Alpha Instance Return (%) — this portfolio<span class="badge-virtual">VIRTUAL</span></div>
+                <div class="chart-wrap"><canvas id="chartInstances"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Instance Contribution — equity &amp; PnL (USDT)</div>
+                <div class="chart-wrap"><canvas id="chartContrib"></canvas></div>
+            </div>
+            <div class="panel panel-chart">
+                <div class="panel-hdr">Trade Activity — count &amp; turnover
+                    <span id="actBtns" style="display:flex;gap:6px">
+                        <button class="pill-btn active" data-g="D">Daily</button>
+                        <button class="pill-btn" data-g="W">Weekly</button>
+                        <button class="pill-btn" data-g="M">Monthly</button>
+                    </span>
+                </div>
+                <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row-2col">
+            <div class="panel" style="height:360px">
+                <div class="panel-hdr">Allocation History — this portfolio's alphas (append-only)</div>
+                <div class="alloc" style="flex:1" id="allocList"></div>
+            </div>
+            <div class="panel" style="height:360px; overflow:visible">
+                <div class="panel-hdr">Alpha Instances — click to open</div>
+                <div class="cards-grid" style="padding:12px; overflow-y:auto" id="cardsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const params = new URLSearchParams(location.search);
+        const wanted = params.get('p') || 'pf-core';
+        const P = COMP.portfolioDetail(wanted);
+        const fmt = (v, d = 0) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const sgn = v => (v >= 0 ? '+' : '-');
+
+        document.getElementById('title').textContent = `${P.meta.label} — Portfolio Detail`;
+        document.getElementById('alphaGridLink').href = 'fund_alpha_grid.html?p=' + encodeURIComponent(P.meta.id);
+
+        const sel = document.getElementById('pfSelect');
+        P.portfolios.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.id; o.textContent = p.label;
+            if (p.id === P.meta.id) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.onchange = () => { location.search = '?p=' + encodeURIComponent(sel.value); };
+
+        const axis = pct => ({
+            x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' } },
+            y: { ticks: { color: '#8e94a1', callback: v => pct ? v.toFixed(1) + '%' : '$' + fmt(v) }, grid: { color: '#2a2d33' } }
+        });
+        const legend = { labels: { color: '#d8d9da', font: { size: 11 } } };
+
+        // ── KPI ──
+        const k = P.kpi;
+        document.getElementById('kpi-pv').textContent = `$${fmt(k.pv)}`;
+        document.getElementById('kpi-pv-sub').textContent = `${k.instances} alpha instances`;
+        document.getElementById('kpi-cap').textContent = `$${fmt(k.cap)}`;
+        document.getElementById('kpi-cap-sub').textContent = `${k.allocNow.toFixed(0)}% of ${P.fundLabel}`;
+        const pnlEl = document.getElementById('kpi-pnl');
+        pnlEl.textContent = `${sgn(k.cumPnl)}$${fmt(Math.abs(k.cumPnl))}`;
+        pnlEl.className = 'kpi-value ' + (k.cumPnl >= 0 ? 'positive' : 'negative');
+        const shEl = document.getElementById('kpi-sharpe');
+        shEl.textContent = k.sharpe.toFixed(3);
+        shEl.className = 'kpi-value ' + (k.sharpe >= 1 ? 'positive' : '');
+        document.getElementById('kpi-vol').textContent = `${k.vol.toFixed(2)}%`;
+        document.getElementById('kpi-mdd').textContent = `${k.mdd.toFixed(2)}%`;
+
+        // ── PV vs allocated capital ──
+        new Chart(document.getElementById('chartPV'), {
+            type: 'line',
+            data: { labels: P.dates, datasets: [
+                { label: 'Virtual PV (USDT)', data: P.pv, borderColor: '#667eea',
+                  backgroundColor: 'rgba(102,126,234,0.08)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
+                { label: 'Allocated capital', data: P.cap, borderColor: '#8e94a1', borderDash: [6, 4],
+                  fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(false) }
+        });
+
+        // ── Return vs fund virtual ──
+        new Chart(document.getElementById('chartRet'), {
+            type: 'line',
+            data: { labels: P.dates, datasets: [
+                { label: `${P.meta.label} (%)`, data: P.retPct, borderColor: '#43e97b',
+                  backgroundColor: 'rgba(67,233,123,0.07)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.05 },
+                { label: 'Fund Virtual (%)', data: P.fundVirtualRetPct, borderColor: '#8e94a1',
+                  borderDash: [5, 4], fill: false, pointRadius: 0, borderWidth: 1.2, tension: 0.05 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
+
+        // ── Instance curves (alphas are unique within one portfolio) ──
+        new Chart(document.getElementById('chartInstances'), {
+            type: 'line',
+            data: { labels: P.dates, datasets: P.instances.map(s => ({
+                label: s.alphaLabel, data: s.retPct, borderColor: s.color,
+                fill: false, pointRadius: 0, borderWidth: 1.6, tension: 0.05 })) },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend }, scales: axis(true) }
+        });
+
+        // ── Contribution: equity (bar) + cum PnL (bar) per instance ──
+        new Chart(document.getElementById('chartContrib'), {
+            type: 'bar',
+            data: { labels: P.instances.map(s => s.alphaLabel), datasets: [
+                { label: 'Equity (virtual)', data: P.instances.map(s => Math.round(s.equity)),
+                  backgroundColor: P.instances.map(s => s.color + '99'), borderRadius: 4 },
+                { label: 'Cum PnL (90d)', data: P.instances.map(s => s.cumPnl),
+                  backgroundColor: P.instances.map(s => s.cumPnl >= 0 ? 'rgba(67,233,123,0.75)' : 'rgba(245,87,108,0.75)'), borderRadius: 4 },
+            ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend },
+                scales: { x: { ticks: { color: '#d8d9da' }, grid: { display: false } },
+                          y: { ticks: { color: '#8e94a1', callback: v => '$' + fmt(v) }, grid: { color: '#2a2d33' } } } }
+        });
+
+        // ── Trade activity (D/W/M) ──
+        function bucket(g) {
+            const size = g === 'D' ? 1 : g === 'W' ? 7 : 30;
+            const labels = [], idx = [];
+            for (let s = 0; s < P.dates.length; s += size) {
+                labels.push(P.dates[s]);
+                idx.push([s, Math.min(s + size, P.dates.length)]);
+            }
+            return { labels, idx };
+        }
+        let actChart = null;
+        function renderActivity(g) {
+            const { labels, idx } = bucket(g);
+            const sum = arr => idx.map(([a, b]) => arr.slice(a, b).reduce((x, y) => x + y, 0));
+            if (actChart) actChart.destroy();
+            actChart = new Chart(document.getElementById('chartActivity'), {
+                data: { labels, datasets: [
+                    ...P.instances.map(s => ({
+                        type: 'bar', label: s.alphaLabel, data: sum(s.trades),
+                        backgroundColor: s.color + 'B3', stack: 'trades', yAxisID: 'y' })),
+                    { type: 'line', label: 'Turnover (USDT)',
+                      data: sum(P.instances.reduce((acc, s) => acc.map((v, i) => v + s.turnover[i]), P.dates.map(() => 0))),
+                      borderColor: '#fee140', pointRadius: 0, borderWidth: 1.8, tension: 0.1, yAxisID: 'y2' },
+                ] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d8d9da', font: { size: 10 }, boxWidth: 10 } } },
+                    scales: {
+                        x: { ticks: { color: '#8e94a1', maxTicksLimit: 8 }, grid: { color: '#2a2d33' }, stacked: true },
+                        y: { ticks: { color: '#8e94a1' }, grid: { color: '#2a2d33' }, stacked: true,
+                             title: { display: true, text: 'trades', color: '#8e94a1', font: { size: 10 } } },
+                        y2: { position: 'right', ticks: { color: '#fee140', callback: v => '$' + fmt(v) }, grid: { display: false } },
+                    } }
+            });
+        }
+        document.querySelectorAll('#actBtns .pill-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('#actBtns .pill-btn').forEach(x => x.classList.toggle('active', x === b));
+                renderActivity(b.dataset.g);
+            };
+        });
+        renderActivity('D');
+
+        // ── Allocation batches (this portfolio only) ──
+        document.getElementById('allocList').innerHTML = P.batches.slice().reverse().map(b => {
+            const rows = b.rows.map(r => {
+                const delta = r.before === null ? null : r.after - r.before;
+                const cls = delta === null ? 'delta-eq' : delta > 0 ? 'delta-up' : delta < 0 ? 'delta-dn' : 'delta-eq';
+                const dTxt = delta === null ? 'new' : (delta === 0 ? '=' : (delta > 0 ? '+' : '') + delta + '%p');
+                return `<tr><td>${r.target}</td>
+                    <td>${r.before === null ? '—' : r.before + '%'} → <b>${r.after}%</b>
+                    <span class="${cls}" style="margin-left:6px">${dTxt}</span></td></tr>`;
+            }).join('');
+            return `<div class="batch">
+                <div class="b-hdr"><span class="b-ts">${b.ts}</span>
+                    <span class="b-reason">${b.reason}</span></div>
+                <table>${rows}</table></div>`;
+        }).join('');
+
+        // ── Instance cards ──
+        const grid = document.getElementById('cardsGrid');
+        P.instances.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => { window.location.href = `fund_alpha.html?a=${encodeURIComponent(s.alphaId)}`; };
+            card.innerHTML = `
+                <div class="card-label"><span class="dot" style="background:${s.color}"></span>${s.alphaLabel}</div>
+                <span class="card-env">${(s.w1 * 100).toFixed(0)}% of portfolio · ${s.freq}</span>
+                <div class="card-metrics">
+                    <div class="card-metric"><span>Equity (virtual)</span><span class="val">$${fmt(s.equity)}</span></div>
+                    <div class="card-metric"><span>Cum PnL</span><span class="val" style="color:${s.cumPnl >= 0 ? '#43e97b' : '#f5576c'}">${s.cumPnl >= 0 ? '+' : ''}${fmt(s.cumPnl)}</span></div>
+                    <div class="card-metric"><span>Sharpe</span><span class="val">${s.sharpe.toFixed(3)}</span></div>
+                    <div class="card-metric"><span>Max Drawdown</span><span class="val">${s.mdd.toFixed(2)}%</span></div>
+                    <div class="card-metric"><span>Trades 90d</span><span class="val">${fmt(s.tradesTotal)}</span></div>
+                    <div class="card-metric"><span>Turnover 90d</span><span class="val">${fmt(s.turnoverPct)}% of capital</span></div>
+                </div>`;
+            grid.appendChild(card);
+        });
+    })();
+    </script>
+</body>
+</html>
