@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>One Click Crypto Auto‑Trading</title>
-  <meta name="description" content="One click crypto auto‑trading for spot & futures. Bring your Python strategy, backtest with Zipline or our local engine, then go live — the same code, end to end." />
+  <title>One Account. Every Strategy.</title>
+  <meta name="description" content="Run as many strategies as you want inside one real account, each still scored on its own, minute by minute. Build it in Manifold, backtest it, and go live on Bitget futures." />
   <link rel="icon" type="image/x-icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -31,19 +31,25 @@
     /* Top Nav */
     .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); z-index: 10; }
     .brand-center { font-weight: 800; letter-spacing: 0.04em; font-size: 30px; text-transform: none; }
-    .cta { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--fg); padding: 10px 14px; border-radius: 999px; font-weight: 600; transition: all 0.15s ease; }
-    .cta:hover { background: var(--fg); color: var(--bg); }
 
     /* Hero */
     .hero { display: grid; grid-template-columns: 1fr 1.15fr; gap: 36px; padding: 16px 0 16px; align-items: center; }
     .kicker { font-size: 40px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
     h1 { font-size: clamp(40px, 8vw, 96px); line-height: .95; margin: 10px 0 18px; letter-spacing: -0.02em; }
-    .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 38ch; }
+    .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 42ch; }
     .hero-cta { display: flex; gap: 12px; margin-top: 22px; }
     .btn { border: 1px solid var(--fg); padding: 14px 18px; border-radius: 12px; font-weight: 700; transition: all 0.15s ease; }
     .btn:hover { background: var(--fg); color: var(--bg); }
     .btn.secondary { border-color: var(--fg); color: var(--fg); }
     .btn.secondary:hover { background: var(--fg); color: var(--bg); }
+
+    /* Hero flow diagram: many strategies netting into one account line */
+    .hero-flow-wrap { grid-column: 1 / -1; margin-top: 12px; }
+    .hero-flow { display: block; width: 100%; height: auto; }
+    .hero-flow .hf-line { fill: none; stroke-width: 1.8; stroke-linecap: round; }
+    .hero-flow .hf-main { fill: none; stroke: var(--fg); stroke-width: 3; stroke-linecap: round; }
+    .hero-flow .hf-dot { fill: var(--fg); }
+    .hero-flow .hf-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
     /* Feature Grid */
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 32px; }
@@ -63,6 +69,22 @@
     .arch-node.soft { border-color: var(--line); font-weight: 600; }
     .arch-arrow { color: var(--muted); font-weight: 800; font-size: 16px; }
     .arch-down { text-align: center; color: var(--muted); font-size: 20px; line-height: 1; padding: 7px 0; }
+    .arch-connector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
+    .arch-connector .line {
+      position: relative; width: 2px; height: 28px;
+      background-image: repeating-linear-gradient(to bottom, var(--line) 0 4px, transparent 4px 9px);
+    }
+    .arch-connector .line .arrow {
+      position: absolute; left: 50%; top: -10px; margin-left: -6px; width: 0; height: 0;
+      border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-top: 9px solid var(--fg); animation: arch-fall 1.6s linear infinite;
+    }
+    @keyframes arch-fall { 0% { top: -10px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+    .arch-connector .label {
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    @media (prefers-reduced-motion: reduce) { .arch-connector .line .arrow { animation: none; top: 50%; opacity: 1; } }
     .arch-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
     @media (max-width: 640px) {
       .arch-node { white-space: normal; width: 100%; }
@@ -97,10 +119,8 @@
       .tab-panel.active { grid-template-columns: 1fr; }
     }
 
-    /* Blog Links */
+    /* Blog / link cards */
     .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
-    /* 4-card variant (Manifold): 2×2 on wide instead of an unbalanced 3+1 */
-    @media (min-width: 720px) { .blog-grid.four { grid-template-columns: repeat(2, 1fr); } }
     .blog-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -127,15 +147,92 @@
       flex-shrink: 0;
       font-size: 24px;
     }
+    .icon-svg { width: 20px; height: 20px; overflow: visible; }
+    .icon-svg path, .icon-svg rect, .icon-svg circle { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .blog-icon.x, .blog-icon.substack, .blog-icon.github {
+      width: 36px; height: 36px; flex: none; aspect-ratio: 1 / 1; border-radius: 9px;
+      box-sizing: border-box; padding: 0;
+    }
+    .blog-icon.x svg, .blog-icon.substack svg, .blog-icon.github svg { display: block; width: 17px; height: 17px; }
     .blog-icon.x { background: #000; color: #fff; }
     .blog-icon.substack { background: #FF6719; color: #fff; }
+    .blog-icon.github { background: #0a0a0a; color: #fff; }
     .blog-info h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
     .blog-info p { margin: 0; font-size: 13px; color: var(--muted); }
     .blog-arrow { margin-left: auto; color: var(--muted); transition: transform 0.2s ease; }
     .blog-card:hover .blog-arrow { transform: translateX(4px); color: var(--fg); }
+    #blog .blog-card { padding: 12px 14px; gap: 10px; }
+    #blog .blog-info h3 { font-size: 13.5px; margin-bottom: 2px; }
+    #blog .blog-info p { font-size: 11.5px; }
 
     @media (max-width: 980px) {
       .blog-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Blog: top-level tabs are the platform (X / Substack). Substack's tab
+       holds its own inner tab row for its two sections (Axiom / Vertex). */
+    .blog-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .blog-tab-btn {
+      border: 1px solid var(--line); background: transparent; color: var(--fg);
+      padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
+    }
+    .blog-tab-btn:hover { border-color: var(--fg); }
+    .blog-tab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .blog-tab-panel {
+      display: none; margin-top: 14px; flex-direction: column; gap: 3px;
+      padding: 22px 24px; border: 1px solid var(--line); max-width: 700px;
+      border-radius: var(--radius); background: linear-gradient(180deg, rgba(0,0,0,0.015), rgba(0,0,0,0));
+    }
+    .blog-tab-panel.active { display: flex; }
+    .blog-tab-panel#blog-tab-substack { max-width: 980px; }
+    .x-posts { display: flex; flex-direction: column; gap: 3px; }
+    .blog-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .blog-subtab-btn {
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 12px;
+      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
+    }
+    .blog-subtab-btn:hover { border-color: var(--fg); color: var(--fg); }
+    .blog-subtab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .blog-subtab-panel { display: none; }
+    .blog-subtab-panel.active { display: grid; grid-template-columns: 230px 1fr; gap: 28px; align-items: start; }
+    .team-intro { border-right: 1px solid var(--line); padding-right: 24px; }
+    .team-name { margin: 0 0 5px; font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+    .team-name a { color: inherit; text-decoration: none; }
+    .team-name a:hover { text-decoration: underline; }
+    .team-tagline {
+      margin: 0 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted);
+    }
+    .team-about { margin: 0; font-size: 13.5px; line-height: 1.55; color: #333; }
+    .posts-col { min-width: 0; }
+    .posts-label {
+      margin: 0 0 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; color: var(--muted);
+    }
+    .team-posts { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    @media (max-width: 760px) {
+      .blog-subtab-panel.active { grid-template-columns: 1fr; gap: 14px; }
+    }
+    .post-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      padding: 9px 10px; margin: 0 -10px; border-radius: 8px;
+      text-decoration: none; color: var(--fg); transition: background 0.15s ease;
+    }
+    .post-row:hover { background: rgba(0,0,0,0.05); }
+    .post-row:hover .prow-title { text-decoration: underline; }
+    .post-row .prow-title { font-weight: 600; font-size: 14.5px; flex: 0 1 auto; min-width: 0; white-space: normal; }
+    .post-row .prow-leader {
+      flex: 1 1 auto; min-width: 16px; align-self: center; height: 2px; margin: 0 6px;
+      background-image: linear-gradient(to right, #8a8a8a 0 2px, transparent 2px 5px);
+      background-repeat: repeat-x; background-size: 5px 2px;
+    }
+    .post-row .prow-date { color: var(--muted); font-size: 12.5px; white-space: nowrap; flex: 0 0 auto; margin-top: 2px; }
+    .blog-empty { color: var(--muted); font-size: 14px; padding: 6px 10px; }
+    @media (max-width: 640px) {
+      .post-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+      .post-row .prow-leader { display: none; }
     }
 
     /* Footer */
@@ -174,26 +271,21 @@
         <div class="brand-center" style="font-size:24px;">NeoMatrix AI</div>
       </div>
       <div class="jump">
+        <a href="#blog">Blog</a>
         <a href="#dashboard">Dashboard</a>
         <a href="#manifold">Manifold</a>
-        <a href="roadmap.html">Roadmap</a>
         <a href="#how-it-works">How it works</a>
         <a href="#data">Data</a>
-        <a href="#blog">Blog</a>
         <a href="#contact">Contact</a>
-      </div>
-      <div style="display:flex; align-items:center; gap:14px;">
-        <a href="demo/portfolio.html" style="font-weight:600;">Live Demo</a>
-        <a class="cta" href="https://github.com/NeoMatrixAI" target="_blank" aria-label="Get started">Get Started →</a>
       </div>
     </nav>
 
     <header class="hero">
       <div>
-        <h1>One click<br/>crypto auto‑trading</h1>
-        <p class="sub">Bring your <strong>Python strategy</strong>. Backtest it, then go live on <strong>spot</strong> & <strong>futures</strong> — with the <em>same code</em>, end to end.</p>
+        <h1>One account.<br/>Every strategy.</h1>
+        <p class="sub">Run as many strategies as you want inside <strong>one real account</strong>, each still scored on its own, minute by minute. Build it in <strong>Manifold</strong>. The same code is currently completing final live validation on <strong>Bitget futures</strong>.</p>
         <div class="hero-cta">
-          <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank" rel="noopener">Start in one click</a>
+          <a class="btn" href="#manifold">Build in Manifold</a>
           <a class="btn secondary" href="#how-it-works">See how it works</a>
         </div>
       </div>
@@ -202,52 +294,150 @@
           <div class="mono">/features</div>
           <div class="grid" id="features">
             <div class="card">
-              <h3>Spot & Futures</h3>
-              <p>Trade both markets from one strategy. Bitget live today, more exchanges rolling out.</p>
+              <h3>Many Strategies, One Account</h3>
+              <p>Net every strategy into a single real position. Each one still keeps its own honest, minute‑by‑minute scorecard.</p>
             </div>
             <div class="card">
-              <h3>Your Strategy, Live</h3>
-              <p>Upload your own Python strategy. Validated, sandboxed, then deployed in one click.</p>
+              <h3>Live on Bitget Futures</h3>
+              <p>Currently completing final live validation on a real Bitget futures account. Spot and more exchanges are next.</p>
             </div>
             <div class="card">
-              <h3>One Code, Three Modes</h3>
-              <p>Zipline backtest, our local backtest, and live trading — 100% compatible, no rewrites.</p>
+              <h3>Compose it in Manifold</h3>
+              <p>Build an alpha, group alphas into a portfolio, package portfolios into a fund, then publish the exact same code live.</p>
             </div>
             <div class="card">
-              <h3>Auto Rebalancing</h3>
-              <p>Schedule‑driven portfolio rebalancing, down to 1‑minute granularity.</p>
+              <h3>Backtest to Live, No Rewrites</h3>
+              <p>One code path for backtesting and live trading, so what you test is exactly what runs.</p>
             </div>
             <div class="card">
-              <h3>CrashGuard</h3>
-              <p>Minute‑level position scaling between cycles. Your own logic, executed instantly on a crash.</p>
+              <h3>Guardrails Built In</h3>
+              <p>Allocations never exceed 100%. A failed strategy holds its position instead of being force‑sold. An empty signal never liquidates your account.</p>
             </div>
             <div class="card">
-              <h3>Max‑Loss Auto‑Stop</h3>
-              <p>Set a loss limit. We liquidate and shut down the session automatically.</p>
+              <h3>Nothing Hidden</h3>
+              <p>Every minute, every scorecard is checked against the real account. Any gap is shown, never hidden.</p>
             </div>
           </div>
         </div>
       </div>
     </header>
 
+    <section class="banner" id="blog">
+      <div class="mono">/blog</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From the blog.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Short updates on X, long‑form research and architecture notes on Substack.</p>
+      <div class="blog-grid" style="margin-top:14px">
+        <a class="blog-card" href="https://substack.com/@neomatrixai" target="_blank" rel="noopener">
+          <div class="blog-icon substack">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/>
+            </svg>
+          </div>
+          <div class="blog-info">
+            <h3>Substack</h3>
+            <p>Our infrastructure &amp; alpha research: what we've learned, what we're building, what's next</p>
+          </div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">
+          <div class="blog-icon x">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+          <div class="blog-info">
+            <h3>X (Twitter)</h3>
+            <p>News, updates &amp; short takes</p>
+          </div>
+          <span class="blog-arrow">→</span>
+        </a>
+        <a class="blog-card" href="https://github.com/NeoMatrixAI" target="_blank" rel="noopener">
+          <div class="blog-icon github">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55 0-.27-.01-1.14-.02-2.06-3.2.7-3.88-1.36-3.88-1.36-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.15 0 1.55-.01 2.8-.01 3.18 0 .3.2.66.79.55A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/>
+            </svg>
+          </div>
+          <div class="blog-info">
+            <h3>GitHub</h3>
+            <p>Open-source code &amp; setup guides</p>
+          </div>
+          <span class="blog-arrow">→</span>
+        </a>
+      </div>
+
+      <div class="blog-tabs" role="tablist">
+        <button class="blog-tab-btn active" data-blog-tab="substack">Substack</button>
+        <button class="blog-tab-btn" data-blog-tab="x">X</button>
+      </div>
+
+      <div class="blog-tab-panel active" id="blog-tab-substack">
+        <div class="blog-subtabs" role="tablist">
+          <button class="blog-subtab-btn active" data-blog-subtab="axiom">Axiom</button>
+          <button class="blog-subtab-btn" data-blog-subtab="vertex">Vertex</button>
+        </div>
+        <div class="blog-subtab-panel active" id="blog-subtab-axiom">
+          <div class="team-intro">
+            <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/axiom" target="_blank" rel="noopener">Axiom</a></h3>
+            <p class="team-tagline">Financial AI Infrastructure</p>
+            <p class="team-about">The team building and running the infrastructure that keeps every strategy live, every minute, on real capital.</p>
+          </div>
+          <div class="posts-col">
+            <p class="posts-label">Latest Posts</p>
+            <div class="team-posts"></div>
+          </div>
+        </div>
+        <div class="blog-subtab-panel" id="blog-subtab-vertex">
+          <div class="team-intro">
+            <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/vertex" target="_blank" rel="noopener">Vertex</a></h3>
+            <p class="team-tagline">Quantitative Alpha Research</p>
+            <p class="team-about">The team researching and validating the alpha signals that go into every strategy.</p>
+          </div>
+          <div class="posts-col">
+            <p class="posts-label">Latest Posts</p>
+            <div class="team-posts"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="blog-tab-panel" id="blog-tab-x">
+        <p class="posts-label">Latest Posts</p>
+        <div class="x-posts"></div>
+      </div>
+    </section>
+
     <section class="banner" id="dashboard">
       <div class="mono">/dashboard</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">See the dashboards live.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">A working preview of what you get once you go live — portfolio overview, strategy grid, and per‑strategy drill‑down. <strong>Sample data, no signup.</strong></p>
+      <p style="margin:6px 0 0;color:#1a1a1a">A working preview of the fund dashboard: one real account, its portfolios, and every alpha inside them. <strong>Sample data, no signup.</strong></p>
       <div class="blog-grid" style="margin-top:14px">
-        <a class="blog-card" href="demo/portfolio.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">📊</div>
-          <div class="blog-info"><h3>Portfolio Overview</h3><p>Aggregated PV, Sharpe & drawdown vs BTC / TOP5</p></div>
+        <a class="blog-card" href="demo/fund.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 32 32">
+              <path d="M2 22 C 8 10, 14 27, 20 14 S 30 7, 30 7" />
+              <path d="M2 25 C 8 19, 14 23, 20 19 S 30 13, 30 13" opacity=".5" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Fund Overview</h3><p>Measured vs virtual PV, reconciliation, allocation history</p></div>
           <span class="blog-arrow">→</span>
         </a>
-        <a class="blog-card" href="demo/grid.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">▦</div>
-          <div class="blog-info"><h3>Strategy Grid</h3><p>Every strategy at a glance, with live sparklines</p></div>
+        <a class="blog-card" href="demo/fund_portfolio.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 32 32">
+              <rect x="4" y="16" width="6" height="13" rx="1.5" fill="currentColor" stroke="none" />
+              <rect x="13" y="7" width="6" height="22" rx="1.5" fill="currentColor" stroke="none" />
+              <rect x="22" y="12" width="6" height="17" rx="1.5" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Portfolio Detail</h3><p>Every alpha in the portfolio, origin vs executed, allocation history</p></div>
           <span class="blog-arrow">→</span>
         </a>
-        <a class="blog-card" href="demo/strategy.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">🔎</div>
-          <div class="blog-info"><h3>Strategy Detail</h3><p>PV, positions & fills for a single strategy</p></div>
+        <a class="blog-card" href="demo/fund_alpha.html">
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 32 32">
+              <path d="M2 18 L8 18 L11 6 L15 27 L18 13 L21 18 L30 18" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Alpha Detail</h3><p>One signal's curve, origin vs executed, held-back orders</p></div>
           <span class="blog-arrow">→</span>
         </a>
       </div>
@@ -256,96 +446,151 @@
     <section class="banner" id="manifold">
       <div class="mono">/manifold</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Write the strategy, not the plumbing.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Manifold is the other half of the platform — a browser IDE where you write <strong>strategy.py</strong>, validate it in a sandbox, and publish it to a live session. The dashboards above are what happens next. <strong>Sample data, no signup.</strong></p>
-      <div class="blog-grid four" style="margin-top:14px">
+      <p style="margin:6px 0 0;color:#1a1a1a">Manifold is the other half of the platform: a browser IDE where you compose an <strong>alpha</strong>, group alphas into a <strong>portfolio</strong>, and package portfolios into a <strong>fund</strong>. Publish it, and it shows up in the dashboards above, the same alpha, portfolio and fund, now running on the real account. <strong>Sample data, no signup.</strong></p>
+      <div class="blog-grid" style="margin-top:14px">
         <a class="blog-card" href="demo/manifold/editor.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">⌨</div>
-          <div class="blog-info"><h3>Strategy Editor</h3><p>File tree, code, and a Save → Validate → Publish → Run rail</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="demo/manifold/builder.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">✨</div>
-          <div class="blog-info"><h3>Strategy Builder</h3><p>Pick indicators, compose rules — it writes the Python</p></div>
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 24 24">
+              <path d="M9 6 L3 12 L9 18 M15 6 L21 12 L15 18" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Strategy Editor</h3><p>File tree, code editor, and a step-by-step Save → Validate → Publish → Run panel</p></div>
           <span class="blog-arrow">→</span>
         </a>
         <a class="blog-card" href="demo/manifold/data.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">⌘</div>
-          <div class="blog-info"><h3>Data Explorer</h3><p>/ohlcv BTCUSDT 1m 240 — the whole dataset, as slash commands</p></div>
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 24 24">
+              <path d="M5 7 L10 12 L5 17 M13 17 L19 17" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Data Explorer</h3><p>Query the whole dataset with slash commands, like /ohlcv BTCUSDT 1m 240</p></div>
           <span class="blog-arrow">→</span>
         </a>
         <a class="blog-card" href="demo/manifold/community.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">🏆</div>
-          <div class="blog-info"><h3>Community &amp; Leaderboard</h3><p>Share a strategy, copy someone else's, rank on PnL</p></div>
+          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
+            <svg class="icon-svg" viewBox="0 0 24 24">
+              <circle cx="12" cy="9" r="5" />
+              <path d="M9 13.5 L7 21 L12 18 L17 21 L15 13.5" />
+            </svg>
+          </div>
+          <div class="blog-info"><h3>Community &amp; Leaderboard</h3><p>Browse shared strategies, copy them into your workspace, rank on PnL</p></div>
           <span class="blog-arrow">→</span>
         </a>
       </div>
-      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">Your code stays yours — credentials are never written into a config, they're injected at publish. Connect it to Claude Code, Cursor or VS Code over MCP and keep using your own subscription.</p>
+      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">Your code stays yours. Credentials are never written into a config, they're injected at publish. Connect it to Claude Code, Cursor or VS Code over MCP and keep using your own subscription.</p>
     </section>
 
     <section class="banner" id="how-it-works">
       <div class="mono">/how-it-works</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From your Python file to a live book.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Write a strategy once. The platform validates it, runs it on schedule, executes the orders, defends the downside, and records everything — around the clock.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Write each strategy once, the same code for backtest and live. The platform validates it, nets it together with every other strategy in the account, executes the orders, and records everything around the clock.</p>
 
-      <p class="sublabel" style="margin:18px 0 0">Build · same code, three modes</p>
+      <div class="hero-flow-wrap">
+        <svg class="hero-flow" viewBox="0 0 640 140" role="img" aria-label="Many strategies, each their own signal, crossing and netting into one account line">
+          <defs>
+            <linearGradient id="hfg1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
+              <stop offset="0%" stop-color="#4f7cac" />
+              <stop offset="100%" style="stop-color:var(--fg)" />
+            </linearGradient>
+            <linearGradient id="hfg2" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
+              <stop offset="0%" stop-color="#c97b3d" />
+              <stop offset="100%" style="stop-color:var(--fg)" />
+            </linearGradient>
+            <linearGradient id="hfg3" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
+              <stop offset="0%" stop-color="#6fa287" />
+              <stop offset="100%" style="stop-color:var(--fg)" />
+            </linearGradient>
+            <linearGradient id="hfg4" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
+              <stop offset="0%" stop-color="#9b6b9e" />
+              <stop offset="100%" style="stop-color:var(--fg)" />
+            </linearGradient>
+          </defs>
+          <g class="hf-strategies">
+            <path id="hfp1" class="hf-line" stroke="url(#hfg1)" d="M0,15 C100,15 140,92 190,90 C250,88 320,72 360,65" />
+            <path id="hfp2" class="hf-line" stroke="url(#hfg2)" d="M0,45 C90,52 150,100 200,78 C260,60 320,64 360,65" />
+            <path id="hfp3" class="hf-line" stroke="url(#hfg3)" d="M0,86 C90,78 150,32 200,50 C260,66 320,66 360,65" />
+            <path id="hfp4" class="hf-line" stroke="url(#hfg4)" d="M0,119 C100,119 140,40 190,42 C250,44 320,58 360,65" />
+          </g>
+          <path class="hf-main" d="M360,65 L640,65" />
+          <circle class="hf-dot" r="3.2" style="fill:#4f7cac">
+            <animateMotion dur="4.2s" begin="0s" repeatCount="indefinite" path="M0,15 C100,15 140,92 190,90 C250,88 320,72 360,65 L640,65" />
+          </circle>
+          <circle class="hf-dot" r="3.2" style="fill:#c97b3d">
+            <animateMotion dur="4.9s" begin="-1s" repeatCount="indefinite" path="M0,45 C90,52 150,100 200,78 C260,60 320,64 360,65 L640,65" />
+          </circle>
+          <circle class="hf-dot" r="3.2" style="fill:#6fa287">
+            <animateMotion dur="4.5s" begin="-2.2s" repeatCount="indefinite" path="M0,86 C90,78 150,32 200,50 C260,66 320,66 360,65 L640,65" />
+          </circle>
+          <circle class="hf-dot" r="3.2" style="fill:#9b6b9e">
+            <animateMotion dur="5.2s" begin="-3.1s" repeatCount="indefinite" path="M0,119 C100,119 140,40 190,42 C250,44 320,58 360,65 L640,65" />
+          </circle>
+          <text class="hf-label" x="0" y="136">every strategy, its own signal</text>
+          <text class="hf-label" x="500" y="136">one account</text>
+        </svg>
+      </div>
+
+      <p class="sublabel" style="margin:18px 0 0">Build · same code, backtest to live</p>
       <div class="grid" style="margin-top:10px">
         <div class="card">
-          <h3>1. Backtest</h3>
-          <p>Run on Zipline or our local backtest engine. Local results are cross‑validated against real live trades.</p>
+          <h3>1. Compose</h3>
+          <p>Build an alpha, group alphas into a portfolio, package portfolios into a fund, all in the same browser IDE.</p>
         </div>
         <div class="card">
-          <h3>2. Pre‑flight Validate</h3>
-          <p>Upload your strategy. We run a 7‑step check — syntax, security, real‑data execution — before a single order ships.</p>
+          <h3>2. Backtest</h3>
+          <p>Run it against real historical data. Results persist and export, so you can compare runs over time.</p>
         </div>
         <div class="card">
           <h3>3. Go Live</h3>
-          <p>Deploy in one click. Hot‑swap your strategy or config mid‑trade. Every fill is snapshot‑logged for audit.</p>
+          <p>Publish the exact same code. It's netted together with every other strategy in the account and traded live.</p>
         </div>
       </div>
 
-      <p class="sublabel" style="margin:24px 0 0">Run · the live loop</p>
+      <p class="sublabel" style="margin:24px 0 0">Run · every minute</p>
       <div class="arch">
         <div class="arch-band">
-          <div class="bl">1 · Market data in</div>
+          <div class="bl">1 · Every strategy computes</div>
           <div class="arch-flow">
-            <span class="arch-node soft">OHLCV<span class="nx">1m · 5m · 15m · 1d</span></span>
-            <span class="arch-node soft">Funding rates</span>
-            <span class="arch-node soft">Market cap</span>
-            <span class="arch-node soft">Macro &amp; on‑chain</span>
+            <span class="arch-node soft">Alpha A</span>
+            <span class="arch-node soft">Alpha B</span>
+            <span class="arch-node soft">Alpha C</span>
             <span class="arch-arrow">→</span>
-            <span style="font-size:13px;color:var(--muted)">pre‑fetched ~2 min before each run, so there's no slippage at execution</span>
+            <span style="font-size:13px;color:var(--muted)">each on its own schedule, computed once no matter how many portfolios use it</span>
           </div>
         </div>
 
-        <div class="arch-down">↓</div>
+        <div class="arch-connector">
+          <div class="line"><span class="arrow"></span></div>
+          <span class="label">every 1 min</span>
+        </div>
 
         <div class="arch-band">
-          <div class="bl">2 · Execution loop</div>
+          <div class="bl">2 · Netted into one order</div>
           <div class="arch-flow">
-            <span class="arch-node">Scheduler<span class="nx">fires on your rebalancing clock</span></span>
+            <span class="arch-node">Portfolio blend<span class="nx">alphas → one portfolio target</span></span>
             <span class="arch-arrow">→</span>
-            <span class="arch-node">Strategy Runner<span class="nx">your Python · target weights</span></span>
+            <span class="arch-node">Fund blend<span class="nx">portfolios → one fund target</span></span>
             <span class="arch-arrow">→</span>
-            <span class="arch-node">Order Execution<span class="nx">orders + SL/TP, spot &amp; futures</span></span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-node">Exchange<span class="nx">Bitget live · Binance soon</span></span>
+            <span class="arch-node">Exchange<span class="nx">Bitget futures: a single real order</span></span>
           </div>
           <div class="arch-flow">
             <span class="arch-arrow" style="visibility:hidden">→</span>
-            <span class="arch-node soft">CrashGuard<span class="nx">between rebalances — your crash logic runs minute‑by‑minute and scales positions instantly</span></span>
+            <span class="arch-node soft">Guardrails<span class="nx">allocations ≤ 100% · a failed strategy holds its position · an empty signal never liquidates</span></span>
           </div>
         </div>
 
-        <div class="arch-down">↓</div>
+        <div class="arch-connector">
+          <div class="line"><span class="arrow"></span></div>
+          <span class="label">every 1 min</span>
+        </div>
 
         <div class="arch-band">
-          <div class="bl">3 · Monitor &amp; protect</div>
+          <div class="bl">3 · Scored &amp; reconciled</div>
           <div class="arch-flow">
-            <span class="arch-node">Monitor<span class="nx">records PV, PnL &amp; fills every 60s</span></span>
+            <span class="arch-node">Real book<span class="nx">the account's actual result, from the exchange</span></span>
             <span class="arch-arrow">→</span>
-            <span class="arch-node">Your Dashboards<span class="nx">portfolio · grid · per‑strategy</span></span>
+            <span class="arch-node">Virtual books<span class="nx">every alpha &amp; portfolio's own scorecard</span></span>
             <span class="arch-arrow">→</span>
-            <span class="arch-node soft">Risk Guard<span class="nx">max‑loss auto‑liquidation · auto‑recovery</span></span>
+            <span class="arch-node soft">Reconciliation<span class="nx">checked every minute, any gap is shown, never hidden</span></span>
           </div>
         </div>
       </div>
@@ -353,56 +598,42 @@
       <p class="sublabel" style="margin:24px 0 0">Protect · built to be trusted with real capital</p>
       <div class="grid" style="margin-top:10px">
         <div class="card">
-          <h3>Zero‑slippage execution</h3>
-          <p>Market data is pre‑fetched ~2 minutes before every run, so your orders fire the instant the clock ticks — not after a slow data pull.</p>
+          <h3>Guardrails, always on</h3>
+          <p>Allocations never exceed 100%, a failed strategy holds its last position instead of being force‑sold, and a genuinely empty signal never auto‑liquidates the account.</p>
         </div>
         <div class="card">
-          <h3>Minute‑level control</h3>
-          <p>Rebalance on your own schedule, and let CrashGuard react between cycles — down to a single minute, with your own logic.</p>
+          <h3>Nothing hidden</h3>
+          <p>Every minute, the sum of every virtual scorecard is checked against the real account. Any gap (fees, funding, timing) is shown, never quietly absorbed.</p>
         </div>
         <div class="card">
-          <h3>Two‑layer downside protection</h3>
-          <p>Set a max loss and we auto‑liquidate and close the session — backed by a second, independent enforcement layer.</p>
+          <h3>One code, backtest to live</h3>
+          <p>The exact same alpha/portfolio/fund code runs in backtest and in production. No rewrites, no drift between what you tested and what trades.</p>
         </div>
         <div class="card">
           <h3>Every session, on the record</h3>
-          <p>The exact strategy code, config and fills are snapshotted — replay or audit any past trade, anytime.</p>
+          <p>The exact strategy code, config and fills are snapshotted, so you can replay or audit any past trade, anytime.</p>
         </div>
         <div class="card">
           <h3>Self‑healing by design</h3>
-          <p>If a node or job dies mid‑session, the platform detects it and recovers your positions automatically — no babysitting.</p>
+          <p>If a node or job dies mid‑session, the platform detects it and recovers your positions automatically. No babysitting.</p>
         </div>
         <div class="card">
           <h3>Hot‑swap, no downtime</h3>
-          <p>Update your strategy or config while you're live — it takes effect on the next cycle, with no restart.</p>
+          <p>Update a strategy or config while it's live. It takes effect on the next cycle, with no restart.</p>
         </div>
       </div>
 
-      <p class="arch-note">All of it runs on Kubernetes — self‑healing, snapshotted for audit, and hot‑swappable mid‑trade. You bring the strategy; we keep it running.</p>
-      <p style="margin:16px 0 0;font-size:13px;color:var(--muted)">Plus Discord alerts &amp; team management, cross/isolated margin, and a demo mode for risk-free dry runs before you commit capital.</p>
+      <p class="arch-note">All of it runs on Kubernetes: self‑healing, snapshotted for audit. You bring the strategy; we keep it running.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
         <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Setup Guide</a>
         <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy" target="_blank">Strategy Templates</a>
       </div>
     </section>
 
-    <section class="banner" id="roadmap">
-      <div class="mono">/roadmap</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">What's next — the compositor.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">We're rebuilding the core so one account can run many strategies at once — each with its own honest, minute‑by‑minute scorecard. Here's the big picture and the plan to get there.</p>
-      <div class="blog-grid" style="margin-top:14px; grid-template-columns:1fr">
-        <a class="blog-card" href="roadmap.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">🧭</div>
-          <div class="blog-info"><h3>v3 Roadmap → the compositor</h3><p>One account, every strategy — architecture &amp; phased plan</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-      </div>
-    </section>
-
     <section class="banner" id="data">
       <div class="mono">/data</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Built on a deep market dataset.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Your strategies trade on a unified feed of crypto, derivatives, macro and on‑chain data — collected, reconciled, and served through our own API.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Your strategies trade on a unified feed of crypto, derivatives, macro and on‑chain data, collected, reconciled, and served through our own API.</p>
 
       <div class="stats-row">
         <div class="stat"><div class="stat-num">1,300+</div><div class="stat-label">Crypto symbols</div></div>
@@ -441,14 +672,14 @@
         </div>
         <div class="data-item">
           <h4>Coin Mapping <span class="tag">cross‑exchange</span></h4>
-          <p>Symbol normalization across exchanges — one identifier, many venues.</p>
+          <p>Symbol normalization across exchanges: one identifier, many venues.</p>
         </div>
       </div>
 
       <div class="tab-panel" id="tab-deriv">
         <div class="data-item">
           <h4>Taker Buy / Sell Volume <span class="tag">since 2020</span></h4>
-          <p>Aggressor‑side flow imbalance — the cleanest read on intraday pressure.</p>
+          <p>Aggressor‑side flow imbalance, the cleanest read on intraday pressure.</p>
         </div>
         <div class="data-item">
           <h4>Top Trader Position Ratio <span class="tag">long / short</span></h4>
@@ -456,7 +687,7 @@
         </div>
         <div class="data-item">
           <h4>Top Trader Account Ratio <span class="tag">long / short</span></h4>
-          <p>Account‑weighted long/short skew — different signal from position‑weighted.</p>
+          <p>Account‑weighted long/short skew: a different signal from position‑weighted.</p>
         </div>
         <div class="data-item">
           <h4>Open Interest <span class="tag">notional</span></h4>
@@ -467,15 +698,15 @@
       <div class="tab-panel" id="tab-alt">
         <div class="data-item">
           <h4>Macro Rates & Indices <span class="tag">daily</span></h4>
-          <p>10Y Treasury (DGS10), VIX, DXY, S&P 500 — sourced from FRED & Yahoo with fallbacks.</p>
+          <p>10Y Treasury (DGS10), VIX, DXY, S&P 500, sourced from FRED & Yahoo with fallbacks.</p>
         </div>
         <div class="data-item">
           <h4>BTC Spot ETF Flows <span class="tag">issuer‑level</span></h4>
-          <p>Daily inflow & AUM per issuer plus aggregate total — see institutional demand in real terms.</p>
+          <p>Daily inflow & AUM per issuer plus aggregate total, so you can see institutional demand in real terms.</p>
         </div>
         <div class="data-item">
           <h4>BTC Leveraged ETF <span class="tag">BITX</span></h4>
-          <p>AUM, price and shares outstanding — speculative leverage proxy since 2023.</p>
+          <p>AUM, price and shares outstanding: a speculative leverage proxy since 2023.</p>
         </div>
         <div class="data-item">
           <h4>On‑chain BTC <span class="tag">per‑minute</span></h4>
@@ -483,7 +714,7 @@
         </div>
         <div class="data-item">
           <h4>Stablecoin Supply <span class="tag">USDT · USDC · DAI · USDe · FDUSD</span></h4>
-          <p>Per‑symbol market cap from DefiLlama — liquidity & risk‑on/off context.</p>
+          <p>Per‑symbol market cap from DefiLlama, for liquidity & risk‑on/off context.</p>
         </div>
         <div class="data-item">
           <h4>DeFi TVL <span class="tag">total · per chain</span></h4>
@@ -513,42 +744,10 @@
       <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">+ derivative & engineered features delivered alongside raw feeds. Multi‑symbol queries (up to 100 per request), dual‑collector architecture with auto‑recovery.</p>
     </section>
 
-    <section class="banner" id="blog">
-      <div class="mono">/blog</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Follow our journey</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Insights on crypto trading, AI strategies, and market analysis.</p>
-      <div class="blog-grid">
-        <a class="blog-card" href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">
-          <div class="blog-icon x">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>X (Twitter)</h3>
-            <p>News, updates & blog highlights</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="https://substack.com/@neomatrixai" target="_blank" rel="noopener">
-          <div class="blog-icon substack">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>Substack</h3>
-            <p>Research, white papers & architecture updates</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
-      </div>
-    </section>
-
     <section class="banner" id="contact">
       <div class="mono">/contact</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Get in touch</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Questions, partnerships, or just want to say hi — reach out anytime.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Questions, partnerships, or just want to say hi: reach out anytime.</p>
       <div style="margin-top:16px">
         <a class="btn" href="mailto:info@neomatrix.ai"
            onclick="navigator.clipboard&&navigator.clipboard.writeText('info@neomatrix.ai');var t=this.textContent;this.textContent='Copied! ✓';setTimeout(function(e,o){return function(){e.textContent=o}}(this,t),1500);">info@neomatrix.ai →</a>
@@ -561,6 +760,7 @@
     </footer>
   </div>
 
+  <script src="posts_data.js"></script>
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
@@ -571,6 +771,46 @@
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
       });
     });
+
+    // Blog (/blog section): top-level tabs are the platform, X and Substack.
+    // Substack has its own inner tab row for its two sections, Axiom and
+    // Vertex. Every list is newest-first; an empty tab/sub-tab renders an
+    // honest line, never a fake post.
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const renderInto = (selector, posts, emptyMsg) => {
+        const panel = document.querySelector(selector);
+        if (!panel) return;
+        const sorted = posts.slice().sort((a, b) => b.date.localeCompare(a.date));
+        panel.innerHTML = sorted.length
+          ? sorted.map(p =>
+              '<a class="post-row" href="' + esc(p.url) + '" target="_blank" rel="noopener">' +
+                '<span class="prow-title">' + esc(p.title) + '</span>' +
+                '<span class="prow-leader" aria-hidden="true"></span>' +
+                '<span class="prow-date">' + esc(p.date) + '</span></a>'
+            ).join('')
+          : '<p class="blog-empty">' + emptyMsg + '</p>';
+      };
+      renderInto('#blog-tab-x .x-posts', all.filter(p => p.platform === 'x'), 'No X posts linked yet.');
+      renderInto('#blog-subtab-axiom .team-posts', all.filter(p => p.team === 'axiom'), 'No Axiom posts linked yet.');
+      renderInto('#blog-subtab-vertex .team-posts', all.filter(p => p.team === 'vertex'), 'No Vertex posts linked yet.');
+
+      document.querySelectorAll('.blog-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.blogTab;
+          document.querySelectorAll('.blog-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          document.querySelectorAll('.blog-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'blog-tab-' + target));
+        });
+      });
+      document.querySelectorAll('.blog-subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.blogSubtab;
+          document.querySelectorAll('.blog-subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          document.querySelectorAll('.blog-subtab-panel').forEach(p => p.classList.toggle('active', p.id === 'blog-subtab-' + target));
+        });
+      });
+    })();
   </script>
 </body>
 </html>
