@@ -1,4 +1,4 @@
-// nm_data.js — synthetic, deterministic sample data for the Neomanifold demo pages.
+// nm_data.js — synthetic, deterministic sample data for the Manifold demo pages.
 //
 // 100% fabricated. No real accounts, keys, sessions, fills or traders are involved.
 // Same convention as ../demo_data.js: a seeded PRNG (mulberry32) keeps every number

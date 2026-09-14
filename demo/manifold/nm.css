@@ -1,5 +1,5 @@
 /* ============================================================
-   nm.css — shared tokens + chrome for the Neomanifold demo pages.
+   nm.css — shared tokens + chrome for the Manifold demo pages.
 
    Every value here is traced to the REAL product, not to a design doc:
      tailwind.config.ts:7-11  → the only 3 custom colors (panel/panelAlt/edge)

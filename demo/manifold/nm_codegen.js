@@ -1,4 +1,4 @@
-// nm_codegen.js — a faithful JS port of the real Neomanifold code generator.
+// nm_codegen.js — a faithful JS port of the real Manifold code generator.
 //
 // Ported 1:1 from the production sources so the Builder demo emits the SAME
 // Python a real user would get. Nothing here is improvised:
