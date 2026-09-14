@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logs</title>
+<script src="fund_api.js"></script>
+<link rel="stylesheet" href="fund_dashboard.css">
+</head>
+<body>
+  <div class="demo-banner"><strong>SAMPLE DATA</strong> — this whole dashboard runs on synthetic numbers for the public demo. No real account, key or balance is involved.</div>
+  <div class="topbar">
+    <span class="title"><span class="logo">N</span>Logs</span>
+  </div>
+  <div class="navbar" id="nav"></div>
+  <div class="container">
+    <div class="panel">
+      <div class="panel-hdr"><h2>Not in this public demo</h2></div>
+      <div class="panel-body">
+        <p style="margin:0 0 10px">
+          On the real dashboard, this page tails a trading session's structured log
+          in real time over a WebSocket, straight from the job's own log file &mdash;
+          the same live view the team uses to debug a running session.
+        </p>
+        <p style="margin:0 0 10px" class="muted">
+          It streams from a real session and a real server connection, so there's no
+          synthetic-data version of it to show here. Everything else on this dashboard
+          &mdash; Fund, the portfolios and alphas inside it, Tracking Error and the
+          Event Ledger &mdash; is fully interactive with sample data.
+        </p>
+        <p style="margin:0"><a href="fund.html">&larr; Back to Fund</a></p>
+      </div>
+    </div>
+  </div>
+<script>
+  window.FundAPI.renderNav({ level: 'fund', tool: 'logs' });
+</script>
+</body>
+</html>

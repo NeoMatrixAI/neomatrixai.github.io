@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="fund_api.js"></script>
+<link rel="stylesheet" href="fund_dashboard.css">
+<style>
+  .market-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #chart { height: 520px; width: 100%; }
+  .tf-btns { display: flex; gap: 4px; }
+</style>
+</head>
+<body>
+  <div class="demo-banner"><strong>SAMPLE DATA</strong> — this whole dashboard runs on synthetic numbers for the public demo. No real account, key or balance is involved.</div>
+  <div class="topbar">
+    <span class="title"><span class="logo">N</span>Market <span id="mktSym">-</span></span>
+    
+  </div>
+  <div class="navbar" id="nav"></div>
+  <div class="container">
+    <div class="cfg-row market-controls">
+      <label>Data API Key <input id="cfgDataKey" placeholder="data API key" size="34"></label>
+      <label>Symbol <input id="mktSymbol" placeholder="BTCUSDT" size="12"></label>
+      <label>Type <select id="mktType"><option>futures</option><option>spot</option></select></label>
+      <label>Timezone <select id="cfgTz"></select></label>
+      <span class="tf-btns" id="tfBtns">
+        <button class="pill-btn" data-tf="1m">1m</button>
+        <button class="pill-btn" data-tf="5m">5m</button>
+        <button class="pill-btn active" data-tf="15m">15m</button>
+        <button class="pill-btn" data-tf="1h">1h</button>
+        <button class="pill-btn" data-tf="1d">1d</button>
+      </span>
+      <button id="btnLoad">Load</button>
+      <span id="loadState" class="muted"></span>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr"><h2 id="mktTitle">-</h2><span class="spacer"></span>
+        <span class="muted">candles + volume · UTC</span></div>
+      <div id="chart"></div>
+    </div>
+  </div>
+<script>
+(function () {
+  const A = window.FundAPI, $ = (id) => document.getElementById(id);
+  const DKEY = 'fund_market_data_apikey';
+  let symbol = (A.urlParam('symbol') || 'BTCUSDT').toUpperCase();
+  let tf = A.urlParam('tf') || '15m';
+  let tradeType = A.urlParam('tradeType') || 'futures';
+
+  const savedKey = localStorage.getItem(DKEY) || '';
+  if (savedKey) $('cfgDataKey').value = savedKey;
+  $('mktSymbol').value = symbol;
+  $('mktType').value = tradeType;
+  document.querySelectorAll('#tfBtns .pill-btn').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+
+  const chart = LightweightCharts.createChart($('chart'), {
+    layout: { background: { color: '#161a22' }, textColor: '#d8dce3' },
+    grid: { vertLines: { color: '#232936' }, horzLines: { color: '#232936' } },
+    rightPriceScale: { borderColor: '#2c3444' },
+    timeScale: {
+      borderColor: '#2c3444', timeVisible: true, secondsVisible: false,
+      tickMarkFormatter: (t, tickType) => A.fmtAxis(t, tickType < 3),   // 선택 tz 로 축 표기
+    },
+    localization: { timeFormatter: (t) => A.fmtAxis(t, true) + ' ' + A.fmtClock(t) },  // 크로스헤어 tooltip
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    autoSize: true,
+  });
+  const candle = chart.addCandlestickSeries({
+    upColor: '#43e97b', downColor: '#f5576c', borderVisible: false,
+    wickUpColor: '#43e97b', wickDownColor: '#f5576c',
+  });
+  const vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol' });
+  chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+
+  // Lightweight Charts throws on duplicate/unsorted times.
+  function dedupeAsc(data) {
+    const byT = {};
+    for (const d of data) byT[d.time] = d;
+    return Object.keys(byT).map(Number).sort((a, b) => a - b).map(t => byT[t]);
+  }
+
+  async function load() {
+    const key = $('cfgDataKey').value.trim();
+    if (!key) { $('loadState').textContent = 'Enter Data API Key'; $('loadState').className = 'err'; return; }
+    localStorage.setItem(DKEY, key);
+    symbol = ($('mktSymbol').value.trim() || 'BTCUSDT').toUpperCase();
+    tradeType = $('mktType').value;
+    $('mktSym').textContent = symbol;
+    $('mktTitle').textContent = `${symbol} · ${tradeType} · ${tf}`;
+    $('loadState').textContent = 'loading...'; $('loadState').className = 'muted';
+    try {
+      const res = await A.fetchOHLCV({ key }, symbol, tf, tradeType, 1000);
+      const rows = dedupeAsc(res.data || []);
+      if (!rows.length) { $('loadState').textContent = 'No data (check symbol / type)'; $('loadState').className = 'err'; return; }
+      candle.setData(rows.map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close })));
+      vol.setData(rows.map(d => ({ time: d.time, value: d.volume,
+        color: d.close >= d.open ? 'rgba(67,233,123,0.4)' : 'rgba(245,87,108,0.4)' })));
+      chart.timeScale().fitContent();
+      $('loadState').textContent = `${symbol} ${tf} · ${rows.length} candles (${A.fmtClock(new Date())} ${A.tzLabel()})`;
+      $('loadState').className = 'muted';
+    } catch (e) {
+      $('loadState').textContent = 'error: ' + e.message; $('loadState').className = 'err';
+    }
+  }
+
+  document.querySelectorAll('#tfBtns .pill-btn').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#tfBtns .pill-btn').forEach(x => x.classList.toggle('active', x === b));
+    tf = b.dataset.tf; load();
+  });
+  $('btnLoad').addEventListener('click', load);
+  $('mktSymbol').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  $('mktType').addEventListener('change', load);
+  A.bindTzSelect($('cfgTz'), () => load());   // 시간대 변경 → 축·라벨 재렌더
+  // 이 화면은 계정 user key 가 아니라 데이터 API key 를 쓰지만, timezone 은 전 화면
+  // 공통 설정이다. Settings 를 붙여 시간대를 여기서도 같은 자리에서 바꾸게 한다
+  // (symbol·timeframe 은 이 화면의 조회 조건이라 상단에 그대로 남는다).
+  A.renderNav({ level: 'fund', tool: 'market' });
+  A.ensureSettingsUI(load);
+  if ($('cfgDataKey').value) load();
+})();
+</script>
+</body>
+</html>

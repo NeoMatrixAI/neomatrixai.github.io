@@ -1,0 +1,166 @@
+/* fund_dashboard.css — v03 Compositor 대시보드 5페이지 공유 다크 테마 (F13 실물) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1115; color: #d8dce3; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; font-size: 13px; }
+a { color: #7aa2f7; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; background: #161a22; border-bottom: 1px solid #232936; flex-wrap: wrap; gap: 8px; }
+.topbar .title { font-size: 16px; font-weight: 600; }
+.topbar .right a { margin-left: 14px; font-size: 13px; }
+.topbar .logo { display: inline-flex; width: 26px; height: 26px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 5px; align-items: center; justify-content: center; font-weight: bold; color: #fff; margin-right: 8px; }
+
+/* 계층 네비 (renderNav) — 왼쪽은 위로 올라가는 경로, 오른쪽은 어느 층에서든
+   같은 자리에 있는 도구. 층이 바뀌어도 메뉴가 흔들리지 않는 것이 요점이다. */
+.navbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 18px; background: #12151c; border-bottom: 1px solid #232936; flex-wrap: wrap; }
+.navbar .crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; min-width: 0; }
+.navbar .crumb { color: #8b93a7; text-decoration: none; white-space: nowrap; }
+.navbar .crumb:hover { color: #c0caf5; }
+.navbar .crumb.here { color: #e6ecff; font-weight: 600; }
+.navbar .sep { color: #3a4256; }
+.navbar .tools { display: flex; align-items: center; gap: 14px; font-size: 13px; }
+.navbar .tool { color: #8b93a7; text-decoration: none; white-space: nowrap; }
+.navbar .tool:hover { color: #c0caf5; }
+.navbar .tool.here { color: #7aa2f7; border-bottom: 2px solid #7aa2f7; padding-bottom: 2px; }
+
+.virtual-banner { background: #1a2030; border-bottom: 1px solid #2c3a55; color: #9fb4d8; font-size: 12.5px; padding: 7px 18px; }
+.virtual-banner b { color: #cfe0ff; }
+.demo-banner { background: linear-gradient(90deg, #2a1f3d, #1f2d3d); border-bottom: 1px solid #3a3d55; color: #c9b8ff; font-size: 12px; padding: 6px 18px; }
+
+.container { max-width: 1600px; margin: 0 auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.cfg-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cfg-row label { display: inline-flex; align-items: center; gap: 5px; color: #a0a4ae; }
+.cfg-row input, .cfg-row select { background: #1b202b; color: #d8dce3; border: 1px solid #2c3444; border-radius: 4px; padding: 5px 8px; font-size: 12px; }
+.cfg-row button { background: #2a3550; color: #d8dce3; border: 1px solid #3d4a6b; border-radius: 4px; padding: 5px 14px; cursor: pointer; }
+.cfg-row button:hover { border-color: #667eea; }
+
+/* 설정은 한 번만 — 상단은 현재 적용값 요약만 보이고, 입력은 Settings 모달로 들어간다.
+   입력 요소는 **id 를 유지한 채** 모달로 옮겨지므로 각 화면의 기존 참조가 그대로 산다. */
+.cfg-summary { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.cfg-summary .chip { background: #1b202b; border: 1px solid #2c3444; border-radius: 12px; padding: 3px 11px; font-size: 12px; color: #8892a4; white-space: nowrap; }
+.cfg-summary .chip b { color: #d8dce3; font-weight: 600; }
+.cfg-summary .chip.warn { border-color: #6b4a2c; color: #e0b070; }
+.btn-gear { background: #2a3550; color: #d8dce3; border: 1px solid #3d4a6b; border-radius: 4px; padding: 5px 12px; cursor: pointer; font-size: 12px; }
+.btn-gear:hover { border-color: #667eea; }
+
+.modal-back { position: fixed; inset: 0; background: rgba(8, 10, 14, .74); display: none; align-items: center; justify-content: center; z-index: 60; }
+.modal-back.open { display: flex; }
+.modal { background: #161a22; border: 1px solid #2c3444; border-radius: 8px; width: min(540px, 92vw); padding: 20px 22px; box-shadow: 0 18px 50px rgba(0, 0, 0, .5); }
+.modal h3 { margin: 0 0 4px; font-size: 15px; color: #d8dce3; }
+.modal .hint { color: #8892a4; font-size: 12px; margin: 0 0 16px; }
+.modal .fields { display: grid; gap: 10px; }
+.modal .fields label { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 10px; color: #a0a4ae; font-size: 12.5px; }
+.modal .fields input, .modal .fields select { background: #1b202b; color: #d8dce3; border: 1px solid #2c3444; border-radius: 4px; padding: 6px 9px; font-size: 12.5px; width: 100%; box-sizing: border-box; }
+.modal .note { color: #6f7a8d; font-size: 11.5px; margin: 14px 0 0; line-height: 1.5; }
+.modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.modal .actions button { border-radius: 4px; padding: 6px 18px; cursor: pointer; font-size: 12.5px; }
+.modal .btn-primary { background: #3d4a6b; color: #fff; border: 1px solid #4d5d84; }
+.modal .btn-primary:hover { background: #47568020; border-color: #667eea; }
+.modal .btn-ghost { background: transparent; color: #a0a4ae; border: 1px solid #2c3444; }
+.modal .btn-ghost:hover { border-color: #3d4a6b; }
+
+/* KPI */
+/* 칸 수를 세지 않는다. `repeat(6, 1fr)` 고정이던 시절에는 7번째 칸이 혼자 아래 줄에
+   1/6 폭으로 떨어졌고(fund.html 의 Max Drawdown 이 실제로 그랬다), 그 사실을 주석으로
+   적어 두고 그대로 뒀다. auto-fit 은 들어온 만큼 나눠 가지므로 칸이 늘어도 안 깨진다. */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; }
+.kpi { background: #161a22; border: 1px solid #232936; border-radius: 6px; padding: 10px 14px; display: flex; flex-direction: column; gap: 3px; }
+.kpi.virtual { border-style: dashed; border-color: #3a4a6b; }
+.kpi .k { color: #7b8496; font-size: 11px; text-transform: uppercase; font-weight: 500; }
+.kpi .v { font-size: 19px; font-weight: 700; }
+.kpi .sub { font-size: 11px; color: #6b7280; }
+.v.pos, td.pos, .pos { color: #43e97b; } .v.neg, td.neg, .neg { color: #f5576c; }
+
+/* 패널 */
+.panel { background: #161a22; border: 1px solid #232936; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+.panel-hdr { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #1a1d22; border-bottom: 1px solid #232936; font-size: 13px; font-weight: 600; color: #a0a4ae; flex-wrap: wrap; }
+.panel-hdr h2 { font-size: 14px; font-weight: 600; color: #e8e9ea; }
+.panel-hdr .muted { font-weight: 400; }
+.panel-body { padding: 12px 14px; }
+/* 차트 패널은 헤더(제목+부제) 아래 남는 공간을 캔버스가 차지한다.
+   예전에는 .panel-chart 를 relative 로 두고 .chart-wrap 을 absolute inset 으로 깔았는데,
+   그러면 캔버스 top 이 **패널 맨 위**가 되어 헤더 위에 얹힌다 — Chart.js 범례가 헤더
+   상단에 그려지므로 부제 텍스트를 덮어 "difference = fees[범례]slippage" 처럼 읽힌다.
+   flex 로 헤더 다음 칸을 받게 하면 겹칠 자리가 사라진다. */
+.panel-chart { height: 320px; display: flex; flex-direction: column; }
+.panel-chart .chart-wrap { position: relative; flex: 1 1 auto; min-height: 0; margin: 8px 12px 12px; }
+.panel-chart .chart-wrap > canvas { position: absolute; inset: 0; }
+.spacer { flex: 1; }
+
+.badge-virtual { background: #22304a; color: #9fb4d8; border: 1px solid #3a4a6b; border-radius: 3px; padding: 0 6px; font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; }
+.badge-measured, .badge-real { background: #1f3a2a; color: #73d391; border: 1px solid #2c5a3c; border-radius: 3px; padding: 0 6px; font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; }
+
+.row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row-full { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.section-title { font-size: 14px; font-weight: 600; color: #e8e9ea; padding: 8px 0 4px; border-bottom: 1px solid #232936; }
+.section-title .sub { font-size: 11.5px; color: #8e94a1; font-weight: 400; margin-left: 8px; }
+
+/* 표 */
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid #232936; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: #7b8496; font-weight: 500; font-size: 10px; text-transform: uppercase; background: #14171c; position: sticky; top: 0; }
+.scroll { overflow: auto; }
+.muted { color: #7b8496; }
+.err { color: #f7768e; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+
+/* 드릴다운 구성 표 */
+.pf-row { cursor: pointer; background: #14171c; font-weight: 600; color: #e8e9ea; }
+.pf-row:hover { background: #1a1e25; }
+.pf-row .caret { display: inline-block; width: 14px; color: #8e94a1; transition: transform .15s; }
+.pf-row.open .caret { transform: rotate(90deg); }
+.inst-row { color: #b8bcc4; display: none; }
+.inst-row.show { display: table-row; }
+.inst-row td:first-child { padding-left: 28px; }
+.cash-row td { color: #9fb4d8; font-style: italic; }
+
+/* 배분 이력 batch */
+.alloc { padding: 10px 12px; overflow-y: auto; }
+.batch { border: 1px solid #23262c; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+.b-hdr { display: flex; align-items: baseline; gap: 10px; padding: 7px 10px; background: #14171c; border-bottom: 1px solid #23262c; flex-wrap: wrap; }
+.b-ts { font-size: 11px; color: #8e94a1; font-family: ui-monospace, Consolas, monospace; }
+.b-scope { font-size: 11px; font-weight: 700; color: #c9b8ff; }
+.b-reason { font-size: 11.5px; color: #b8bcc4; flex-basis: 100%; }
+.batch table td { padding: 4px 10px; border-bottom: 1px solid #1c1f24; }
+.delta-up { color: #43e97b; } .delta-dn { color: #f5576c; } .delta-eq { color: #6b7280; }
+
+/* grid 카드 */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: #161a22; border: 1px solid #232936; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.card:hover { border-color: #667eea; }
+.card .c-hdr { display: flex; justify-content: space-between; align-items: baseline; }
+.card .c-name { font-size: 14px; font-weight: 600; color: #e8e9ea; }
+.card .c-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; }
+.card .c-mini .k { color: #7b8496; }
+.card .c-spark { height: 46px; position: relative; }
+/* 카드 한 줄 상태 — 정지된 인스턴스나 "아직 데이터 없음" 을 이름으로 알린다.
+   그래프만 보면 멈춘 알파와 평평한 알파가 똑같이 보인다. */
+.card .c-state { font-size: 11px; }
+/* 안 도는 항목은 한눈에 구분된다 — 텍스트만으로는 격자에서 놓친다. */
+.card.off { opacity: .62; border-style: dashed; }
+
+/* 조회 구간 컨트롤 (2026-09-14) — 프리셋 pill + 임의 from/to. 매 화면 상단, Settings 밖. */
+.range-ctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.range-ctl .range-presets { display: inline-flex; gap: 4px; }
+.range-ctl .range-custom { display: inline-flex; align-items: center; gap: 4px; }
+.range-ctl input[type="datetime-local"] { background: #1b202b; color: #d8dce3; border: 1px solid #2c3444; border-radius: 4px; padding: 3px 6px; font-size: 11.5px; font-family: inherit; color-scheme: dark; }
+.range-ctl .sep { color: #3a4256; }
+
+.pill-btn { border: 1px solid #2a2d33; background: transparent; color: #a0a4ae; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.pill-btn:hover { border-color: #667eea; color: #e8e9ea; }
+.pill-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+
+.help { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #5a5f6a; color: #b8bcc4; font-size: 11px; cursor: help; position: relative; font-weight: 700; background: #2a2d33; }
+.help .tip { display: none; position: absolute; top: calc(100% + 6px); right: -6px; z-index: 60; width: 260px; padding: 9px 11px; background: #1f2329; border: 1px solid #343842; border-radius: 6px; color: #b8bcc4; font-size: 11px; font-weight: 400; line-height: 1.5; text-align: left; box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+.help:hover .tip { display: block; }
+
+/* tracking error (#900) — tier 색과 상태 배지.
+   WARN 은 중립 주황이다. 초록/빨강 둘로만 칠하면 "조금 벌어짐" 과 "조사 대상" 이 같아 보인다. */
+.te-warn { color: #e0af68; }
+.badge-stale { background: #3a2c1f; color: #e0b070; border: 1px solid #6b4a2c; border-radius: 3px; padding: 0 6px; font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; }
+.badge-skipped { background: #2a2d33; color: #9aa2b1; border: 1px solid #3d4350; border-radius: 3px; padding: 0 6px; font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; }
+.te-scope { font-size: 10px; text-transform: uppercase; color: #7b8496; letter-spacing: .06em; }
+
+@media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) { .row-2col { grid-template-columns: 1fr; } .kpi-row { grid-template-columns: repeat(2, 1fr); } }

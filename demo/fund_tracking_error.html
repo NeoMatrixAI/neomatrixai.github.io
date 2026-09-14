@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracking Error</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="fund_api.js"></script>
+<link rel="stylesheet" href="fund_dashboard.css">
+</head>
+<body>
+  <div class="demo-banner"><strong>SAMPLE DATA</strong> — this whole dashboard runs on synthetic numbers for the public demo. No real account, key or balance is involved.</div>
+  <div class="topbar">
+    <span class="title"><span class="logo">N</span>Tracking Error</span>
+    
+  </div>
+  <div class="virtual-banner">
+    Live results compared against a <b>backtest of the same alpha</b>, refreshed hourly.
+    <b>Strategy</b> compares strategy behaviour only. <b>Exchange</b> includes execution &mdash; fills, slippage, rejected orders.
+    A widening gap in both points at the alpha or its data; a gap between the two points at execution.
+    1 bp = 0.01%.
+  </div>
+  <div class="navbar" id="nav"></div>
+  <div class="container">
+    <div class="cfg-row">
+      <label>User Key <input id="cfgKey" size="34"></label>
+      <label>Environment <select id="cfgEnv"><option>live</option><option>demo</option></select></label>
+      <button id="btnLoad">Load</button><span id="loadState" class="muted"></span>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi virtual"><span class="k">Fund vs Backtest <span class="badge-virtual">STRATEGY</span></span><span class="v" id="kFundV">-</span><span class="sub" id="kFundVSub">-</span></div>
+      <div class="kpi"><span class="k">Fund vs Backtest <span class="badge-measured">EXCHANGE</span></span><span class="v" id="kFundM">-</span><span class="sub" id="kFundMSub">-</span></div>
+      <div class="kpi"><span class="k">Widest Strategy Gap</span><span class="v" id="kWorst">-</span><span class="sub" id="kWorstSub">-</span></div>
+      <div class="kpi"><span class="k">Execution Share</span><span class="v" id="kExec">-</span><span class="sub">exchange gap minus strategy gap</span></div>
+      <div class="kpi"><span class="k">Compared</span><span class="v" id="kCount">-</span><span class="sub" id="kCountSub">-</span></div>
+      <div class="kpi"><span class="k">Last Run</span><span class="v" id="kRun">-</span><span class="sub" id="kRunSub">-</span></div>
+    </div>
+    <div class="panel panel-chart" style="height:360px">
+      <div class="panel-hdr">
+        <h2>Live vs Backtest (%)</h2>
+        <span class="muted" id="chartWho">select a row below</span>
+        <span class="spacer"></span>
+        <button class="pill-btn" id="btnReport" style="display:none">Backtest report</button>
+      </div>
+      <div class="chart-wrap"><canvas id="chartTe"></canvas></div>
+    </div>
+    <div class="panel" style="height:420px">
+      <div class="panel-hdr">
+        <h2>Comparisons</h2>
+        <span class="muted">click a row to chart it</span>
+        <span class="spacer"></span>
+        <span class="muted" id="tblNote"></span>
+      </div>
+      <div class="scroll" style="flex:1" id="teBody"><div class="panel-body muted">-</div></div>
+    </div>
+  </div>
+<script>
+(function () {
+  const A = window.FundAPI, $ = (id) => document.getElementById(id);
+  const charts = {};
+  let ROWS = [], CFG = null, PICKED = null;
+
+  const num = (v) => (v === null || v === undefined ? null : Number(v));
+
+  function badge(row) {
+    if (row.status !== 'ok') return `<span class="badge-skipped">${A.esc(row.status).toUpperCase()}</span>`;
+    return row.stale ? '<span class="badge-stale">STALE</span>' : '';
+  }
+
+  // 못 잰 행은 값이 아니라 **사유**를 보여준다. 빈칸으로 두면 "괴리 없음" 과 구분되지 않아
+  // 엔진이 조용히 죽어도 화면이 정상으로 보인다.
+  function cells(row) {
+    if (row.status !== 'ok') {
+      return `<td colspan="5" class="muted" style="text-align:left">${A.esc(row.detail || 'not measured')}</td>`;
+    }
+    const te = num(row.teBps), inst = num(row.instantBps);
+    return `<td class="${A.tierClass(row.tier)}">${A.fmtBps(te)}</td>` +
+      `<td class="${inst != null && inst < 0 ? 'neg' : 'pos'}">${A.fmtBps(inst)}</td>` +
+      `<td>${row.teStdevBps != null ? Number(row.teStdevBps).toFixed(1) : '-'}</td>` +
+      `<td>${row.corr != null ? Number(row.corr).toFixed(3) : '-'}</td>` +
+      `<td>${row.bars || 0}</td>`;
+  }
+
+  function renderTable() {
+    if (!ROWS.length) {
+      $('teBody').innerHTML = '<div class="panel-body muted">No comparison yet. The engine runs hourly.</div>';
+      return;
+    }
+    const order = { fund: 0, portfolio: 1, alpha: 2 };
+    const sorted = ROWS.slice().sort((a, b) =>
+      (order[a.scope] - order[b.scope]) || String(a.portfolioId).localeCompare(String(b.portfolioId))
+      || String(a.alphaId).localeCompare(String(b.alphaId)) || String(a.basis).localeCompare(String(b.basis)));
+    $('teBody').innerHTML =
+      '<table><thead><tr><th>Target</th><th>Basis</th>' +
+      '<th title="Cumulative gap over the compared window">Gap</th>' +
+      '<th title="Gap of the most recent bar alone">Latest bar</th>' +
+      '<th title="Standard deviation of per-bar gaps (bp)">Volatility</th>' +
+      '<th title="Correlation of per-bar returns. Low means direction differs, not just size.">Corr</th>' +
+      '<th>Bars</th></tr></thead><tbody>' +
+      sorted.map((row, i) => `<tr data-i="${i}" style="cursor:pointer">` +
+        `<td><span class="te-scope">${A.esc(row.scope)}</span> ${A.teLabel(row)}${badge(row)}</td>` +
+        `<td>${row.basis === 'measured' ? 'Exchange' : 'Strategy'}</td>` + cells(row) + '</tr>').join('') +
+      '</tbody></table>';
+    Array.from($('teBody').querySelectorAll('tr[data-i]')).forEach(tr => {
+      tr.onclick = () => pick(sorted[Number(tr.dataset.i)]);
+    });
+    // **진입 컨텍스트를 존중한다.** alpha 페이지의 'all comparisons' 나 도구바의
+    // Tracking Error 링크는 `?p=` / `?a=` 를 싣는데(fund_api.js 의 NAV_TOOLS),
+    // 예전에는 그것을 무시하고 항상 첫 ok 행을 잡았다. 정렬이 {fund:0, portfolio:1,
+    // alpha:2} 라 알파에서 들어가도 fund 행이 잡혀, "세 층에서 TE 를 본다" 가
+    // 카드까지만 되고 화면으로 물고 들어가는 것은 안 됐다.
+    const wantA = A.urlParam('a');
+    const wantP = A.urlParam('p');
+    const ctxMatch = (wantA || wantP) ? sorted.find(r =>
+      r.status === 'ok'
+      && (!wantA || String(r.alphaId || '') === wantA)
+      && (!wantP || String(r.portfolioId || '') === wantP)) : null;
+    const first = sorted.find(r => r.status === 'ok');
+    if (first) pick(PICKED && sorted.find(r => sameRow(r, PICKED)) || ctxMatch || first);
+  }
+
+  function sameRow(a, b) {
+    return a.scope === b.scope && a.portfolioId === b.portfolioId
+      && a.alphaId === b.alphaId && a.basis === b.basis;
+  }
+
+  async function pick(row) {
+    PICKED = row;
+    $('chartWho').textContent =
+      `${A.teLabelText(row)} — ${row.basis === 'measured' ? 'exchange' : 'strategy'} (run ${row.runId})`;
+    $('btnReport').style.display = row.alphaId ? '' : 'none';
+    $('btnReport').onclick = async () => {
+      try { await A.openBacktestReport(CFG, row.alphaId); }
+      catch (e) { $('tblNote').className = 'err'; $('tblNote').textContent = String(e.message || e); }
+    };
+    let pts = [];
+    try { pts = (await A.fetchTrackingErrorCurve(CFG, row)).data || []; }
+    catch (e) { $('chartWho').textContent = `curve unavailable (${e.message})`; }
+    const ds = [
+      { label: 'Live (%)', data: pts.map(p => ({ x: p.datetime, y: p.liveCum * 100 })), borderColor: '#7aa2f7', pointRadius: 0, borderWidth: 1.8 },
+      { label: 'Backtest (%)', data: pts.map(p => ({ x: p.datetime, y: p.btCum * 100 })), borderColor: '#e0af68', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+    ];
+    if (charts.te) charts.te.destroy();
+    charts.te = A.lineChart($('chartTe'), ds, {
+      scales: {
+        x: { type: 'category', ticks: { color: '#7b8496', maxTicksLimit: 9 }, grid: { color: '#232936' } },
+        y: { ticks: { color: '#7b8496', callback: v => v.toFixed(2) + '%' }, grid: { color: '#232936' } },
+      },
+    });
+  }
+
+  function setCard(id, subId, row, subText) {
+    if (!row) { $(id).textContent = '-'; $(id).className = 'v muted'; if (subId) $(subId).textContent = 'not measured yet'; return; }
+    if (row.status !== 'ok') {
+      $(id).textContent = '-'; $(id).className = 'v muted';
+      if (subId) $(subId).textContent = row.detail || row.status;
+      return;
+    }
+    $(id).textContent = A.fmtBps(row.teBps);
+    $(id).className = 'v ' + A.tierClass(row.tier);
+    if (subId) $(subId).textContent = subText || `${row.tier.toLowerCase()} · ${row.bars} bars`;
+  }
+
+  function renderCards() {
+    const fundV = ROWS.find(r => r.scope === 'fund' && r.basis === 'virtual');
+    const fundM = ROWS.find(r => r.scope === 'fund' && r.basis === 'measured');
+    setCard('kFundV', 'kFundVSub', fundV);
+    setCard('kFundM', 'kFundMSub', fundM);
+
+    const alphas = ROWS.filter(r => r.scope === 'alpha' && r.status === 'ok' && r.teBps != null);
+    const worst = alphas.slice().sort((a, b) => Math.abs(b.teBps) - Math.abs(a.teBps))[0];
+    setCard('kWorst', 'kWorstSub', worst, worst ? A.teLabelText(worst) : '');
+
+    // 두 기준의 차 = 집행이 만든 몫. 하나라도 없으면 계산하지 않는다 — 0 으로 두면
+    // "집행 괴리 없음" 으로 읽힌다.
+    if (fundV && fundM && fundV.status === 'ok' && fundM.status === 'ok'
+        && fundV.teBps != null && fundM.teBps != null) {
+      const diff = Number(fundM.teBps) - Number(fundV.teBps);
+      $('kExec').textContent = A.fmtBps(diff);
+      $('kExec').className = 'v ' + (Math.abs(diff) >= 100 ? 'te-warn' : 'pos');
+    } else { $('kExec').textContent = '-'; $('kExec').className = 'v muted'; }
+
+    const ok = ROWS.filter(r => r.status === 'ok').length;
+    $('kCount').textContent = `${ok}/${ROWS.length}`;
+    $('kCountSub').textContent = ROWS.length ? `${ROWS.length - ok} not measured` : '';
+
+    const runs = ROWS.map(r => r.createdAt).filter(Boolean).sort();
+    const last = runs.length ? runs[runs.length - 1] : null;
+    $('kRun').textContent = last ? String(last).replace('T', ' ').slice(0, 16) : '-';
+    $('kRunSub').textContent = ROWS.length ? `run ${ROWS[0].runId}` : 'engine has not reported';
+  }
+
+  async function load(cfg) {
+    CFG = cfg;
+    if (!cfg.fund || !cfg.key) { $('loadState').textContent = 'User Key required'; return; }
+    $('loadState').className = 'muted';
+    $('loadState').textContent = 'loading...';
+    try {
+      ROWS = (await A.fetchTrackingError(cfg)).data || [];
+    } catch (e) {
+      ROWS = [];
+      $('loadState').className = 'err';
+      $('loadState').textContent = `failed: ${e.message}`;
+      renderCards(); renderTable();
+      return;
+    }
+    renderCards();
+    renderTable();
+    $('loadState').textContent = ROWS.length ? 'loaded' : 'no comparison recorded yet';
+  }
+  A.renderNav({ level: 'fund', tool: 'te' });
+  A.bindConfigForm(load);
+})();
+</script>
+</body>
+</html>
