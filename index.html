@@ -18,7 +18,7 @@
       --radius: 16px;
     }
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html, body { min-height: 100%; }
     body {
       margin: 0; background: var(--bg); color: var(--fg);
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -28,20 +28,26 @@
     a { color: var(--fg); text-decoration: none; }
     .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 32px 80px; }
 
-    /* Top Nav */
-    .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); z-index: 10; }
+    /* Top Nav: sits outside .wrap so its background spans the full viewport
+       width and sits flush with the very top of the page, not inset by
+       .wrap's own padding. .nav-inner re-applies that same 1440px column
+       so the logo/links line up with everything below it. */
+    .nav { border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fafafa; box-shadow: 0 1px 0 rgba(0,0,0,0.04); z-index: 10; }
+    .nav-inner { max-width: 1440px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .brand-center { font-weight: 800; letter-spacing: 0.04em; font-size: 30px; text-transform: none; }
 
-    /* Hero */
-    .hero { display: grid; grid-template-columns: 1fr 1.15fr; gap: 36px; padding: 16px 0 16px; align-items: center; }
+    /* Hero: fills the first screen on its own (headline + subcopy only) so
+       everything else only appears once you scroll, altbridge-style. */
+    .hero { min-height: calc(100vh - 110px); display: flex; flex-direction: column; justify-content: center; padding: 16px 0; }
     .kicker { font-size: 40px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
     h1 { font-size: clamp(40px, 8vw, 96px); line-height: .95; margin: 10px 0 18px; letter-spacing: -0.02em; }
-    .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 42ch; }
-    .hero-cta { display: flex; gap: 12px; margin-top: 22px; }
+    .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 62ch; }
     .btn { border: 1px solid var(--fg); padding: 14px 18px; border-radius: 12px; font-weight: 700; transition: all 0.15s ease; }
     .btn:hover { background: var(--fg); color: var(--bg); }
     .btn.secondary { border-color: var(--fg); color: var(--fg); }
     .btn.secondary:hover { background: var(--fg); color: var(--bg); }
+
+    .big-statement { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 0; }
 
     /* Hero flow diagram: many strategies netting into one account line */
     .hero-flow-wrap { grid-column: 1 / -1; margin-top: 12px; }
@@ -57,39 +63,7 @@
     .card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: .02em; }
     .card p { margin: 0; color: #222; }
 
-    /* Architecture diagram */
-    .arch { display: flex; flex-direction: column; margin-top: 14px; }
-    .arch-band { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
-    .arch-band .bl { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 10px; }
-    .arch-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-    .arch-flow + .arch-flow { margin-top: 10px; }
-    .arch-node { border: 1px solid var(--fg); border-radius: 10px; padding: 9px 13px; font-weight: 700; font-size: 14px; background: var(--bg); white-space: nowrap; }
-    .arch-node .nx { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-    .arch-node.soft { border-color: var(--line); font-weight: 600; }
-    .arch-arrow { color: var(--muted); font-weight: 800; font-size: 16px; }
-    .arch-down { text-align: center; color: var(--muted); font-size: 20px; line-height: 1; padding: 7px 0; }
-    .arch-connector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
-    .arch-connector .line {
-      position: relative; width: 2px; height: 28px;
-      background-image: repeating-linear-gradient(to bottom, var(--line) 0 4px, transparent 4px 9px);
-    }
-    .arch-connector .line .arrow {
-      position: absolute; left: 50%; top: -10px; margin-left: -6px; width: 0; height: 0;
-      border-left: 6px solid transparent; border-right: 6px solid transparent;
-      border-top: 9px solid var(--fg); animation: arch-fall 1.6s linear infinite;
-    }
-    @keyframes arch-fall { 0% { top: -10px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-    .arch-connector .label {
-      font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    @media (prefers-reduced-motion: reduce) { .arch-connector .line .arrow { animation: none; top: 50%; opacity: 1; } }
     .arch-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
-    @media (max-width: 640px) {
-      .arch-node { white-space: normal; width: 100%; }
-      .arch-arrow { display: none; }
-    }
 
     /* Statement Blocks */
     .banner { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; margin-top: 14px; }
@@ -100,27 +74,12 @@
     .stat { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(0,0,0,0.02); }
     .stat-num { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
     .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .tab-btn {
-      border: 1px solid var(--line); background: transparent; color: var(--fg);
-      padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 13px;
-      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
-    }
-    .tab-btn:hover { border-color: var(--fg); }
-    .tab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-    .tab-panel { display: none; margin-top: 14px; }
-    .tab-panel.active { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .data-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
-    .data-item h4 { margin: 0 0 6px; font-size: 15px; }
-    .data-item p { margin: 0; font-size: 13.5px; color: #222; }
-    .data-item .tag { display: inline-block; font-size: 11px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
     @media (max-width: 980px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .tab-panel.active { grid-template-columns: 1fr; }
     }
 
     /* Blog / link cards */
-    .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+    .blog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 12px; max-width: 700px; }
     .blog-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -185,19 +144,11 @@
       border-radius: var(--radius); background: linear-gradient(180deg, rgba(0,0,0,0.015), rgba(0,0,0,0));
     }
     .blog-tab-panel.active { display: flex; }
-    .blog-tab-panel#blog-tab-substack { max-width: 980px; }
+    .blog-tab-panel#blog-tab-substack { max-width: none; width: 100%; }
     .x-posts { display: flex; flex-direction: column; gap: 3px; }
-    .blog-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-    .blog-subtab-btn {
-      border: 1px solid var(--line); background: transparent; color: var(--muted);
-      padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 12px;
-      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
-    }
-    .blog-subtab-btn:hover { border-color: var(--fg); color: var(--fg); }
-    .blog-subtab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-    .blog-subtab-panel { display: none; }
-    .blog-subtab-panel.active { display: grid; grid-template-columns: 230px 1fr; gap: 28px; align-items: start; }
-    .team-intro { border-right: 1px solid var(--line); padding-right: 24px; }
+    .blog-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; width: 100%; }
+    .blog-team-col { min-width: 0; }
+    .team-intro { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
     .team-name { margin: 0 0 5px; font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
     .team-name a { color: inherit; text-decoration: none; }
     .team-name a:hover { text-decoration: underline; }
@@ -205,126 +156,122 @@
       margin: 0 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .08em; color: var(--muted);
     }
-    .team-about { margin: 0; font-size: 13.5px; line-height: 1.55; color: #333; }
+    .team-about { margin: 0; font-size: 13.5px; line-height: 1.55; color: #333; min-height: 3.1em; }
     .posts-col { min-width: 0; }
     .posts-label {
       margin: 0 0 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .12em; color: var(--muted);
     }
-    .team-posts { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .team-posts { display: flex; flex-direction: column; min-width: 0; }
     @media (max-width: 760px) {
-      .blog-subtab-panel.active { grid-template-columns: 1fr; gap: 14px; }
+      .blog-teams { grid-template-columns: 1fr; gap: 20px; }
     }
     .post-row {
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
-      padding: 9px 10px; margin: 0 -10px; border-radius: 8px;
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 10px; margin: 0 -10px; border-radius: 10px;
       text-decoration: none; color: var(--fg); transition: background 0.15s ease;
     }
-    .post-row:hover { background: rgba(0,0,0,0.05); }
+    .post-row + .post-row { border-top: 1px solid var(--line); }
+    .post-row:hover { background: rgba(0,0,0,0.04); }
     .post-row:hover .prow-title { text-decoration: underline; }
-    .post-row .prow-title { font-weight: 600; font-size: 14.5px; flex: 0 1 auto; min-width: 0; white-space: normal; }
-    .post-row .prow-leader {
-      flex: 1 1 auto; min-width: 16px; align-self: center; height: 2px; margin: 0 6px;
-      background-image: linear-gradient(to right, #8a8a8a 0 2px, transparent 2px 5px);
-      background-repeat: repeat-x; background-size: 5px 2px;
+    .prow-text { min-width: 0; flex: 1 1 auto; }
+    .post-row .prow-title { display: block; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; margin-bottom: 5px; }
+    .post-row .prow-sub { display: block; font-size: 13px; line-height: 1.5; color: var(--muted); }
+    .prow-thumb {
+      flex: 0 0 auto; width: 84px; height: 84px; border-radius: 10px;
+      border: 1px solid var(--line); background: linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.015));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800; color: rgba(0,0,0,0.2); letter-spacing: 0;
     }
-    .post-row .prow-date { color: var(--muted); font-size: 12.5px; white-space: nowrap; flex: 0 0 auto; margin-top: 2px; }
+    @media (max-width: 480px) {
+      .prow-thumb { width: 56px; height: 56px; font-size: 18px; }
+      .post-row .prow-title { font-size: 15.5px; }
+    }
     .blog-empty { color: var(--muted); font-size: 14px; padding: 6px 10px; }
-    @media (max-width: 640px) {
-      .post-row { flex-direction: column; align-items: flex-start; gap: 2px; }
-      .post-row .prow-leader { display: none; }
-    }
 
     /* Footer */
     footer { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
     /* Responsive */
     @media (max-width: 980px) {
-      .hero { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 640px) {
       .grid { grid-template-columns: 1fr; }
       .wrap { padding-bottom: 48px; }
       .btn { width: 100%; justify-content: center; }
-      .hero-cta { flex-direction: column; }
     }
 
     /* In-page jump nav + smooth scroll */
     html { scroll-behavior: smooth; }
     section[id], header[id] { scroll-margin-top: 80px; }
-    .nav .jump { display: flex; gap: 20px; font-size: 14px; }
+    .nav .jump { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; }
     .nav .jump a { color: #555; }
     .nav .jump a:hover { color: var(--fg); }
     .nav .left { display: flex; align-items: center; }
-    @media (max-width: 980px) { .nav .jump { display: none; } }
+    @media (max-width: 980px) {
+      .nav-inner { flex-wrap: wrap; row-gap: 10px; }
+      .nav .jump { width: 100%; gap: 8px 16px; font-size: 13.5px; }
+    }
+    @media (max-width: 480px) {
+      .nav .jump { gap: 6px 12px; font-size: 12.5px; }
+    }
 
     /* Section sub-labels (used to group content within a section) */
     .sublabel { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <nav class="nav">
+  <nav class="nav">
+    <div class="nav-inner">
       <div class="left">
         <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:48px; margin-right:8px; vertical-align:middle;">
         <div class="brand-center" style="font-size:24px;">NeoMatrix AI</div>
       </div>
       <div class="jump">
         <a href="#blog">Blog</a>
-        <a href="#dashboard">Dashboard</a>
         <a href="#manifold">Manifold</a>
+        <a href="#neoquant">Neoquant</a>
         <a href="#how-it-works">How it works</a>
+        <a href="#dashboard">Dashboard</a>
         <a href="#data">Data</a>
         <a href="#contact">Contact</a>
       </div>
-    </nav>
+    </div>
+  </nav>
 
+  <div class="wrap">
     <header class="hero">
-      <div>
-        <h1>One account.<br/>Every strategy.</h1>
-        <p class="sub">Run as many strategies as you want inside <strong>one real account</strong>, each still scored on its own, minute by minute. Build it in <strong>Manifold</strong>. The same code is currently completing final live validation on <strong>Bitget futures</strong>.</p>
-        <div class="hero-cta">
-          <a class="btn" href="#manifold">Build in Manifold</a>
-          <a class="btn secondary" href="#how-it-works">See how it works</a>
-        </div>
-      </div>
-      <div>
-        <div class="banner">
-          <div class="mono">/features</div>
-          <div class="grid" id="features">
-            <div class="card">
-              <h3>Many Strategies, One Account</h3>
-              <p>Net every strategy into a single real position. Each one still keeps its own honest, minute‑by‑minute scorecard.</p>
-            </div>
-            <div class="card">
-              <h3>Live on Bitget Futures</h3>
-              <p>Currently completing final live validation on a real Bitget futures account. Spot and more exchanges are next.</p>
-            </div>
-            <div class="card">
-              <h3>Compose it in Manifold</h3>
-              <p>Build an alpha, group alphas into a portfolio, package portfolios into a fund, then publish the exact same code live.</p>
-            </div>
-            <div class="card">
-              <h3>Backtest to Live, No Rewrites</h3>
-              <p>One code path for backtesting and live trading, so what you test is exactly what runs.</p>
-            </div>
-            <div class="card">
-              <h3>Guardrails Built In</h3>
-              <p>Allocations never exceed 100%. A failed strategy holds its position instead of being force‑sold. An empty signal never liquidates your account.</p>
-            </div>
-            <div class="card">
-              <h3>Nothing Hidden</h3>
-              <p>Every minute, every scorecard is checked against the real account. Any gap is shown, never hidden.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <h1>One account.<br/>Every strategy.</h1>
+      <p class="sub">Most systems stop at the backtest. Ours goes all the way. The same code, live on one real account, every strategy still scored honestly, every minute, right now on <strong>Bitget futures</strong>. That's the proof. <strong>Manifold</strong> is the destination. A platform where you compose a strategy like this yourself, publish it, and watch it run for real.</p>
     </header>
+
+    <section class="banner" id="thesis">
+      <div class="mono">/thesis</div>
+      <h2 class="big-statement">The proof, then the platform.</h2>
+      <p class="sub" style="margin-top:12px">A backtest can prove almost anything. Real money only proves whether the strategy survives contact with it. So before we built a platform, we built one strategy that had to survive, real slippage, real drawdown, real risk, no do-overs. Everything below is downstream of that.</p>
+      <div class="grid" style="margin-top:28px">
+        <div class="card">
+          <p class="sublabel" style="margin:0 0 8px">Now</p>
+          <h3>Live on real capital</h3>
+          <p>Not a demo. Not paper trading. One real position on Bitget futures, right now, scored honestly every minute. Built on <strong>livesys</strong>, our own execution engine, watched by <strong>finwatcher</strong>.</p>
+        </div>
+        <div class="card">
+          <p class="sublabel" style="margin:0 0 8px">Next</p>
+          <h3>A faster engine underneath</h3>
+          <p>Surviving was the bar for one strategy. Carrying many, for anyone, takes more. We're rebuilding what runs underneath. Coming soon.</p>
+        </div>
+        <div class="card">
+          <p class="sublabel" style="margin:0 0 8px">The goal</p>
+          <h3>Manifold, opened up</h3>
+          <p>You can already try it below. It's a browser IDE where you compose an alpha, group it into a portfolio, package it into a fund. Today that publishes onto our account. The goal is for it to publish onto yours. AI‑native from the start, built with Claude Code, Cursor or your own tools.</p>
+        </div>
+      </div>
+    </section>
 
     <section class="banner" id="blog">
       <div class="mono">/blog</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From the blog.</h2>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From our blog.</h2>
       <p style="margin:6px 0 0;color:#1a1a1a">Short updates on X, long‑form research and architecture notes on Substack.</p>
       <div class="blog-grid" style="margin-top:14px">
         <a class="blog-card" href="https://substack.com/@neomatrixai" target="_blank" rel="noopener">
@@ -335,7 +282,7 @@
           </div>
           <div class="blog-info">
             <h3>Substack</h3>
-            <p>Our infrastructure &amp; alpha research: what we've learned, what we're building, what's next</p>
+            <p>Our infrastructure &amp; alpha research, what we've learned, what we're building, what's next</p>
           </div>
           <span class="blog-arrow">→</span>
         </a>
@@ -351,18 +298,6 @@
           </div>
           <span class="blog-arrow">→</span>
         </a>
-        <a class="blog-card" href="https://github.com/NeoMatrixAI" target="_blank" rel="noopener">
-          <div class="blog-icon github">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55 0-.27-.01-1.14-.02-2.06-3.2.7-3.88-1.36-3.88-1.36-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.15 0 1.55-.01 2.8-.01 3.18 0 .3.2.66.79.55A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>GitHub</h3>
-            <p>Open-source code &amp; setup guides</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
       </div>
 
       <div class="blog-tabs" role="tablist">
@@ -371,30 +306,28 @@
       </div>
 
       <div class="blog-tab-panel active" id="blog-tab-substack">
-        <div class="blog-subtabs" role="tablist">
-          <button class="blog-subtab-btn active" data-blog-subtab="axiom">Axiom</button>
-          <button class="blog-subtab-btn" data-blog-subtab="vertex">Vertex</button>
-        </div>
-        <div class="blog-subtab-panel active" id="blog-subtab-axiom">
-          <div class="team-intro">
-            <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/axiom" target="_blank" rel="noopener">Axiom</a></h3>
-            <p class="team-tagline">Financial AI Infrastructure</p>
-            <p class="team-about">The team building and running the infrastructure that keeps every strategy live, every minute, on real capital.</p>
+        <div class="blog-teams">
+          <div class="blog-team-col" id="blog-team-axiom">
+            <div class="team-intro">
+              <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/axiom" target="_blank" rel="noopener">Axiom</a></h3>
+              <p class="team-tagline">Financial AI Infrastructure</p>
+              <p class="team-about">The team building and running the infrastructure that keeps every strategy live, every minute, on real capital.</p>
+            </div>
+            <div class="posts-col">
+              <p class="posts-label">Latest Posts</p>
+              <div class="team-posts"></div>
+            </div>
           </div>
-          <div class="posts-col">
-            <p class="posts-label">Latest Posts</p>
-            <div class="team-posts"></div>
-          </div>
-        </div>
-        <div class="blog-subtab-panel" id="blog-subtab-vertex">
-          <div class="team-intro">
-            <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/vertex" target="_blank" rel="noopener">Vertex</a></h3>
-            <p class="team-tagline">Quantitative Alpha Research</p>
-            <p class="team-about">The team researching and validating the alpha signals that go into every strategy.</p>
-          </div>
-          <div class="posts-col">
-            <p class="posts-label">Latest Posts</p>
-            <div class="team-posts"></div>
+          <div class="blog-team-col" id="blog-team-vertex">
+            <div class="team-intro">
+              <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/vertex" target="_blank" rel="noopener">Vertex</a></h3>
+              <p class="team-tagline">Quantitative Alpha Research</p>
+              <p class="team-about">The team researching and validating the alpha signals that go into every strategy.</p>
+            </div>
+            <div class="posts-col">
+              <p class="posts-label">Latest Posts</p>
+              <div class="team-posts"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -405,84 +338,27 @@
       </div>
     </section>
 
-    <section class="banner" id="dashboard">
-      <div class="mono">/dashboard</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">See the dashboards live.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">A working preview of the fund dashboard: one real account, its portfolios, and every alpha inside them. <strong>Sample data, no signup.</strong></p>
-      <div class="blog-grid" style="margin-top:14px">
-        <a class="blog-card" href="demo/fund.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 32 32">
-              <path d="M2 22 C 8 10, 14 27, 20 14 S 30 7, 30 7" />
-              <path d="M2 25 C 8 19, 14 23, 20 19 S 30 13, 30 13" opacity=".5" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Fund Overview</h3><p>Measured vs virtual PV, reconciliation, allocation history</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="demo/fund_portfolio.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 32 32">
-              <rect x="4" y="16" width="6" height="13" rx="1.5" fill="currentColor" stroke="none" />
-              <rect x="13" y="7" width="6" height="22" rx="1.5" fill="currentColor" stroke="none" />
-              <rect x="22" y="12" width="6" height="17" rx="1.5" fill="currentColor" stroke="none" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Portfolio Detail</h3><p>Every alpha in the portfolio, origin vs executed, allocation history</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="demo/fund_alpha.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 32 32">
-              <path d="M2 18 L8 18 L11 6 L15 27 L18 13 L21 18 L30 18" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Alpha Detail</h3><p>One signal's curve, origin vs executed, held-back orders</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-      </div>
-    </section>
-
     <section class="banner" id="manifold">
       <div class="mono">/manifold</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Write the strategy, not the plumbing.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Manifold is the other half of the platform: a browser IDE where you compose an <strong>alpha</strong>, group alphas into a <strong>portfolio</strong>, and package portfolios into a <strong>fund</strong>. Publish it, and it shows up in the dashboards above, the same alpha, portfolio and fund, now running on the real account. <strong>Sample data, no signup.</strong></p>
-      <div class="blog-grid" style="margin-top:14px">
-        <a class="blog-card" href="demo/manifold/editor.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 24 24">
-              <path d="M9 6 L3 12 L9 18 M15 6 L21 12 L15 18" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Strategy Editor</h3><p>File tree, code editor, and a step-by-step Save → Validate → Publish → Run panel</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="demo/manifold/data.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 24 24">
-              <path d="M5 7 L10 12 L5 17 M13 17 L19 17" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Data Explorer</h3><p>Query the whole dataset with slash commands, like /ohlcv BTCUSDT 1m 240</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="demo/manifold/community.html">
-          <div class="blog-icon" style="background:#0a0a0a;color:#fff;">
-            <svg class="icon-svg" viewBox="0 0 24 24">
-              <circle cx="12" cy="9" r="5" />
-              <path d="M9 13.5 L7 21 L12 18 L17 21 L15 13.5" />
-            </svg>
-          </div>
-          <div class="blog-info"><h3>Community &amp; Leaderboard</h3><p>Browse shared strategies, copy them into your workspace, rank on PnL</p></div>
-          <span class="blog-arrow">→</span>
-        </a>
-      </div>
+      <p style="margin:6px 0 0;color:#1a1a1a">A browser IDE where you compose an <strong>alpha</strong>, group alphas into a <strong>portfolio</strong>, package portfolios into a <strong>fund</strong>, and publish it straight onto the real account above. <strong>Sample data, no signup.</strong></p>
       <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">Your code stays yours. Credentials are never written into a config, they're injected at publish. Connect it to Claude Code, Cursor or VS Code over MCP and keep using your own subscription.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px">
+        <a class="btn" href="demo/manifold/editor.html">Strategy Editor →</a>
+        <a class="btn secondary" href="demo/manifold/data.html">Data Explorer →</a>
+        <a class="btn secondary" href="demo/manifold/community.html">Community →</a>
+      </div>
+    </section>
+
+    <section class="banner" id="neoquant">
+      <div class="mono">/neoquant</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Neoquant</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">Description coming soon.</p>
     </section>
 
     <section class="banner" id="how-it-works">
       <div class="mono">/how-it-works</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From your Python file to a live book.</h2>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From your strategy to a live book.</h2>
       <p style="margin:6px 0 0;color:#1a1a1a">Write each strategy once, the same code for backtest and live. The platform validates it, nets it together with every other strategy in the account, executes the orders, and records everything around the clock.</p>
 
       <div class="hero-flow-wrap">
@@ -545,95 +421,38 @@
         </div>
       </div>
 
-      <p class="sublabel" style="margin:24px 0 0">Run · every minute</p>
-      <div class="arch">
-        <div class="arch-band">
-          <div class="bl">1 · Every strategy computes</div>
-          <div class="arch-flow">
-            <span class="arch-node soft">Alpha A</span>
-            <span class="arch-node soft">Alpha B</span>
-            <span class="arch-node soft">Alpha C</span>
-            <span class="arch-arrow">→</span>
-            <span style="font-size:13px;color:var(--muted)">each on its own schedule, computed once no matter how many portfolios use it</span>
-          </div>
-        </div>
-
-        <div class="arch-connector">
-          <div class="line"><span class="arrow"></span></div>
-          <span class="label">every 1 min</span>
-        </div>
-
-        <div class="arch-band">
-          <div class="bl">2 · Netted into one order</div>
-          <div class="arch-flow">
-            <span class="arch-node">Portfolio blend<span class="nx">alphas → one portfolio target</span></span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-node">Fund blend<span class="nx">portfolios → one fund target</span></span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-node">Exchange<span class="nx">Bitget futures: a single real order</span></span>
-          </div>
-          <div class="arch-flow">
-            <span class="arch-arrow" style="visibility:hidden">→</span>
-            <span class="arch-node soft">Guardrails<span class="nx">allocations ≤ 100% · a failed strategy holds its position · an empty signal never liquidates</span></span>
-          </div>
-        </div>
-
-        <div class="arch-connector">
-          <div class="line"><span class="arrow"></span></div>
-          <span class="label">every 1 min</span>
-        </div>
-
-        <div class="arch-band">
-          <div class="bl">3 · Scored &amp; reconciled</div>
-          <div class="arch-flow">
-            <span class="arch-node">Real book<span class="nx">the account's actual result, from the exchange</span></span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-node">Virtual books<span class="nx">every alpha &amp; portfolio's own scorecard</span></span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-node soft">Reconciliation<span class="nx">checked every minute, any gap is shown, never hidden</span></span>
-          </div>
-        </div>
-      </div>
-
-      <p class="sublabel" style="margin:24px 0 0">Protect · built to be trusted with real capital</p>
+      <p class="sublabel" style="margin:24px 0 0">Trusted with real capital</p>
       <div class="grid" style="margin-top:10px">
         <div class="card">
           <h3>Guardrails, always on</h3>
-          <p>Allocations never exceed 100%, a failed strategy holds its last position instead of being force‑sold, and a genuinely empty signal never auto‑liquidates the account.</p>
+          <p>Allocations never exceed 100%. A failed strategy holds its position instead of being force‑sold.</p>
         </div>
         <div class="card">
           <h3>Nothing hidden</h3>
-          <p>Every minute, the sum of every virtual scorecard is checked against the real account. Any gap (fees, funding, timing) is shown, never quietly absorbed.</p>
+          <p>Every minute, every scorecard is checked against the real account. Any gap is shown, never absorbed.</p>
         </div>
         <div class="card">
           <h3>One code, backtest to live</h3>
-          <p>The exact same alpha/portfolio/fund code runs in backtest and in production. No rewrites, no drift between what you tested and what trades.</p>
-        </div>
-        <div class="card">
-          <h3>Every session, on the record</h3>
-          <p>The exact strategy code, config and fills are snapshotted, so you can replay or audit any past trade, anytime.</p>
-        </div>
-        <div class="card">
-          <h3>Self‑healing by design</h3>
-          <p>If a node or job dies mid‑session, the platform detects it and recovers your positions automatically. No babysitting.</p>
-        </div>
-        <div class="card">
-          <h3>Hot‑swap, no downtime</h3>
-          <p>Update a strategy or config while it's live. It takes effect on the next cycle, with no restart.</p>
+          <p>The exact same code runs in backtest and production. No rewrites, no drift.</p>
         </div>
       </div>
 
-      <p class="arch-note">All of it runs on Kubernetes: self‑healing, snapshotted for audit. You bring the strategy; we keep it running.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
-        <a class="btn" href="https://github.com/NeoMatrixAI/nb-runner" target="_blank">Setup Guide</a>
-        <a class="btn secondary" href="https://github.com/NeoMatrixAI/strategy" target="_blank">Strategy Templates</a>
+      <p class="arch-note">All of it runs on Kubernetes. Self‑healing and snapshotted for audit. You bring the strategy. We keep it running.</p>
+    </section>
+
+    <section class="banner" id="dashboard">
+      <div class="mono">/dashboard</div>
+      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">See the fund, live.</h2>
+      <p style="margin:6px 0 0;color:#1a1a1a">One real account, its portfolios, and every alpha inside them, measured against the real account, not a backtest. <strong>Sample data, no signup.</strong></p>
+      <div style="margin-top:16px">
+        <a class="btn" href="demo/fund.html">See the fund →</a>
       </div>
     </section>
 
     <section class="banner" id="data">
       <div class="mono">/data</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Built on a deep market dataset.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Your strategies trade on a unified feed of crypto, derivatives, macro and on‑chain data, collected, reconciled, and served through our own API.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Crypto spot &amp; futures, derivatives &amp; sentiment, macro &amp; on‑chain, Korean equities. Collected, reconciled, and served through our own API.</p>
 
       <div class="stats-row">
         <div class="stat"><div class="stat-num">1,300+</div><div class="stat-label">Crypto symbols</div></div>
@@ -641,113 +460,12 @@
         <div class="stat"><div class="stat-num">2 → N</div><div class="stat-label">Exchanges (expanding)</div></div>
         <div class="stat"><div class="stat-num">30+</div><div class="stat-label">REST endpoints</div></div>
       </div>
-
-      <div class="tabs" role="tablist">
-        <button class="tab-btn active" data-tab="crypto">Crypto Market</button>
-        <button class="tab-btn" data-tab="deriv">Derivatives & Sentiment</button>
-        <button class="tab-btn" data-tab="alt">Macro & On‑chain</button>
-        <button class="tab-btn" data-tab="stock">Equities</button>
-      </div>
-
-      <div class="tab-panel active" id="tab-crypto">
-        <div class="data-item">
-          <h4>OHLCV Candles <span class="tag">1m · 5m · 15m · 1h · 1d</span></h4>
-          <p>Spot & futures across 1,300+ symbols. Minute‑level history back to 2023 on major pairs.</p>
-        </div>
-        <div class="data-item">
-          <h4>Real‑time Orderbook <span class="tag">Top 20 depth</span></h4>
-          <p>Minute‑snapshot depth from live WebSocket streams, normalized across exchanges.</p>
-        </div>
-        <div class="data-item">
-          <h4>Historical Depth Buckets <span class="tag">2023 →</span></h4>
-          <p>Cumulative ±%p liquidity buckets for backtests where raw orderbook history is unavailable.</p>
-        </div>
-        <div class="data-item">
-          <h4>Funding Rates <span class="tag">hourly · 8h cycles</span></h4>
-          <p>Per‑symbol settlement cycles tracked individually (BTC/ETH 8h, alts hourly).</p>
-        </div>
-        <div class="data-item">
-          <h4>Market Cap Rankings <span class="tag">daily · top 1000</span></h4>
-          <p>CoinMarketCap top‑1000 daily snapshots with stable IDs for clean joins and history.</p>
-        </div>
-        <div class="data-item">
-          <h4>Coin Mapping <span class="tag">cross‑exchange</span></h4>
-          <p>Symbol normalization across exchanges: one identifier, many venues.</p>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="tab-deriv">
-        <div class="data-item">
-          <h4>Taker Buy / Sell Volume <span class="tag">since 2020</span></h4>
-          <p>Aggressor‑side flow imbalance, the cleanest read on intraday pressure.</p>
-        </div>
-        <div class="data-item">
-          <h4>Top Trader Position Ratio <span class="tag">long / short</span></h4>
-          <p>Where the largest accounts are net‑positioned, refreshed every 15 minutes.</p>
-        </div>
-        <div class="data-item">
-          <h4>Top Trader Account Ratio <span class="tag">long / short</span></h4>
-          <p>Account‑weighted long/short skew: a different signal from position‑weighted.</p>
-        </div>
-        <div class="data-item">
-          <h4>Open Interest <span class="tag">notional</span></h4>
-          <p>Notional OI tracked per symbol for crowding, squeeze and rollover signals.</p>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="tab-alt">
-        <div class="data-item">
-          <h4>Macro Rates & Indices <span class="tag">daily</span></h4>
-          <p>10Y Treasury (DGS10), VIX, DXY, S&P 500, sourced from FRED & Yahoo with fallbacks.</p>
-        </div>
-        <div class="data-item">
-          <h4>BTC Spot ETF Flows <span class="tag">issuer‑level</span></h4>
-          <p>Daily inflow & AUM per issuer plus aggregate total, so you can see institutional demand in real terms.</p>
-        </div>
-        <div class="data-item">
-          <h4>BTC Leveraged ETF <span class="tag">BITX</span></h4>
-          <p>AUM, price and shares outstanding: a speculative leverage proxy since 2023.</p>
-        </div>
-        <div class="data-item">
-          <h4>On‑chain BTC <span class="tag">per‑minute</span></h4>
-          <p>Hashrate, difficulty, mempool size & median fee from blockchain.com and mempool.space.</p>
-        </div>
-        <div class="data-item">
-          <h4>Stablecoin Supply <span class="tag">USDT · USDC · DAI · USDe · FDUSD</span></h4>
-          <p>Per‑symbol market cap from DefiLlama, for liquidity & risk‑on/off context.</p>
-        </div>
-        <div class="data-item">
-          <h4>DeFi TVL <span class="tag">total · per chain</span></h4>
-          <p>Total value locked across protocols and chains, daily.</p>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="tab-stock">
-        <div class="data-item">
-          <h4>KOSPI / KOSDAQ OHLCV <span class="tag">daily</span></h4>
-          <p>Full Korean equity universe with corporate metadata, sectors and categories.</p>
-        </div>
-        <div class="data-item">
-          <h4>Corporate Actions <span class="tag">splits · dividends</span></h4>
-          <p>Stock splits and dividend history for adjusted‑price reconstruction.</p>
-        </div>
-        <div class="data-item">
-          <h4>Financial Statements <span class="tag">FnGuide</span></h4>
-          <p>Fundamentals sourced from FnGuide for valuation & cross‑asset strategies.</p>
-        </div>
-        <div class="data-item">
-          <h4>Market & Item Registry <span class="tag">KRX</span></h4>
-          <p>Listed‑instrument registry, sector mappings and tradeable universe snapshots.</p>
-        </div>
-      </div>
-
-      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">+ derivative & engineered features delivered alongside raw feeds. Multi‑symbol queries (up to 100 per request), dual‑collector architecture with auto‑recovery.</p>
     </section>
 
     <section class="banner" id="contact">
       <div class="mono">/contact</div>
       <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Get in touch</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Questions, partnerships, or just want to say hi: reach out anytime.</p>
+      <p style="margin:6px 0 0;color:#1a1a1a">Questions, partnerships, or just want to say hi. Reach out anytime.</p>
       <div style="margin-top:16px">
         <a class="btn" href="mailto:info@neomatrix.ai"
            onclick="navigator.clipboard&&navigator.clipboard.writeText('info@neomatrix.ai');var t=this.textContent;this.textContent='Copied! ✓';setTimeout(function(e,o){return function(){e.textContent=o}}(this,t),1500);">info@neomatrix.ai →</a>
@@ -764,50 +482,43 @@
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
-      });
-    });
-
     // Blog (/blog section): top-level tabs are the platform, X and Substack.
-    // Substack has its own inner tab row for its two sections, Axiom and
-    // Vertex. Every list is newest-first; an empty tab/sub-tab renders an
-    // honest line, never a fake post.
+    // Substack shows Axiom and Vertex side by side (no sub-tabs). Every list
+    // is newest-first: title, one-line subtitle, and a monogram thumbnail
+    // (no real photo, since these posts have no real image yet). No date
+    // shown. A post flagged `example: true` isn't live yet (draft link, not
+    // public): link to the team's Substack section instead of the draft
+    // URL. Flip the flag off (and point `url` at the real published post)
+    // once it actually goes live. An empty tab renders an honest line,
+    // never a fake post.
     (function () {
       const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const teamPage = { axiom: 'https://neomatrixai.substack.com/s/axiom', vertex: 'https://neomatrixai.substack.com/s/vertex' };
       const renderInto = (selector, posts, emptyMsg) => {
         const panel = document.querySelector(selector);
         if (!panel) return;
         const sorted = posts.slice().sort((a, b) => b.date.localeCompare(a.date));
         panel.innerHTML = sorted.length
-          ? sorted.map(p =>
-              '<a class="post-row" href="' + esc(p.url) + '" target="_blank" rel="noopener">' +
-                '<span class="prow-title">' + esc(p.title) + '</span>' +
-                '<span class="prow-leader" aria-hidden="true"></span>' +
-                '<span class="prow-date">' + esc(p.date) + '</span></a>'
-            ).join('')
+          ? sorted.map(p => {
+              const href = p.example ? (teamPage[p.team] || 'https://substack.com/@neomatrixai') : p.url;
+              const mono = (p.team || p.platform || p.title).charAt(0).toUpperCase();
+              const sub = p.subtitle ? '<span class="prow-sub">' + esc(p.subtitle) + '</span>' : '';
+              return '<a class="post-row" href="' + esc(href) + '" target="_blank" rel="noopener">' +
+                '<span class="prow-text"><span class="prow-title">' + esc(p.title) + '</span>' + sub + '</span>' +
+                '<span class="prow-thumb" aria-hidden="true">' + esc(mono) + '</span></a>';
+            }).join('')
           : '<p class="blog-empty">' + emptyMsg + '</p>';
       };
       renderInto('#blog-tab-x .x-posts', all.filter(p => p.platform === 'x'), 'No X posts linked yet.');
-      renderInto('#blog-subtab-axiom .team-posts', all.filter(p => p.team === 'axiom'), 'No Axiom posts linked yet.');
-      renderInto('#blog-subtab-vertex .team-posts', all.filter(p => p.team === 'vertex'), 'No Vertex posts linked yet.');
+      renderInto('#blog-team-axiom .team-posts', all.filter(p => p.team === 'axiom'), 'No Axiom posts linked yet.');
+      renderInto('#blog-team-vertex .team-posts', all.filter(p => p.team === 'vertex'), 'No Vertex posts linked yet.');
 
       document.querySelectorAll('.blog-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const target = btn.dataset.blogTab;
           document.querySelectorAll('.blog-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
           document.querySelectorAll('.blog-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'blog-tab-' + target));
-        });
-      });
-      document.querySelectorAll('.blog-subtab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const target = btn.dataset.blogSubtab;
-          document.querySelectorAll('.blog-subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
-          document.querySelectorAll('.blog-subtab-panel').forEach(p => p.classList.toggle('active', p.id === 'blog-subtab-' + target));
         });
       });
     })();
