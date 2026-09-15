@@ -1,526 +1,1002 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>One Account. Every Strategy.</title>
-  <meta name="description" content="Run as many strategies as you want inside one real account, each still scored on its own, minute by minute. Build it in Manifold, backtest it, and go live on Bitget futures." />
-  <link rel="icon" type="image/x-icon" href="favicon.png">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NeoMatrix — Modeling the Alpha Manifold." />
+  <title>NeoMatrix — Alpha Manifold</title>
+
   <style>
-    :root {
-      --bg: #ffffff;      /* white background */
-      --fg: #0a0a0a;      /* black text */
-      --muted: #6b6b6b;   /* medium gray for secondary text */
-      --line: #e5e5e5;    /* light gray borders on white */
-      --accent: #000000;  /* keep monochrome */
-      --radius: 16px;
-    }
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
-    body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      line-height: 1.6; letter-spacing: 0.01em;
-      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-    }
-    a { color: var(--fg); text-decoration: none; }
-    .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 32px 80px; }
-
-    /* Top Nav: sits outside .wrap so its background spans the full viewport
-       width and sits flush with the very top of the page, not inset by
-       .wrap's own padding. .nav-inner re-applies that same 1440px column
-       so the logo/links line up with everything below it. */
-    .nav { border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fafafa; box-shadow: 0 1px 0 rgba(0,0,0,0.04); z-index: 10; }
-    .nav-inner { max-width: 1440px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-    .brand-center { font-weight: 800; letter-spacing: 0.04em; font-size: 30px; text-transform: none; }
-
-    /* Hero: fills the first screen on its own (headline + subcopy only) so
-       everything else only appears once you scroll, altbridge-style. */
-    .hero { min-height: calc(100vh - 110px); display: flex; flex-direction: column; justify-content: center; padding: 16px 0; }
-    .kicker { font-size: 40px; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
-    h1 { font-size: clamp(40px, 8vw, 96px); line-height: .95; margin: 10px 0 18px; letter-spacing: -0.02em; }
-    .sub { font-size: clamp(16px, 2.5vw, 22px); color: #1a1a1a; max-width: 62ch; }
-    .btn { border: 1px solid var(--fg); padding: 14px 18px; border-radius: 12px; font-weight: 700; transition: all 0.15s ease; }
-    .btn:hover { background: var(--fg); color: var(--bg); }
-    .btn.secondary { border-color: var(--fg); color: var(--fg); }
-    .btn.secondary:hover { background: var(--fg); color: var(--bg); }
-
-    .big-statement { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; margin: 0; }
-
-    /* Hero flow diagram: many strategies netting into one account line */
-    .hero-flow-wrap { grid-column: 1 / -1; margin-top: 12px; }
-    .hero-flow { display: block; width: 100%; height: auto; }
-    .hero-flow .hf-line { fill: none; stroke-width: 1.8; stroke-linecap: round; }
-    .hero-flow .hf-main { fill: none; stroke: var(--fg); stroke-width: 3; stroke-linecap: round; }
-    .hero-flow .hf-dot { fill: var(--fg); }
-    .hero-flow .hf-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-
-    /* Feature Grid */
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 32px; }
-    .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
-    .card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: .02em; }
-    .card p { margin: 0; color: #222; }
-
-    .arch-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
-
-    /* Statement Blocks */
-    .banner { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; margin-top: 14px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; color: var(--muted); }
-
-    /* Data Panel */
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
-    .stat { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(0,0,0,0.02); }
-    .stat-num { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
-    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    @media (max-width: 980px) {
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
     }
 
-    /* Blog / link cards */
-    .blog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 12px; max-width: 700px; }
-    .blog-card {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 24px 20px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0));
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-    .blog-card:hover {
-      border-color: var(--fg);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    .blog-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-size: 24px;
-    }
-    .icon-svg { width: 20px; height: 20px; overflow: visible; }
-    .icon-svg path, .icon-svg rect, .icon-svg circle { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .blog-icon.x, .blog-icon.substack, .blog-icon.github {
-      width: 36px; height: 36px; flex: none; aspect-ratio: 1 / 1; border-radius: 9px;
-      box-sizing: border-box; padding: 0;
-    }
-    .blog-icon.x svg, .blog-icon.substack svg, .blog-icon.github svg { display: block; width: 17px; height: 17px; }
-    .blog-icon.x { background: #000; color: #fff; }
-    .blog-icon.substack { background: #FF6719; color: #fff; }
-    .blog-icon.github { background: #0a0a0a; color: #fff; }
-    .blog-info h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
-    .blog-info p { margin: 0; font-size: 13px; color: var(--muted); }
-    .blog-arrow { margin-left: auto; color: var(--muted); transition: transform 0.2s ease; }
-    .blog-card:hover .blog-arrow { transform: translateX(4px); color: var(--fg); }
-    #blog .blog-card { padding: 12px 14px; gap: 10px; }
-    #blog .blog-info h3 { font-size: 13.5px; margin-bottom: 2px; }
-    #blog .blog-info p { font-size: 11.5px; }
-
-    @media (max-width: 980px) {
-      .blog-grid { grid-template-columns: 1fr; }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
     }
 
-    /* Blog: top-level tabs are the platform (X / Substack). Substack's tab
-       holds its own inner tab row for its two sections (Axiom / Vertex). */
-    .blog-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .blog-tab-btn {
-      border: 1px solid var(--line); background: transparent; color: var(--fg);
-      padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 13px;
-      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
-    }
-    .blog-tab-btn:hover { border-color: var(--fg); }
-    .blog-tab-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-    .blog-tab-panel {
-      display: none; margin-top: 14px; flex-direction: column; gap: 3px;
-      padding: 22px 24px; border: 1px solid var(--line); max-width: 700px;
-      border-radius: var(--radius); background: linear-gradient(180deg, rgba(0,0,0,0.015), rgba(0,0,0,0));
-    }
-    .blog-tab-panel.active { display: flex; }
-    .blog-tab-panel#blog-tab-substack { max-width: none; width: 100%; }
-    .x-posts { display: flex; flex-direction: column; gap: 3px; }
-    .blog-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; width: 100%; }
-    .blog-team-col { min-width: 0; }
-    .team-intro { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
-    .team-name { margin: 0 0 5px; font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
-    .team-name a { color: inherit; text-decoration: none; }
-    .team-name a:hover { text-decoration: underline; }
-    .team-tagline {
-      margin: 0 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .08em; color: var(--muted);
-    }
-    .team-about { margin: 0; font-size: 13.5px; line-height: 1.55; color: #333; min-height: 3.1em; }
-    .posts-col { min-width: 0; }
-    .posts-label {
-      margin: 0 0 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .12em; color: var(--muted);
-    }
-    .team-posts { display: flex; flex-direction: column; min-width: 0; }
-    @media (max-width: 760px) {
-      .blog-teams { grid-template-columns: 1fr; gap: 20px; }
-    }
-    .post-row {
-      display: flex; align-items: center; gap: 16px;
-      padding: 16px 10px; margin: 0 -10px; border-radius: 10px;
-      text-decoration: none; color: var(--fg); transition: background 0.15s ease;
-    }
-    .post-row + .post-row { border-top: 1px solid var(--line); }
-    .post-row:hover { background: rgba(0,0,0,0.04); }
-    .post-row:hover .prow-title { text-decoration: underline; }
-    .prow-text { min-width: 0; flex: 1 1 auto; }
-    .post-row .prow-title { display: block; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; margin-bottom: 5px; }
-    .post-row .prow-sub { display: block; font-size: 13px; line-height: 1.5; color: var(--muted); }
-    .prow-thumb {
-      flex: 0 0 auto; width: 84px; height: 84px; border-radius: 10px;
-      border: 1px solid var(--line); background: linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.015));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; font-weight: 800; color: rgba(0,0,0,0.2); letter-spacing: 0;
-    }
-    @media (max-width: 480px) {
-      .prow-thumb { width: 56px; height: 56px; font-size: 18px; }
-      .post-row .prow-title { font-size: 15.5px; }
-    }
-    .blog-empty { color: var(--muted); font-size: 14px; padding: 6px 10px; }
+    ::selection{background:#000;color:#fff}
 
-    /* Footer */
-    footer { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    a{color:inherit;text-decoration:none}
 
-    /* Responsive */
-    @media (max-width: 980px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 640px) {
-      .grid { grid-template-columns: 1fr; }
-      .wrap { padding-bottom: 48px; }
-      .btn { width: 100%; justify-content: center; }
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
     }
 
-    /* In-page jump nav + smooth scroll */
-    html { scroll-behavior: smooth; }
-    section[id], header[id] { scroll-margin-top: 80px; }
-    .nav .jump { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; }
-    .nav .jump a { color: #555; }
-    .nav .jump a:hover { color: var(--fg); }
-    .nav .left { display: flex; align-items: center; }
-    @media (max-width: 980px) {
-      .nav-inner { flex-wrap: wrap; row-gap: 10px; }
-      .nav .jump { width: 100%; gap: 8px 16px; font-size: 13.5px; }
-    }
-    @media (max-width: 480px) {
-      .nav .jump { gap: 6px 12px; font-size: 12.5px; }
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
     }
 
-    /* Section sub-labels (used to group content within a section) */
-    .sublabel { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brand-text{
+      font-size:16px;
+      font-weight:600;
+      letter-spacing:-.01em;
+      color:#111;
+      white-space:nowrap;
+    }
+    .brand-text .accent{
+      font-weight:500;
+      color:var(--muted);
+    }
+
+    @media (max-width:520px){
+      .brand-text{ display:none; }
+    }
+
+    .nav-links{
+      display:flex;
+      gap:28px;
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+    }
+
+    .nav-links a{transition:color .25s ease}
+    .nav-links a:hover{color:#000}
+
+    section{
+      position:relative;
+      border-bottom:1px solid var(--line);
+    }
+
+    .hero{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      overflow:hidden;
+      padding-top:76px;
+    }
+
+    .grid{
+      position:absolute;
+      inset:0;
+      opacity:.7;
+      pointer-events:none;
+      background-image:
+        linear-gradient(to right, rgba(0,0,0,.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,.045) 1px, transparent 1px);
+      background-size:96px 96px;
+      mask-image:linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+    }
+
+    .hero-orbit{
+      position:absolute;
+      width:min(46vw,620px);
+      aspect-ratio:1;
+      right:-8vw;
+      top:14vh;
+      border:1px solid rgba(0,0,0,.15);
+      border-radius:50%;
+      opacity:.7;
+    }
+
+    .hero-orbit:before,
+    .hero-orbit:after{
+      content:"";
+      position:absolute;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:50%;
+      inset:10%;
+    }
+
+    .hero-orbit:after{inset:24%}
+
+    .hero-content{
+      position:relative;
+      z-index:2;
+      padding-block:110px 80px;
+      max-width:1050px;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:12px;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      color:#5f5f5f;
+      margin-bottom:34px;
+    }
+
+    .eyebrow:before{
+      content:"";
+      width:34px;
+      height:1px;
+      background:#000;
+    }
+
+    h1,h2,h3,p{margin:0}
+
+    .hero h1{
+      font-size:clamp(72px,12vw,170px);
+      line-height:.86;
+      letter-spacing:-.065em;
+      font-weight:620;
+      max-width:1050px;
+    }
+
+    .hero-lede{
+      margin-top:42px;
+      max-width:820px;
+      font-size:clamp(22px,2.9vw,43px);
+      line-height:1.16;
+      letter-spacing:-.035em;
+      font-weight:430;
+    }
+
+    .hero-sub{
+      margin-top:24px;
+      color:var(--muted);
+      max-width:690px;
+      font-size:16px;
+      line-height:1.65;
+    }
+
+    .hero-tags{
+      margin-top:62px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px 28px;
+      color:#222;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.13em;
+    }
+
+    .hero-tags span:not(:last-child):after{
+      content:"·";
+      padding-left:28px;
+      color:#aaa;
+    }
+
+    .section-pad{
+      padding-block:clamp(96px,13vw,180px);
+    }
+
+    .section-head{
+      display:grid;
+      grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);
+      gap:clamp(48px,8vw,120px);
+      align-items:start;
+    }
+
+    .section-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      padding-top:10px;
+    }
+
+    .section-title{
+      font-size:clamp(48px,7.2vw,104px);
+      line-height:.95;
+      letter-spacing:-.055em;
+      font-weight:560;
+      max-width:900px;
+    }
+
+    .section-copy{
+      margin-top:36px;
+      max-width:790px;
+      color:#555;
+      font-size:18px;
+      line-height:1.72;
+    }
+
+    .blog-subscribe-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-top:28px;
+    }
+    .blog-subscribe{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:14px 28px;
+      background:#000;
+      color:#fff;
+      font-size:14px;
+      font-weight:600;
+      letter-spacing:.02em;
+      border-radius:8px;
+      transition:background .25s ease;
+    }
+    .blog-subscribe:hover{ background:#333; }
+    .blog-subscribe svg{ flex:0 0 auto; }
+    .blog-subscribe-x{
+      background:transparent;
+      color:#000;
+      border:1px solid var(--line-strong);
+    }
+    .blog-subscribe-x:hover{ background:#f4f4f4; }
+
+    .statement{
+      margin-top:70px;
+      padding-top:26px;
+      border-top:1px solid var(--line-strong);
+      font-size:clamp(24px,3.2vw,46px);
+      line-height:1.18;
+      letter-spacing:-.035em;
+    }
+
+    .statement strong{font-weight:620}
+
+    .metric-row{
+      margin-top:76px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      border-top:1px solid var(--line);
+      border-left:1px solid var(--line);
+    }
+
+    .metric{
+      min-height:170px;
+      padding:24px;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .metric-label{
+      font-size:11px;
+      letter-spacing:.13em;
+      text-transform:uppercase;
+      color:#6a6a6a;
+    }
+
+    .metric-value{
+      font-size:clamp(25px,3.1vw,43px);
+      letter-spacing:-.04em;
+      line-height:1.05;
+    }
+
+    .flow{
+      margin-top:72px;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      border-top:1px solid var(--line-strong);
+      border-left:1px solid var(--line);
+    }
+
+    .flow-item{
+      position:relative;
+      min-height:220px;
+      padding:24px;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      transition:background .3s ease,color .3s ease;
+    }
+
+    .flow-item:hover{
+      background:#000;
+      color:#fff;
+    }
+
+    .flow-num{
+      font-size:10px;
+      letter-spacing:.14em;
+      color:#777;
+    }
+
+    .flow-label{
+      font-size:clamp(18px,1.8vw,28px);
+      line-height:1.08;
+      letter-spacing:-.03em;
+    }
+
+    .flow-arrow{
+      position:absolute;
+      right:-11px;
+      top:50%;
+      z-index:3;
+      width:22px;
+      height:22px;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      border:1px solid #aaa;
+      border-radius:50%;
+      font-size:11px;
+      color:#000;
+      transform:translateY(-50%);
+    }
+
+    .flow-item:last-child .flow-arrow{display:none}
+
+    .pipeline{
+      margin-top:74px;
+      border-top:1px solid var(--line-strong);
+    }
+
+    .pipeline-row{
+      display:grid;
+      grid-template-columns:54px minmax(0,1fr) auto;
+      align-items:center;
+      gap:22px;
+      padding:22px 0;
+      border-bottom:1px solid var(--line);
+      transition:padding-left .25s ease, background .25s ease;
+    }
+
+    .pipeline-row:hover{padding-left:12px}
+
+    .pipeline-index{
+      color:#777;
+      font-size:11px;
+      letter-spacing:.12em;
+    }
+
+    .pipeline-name{
+      font-size:clamp(22px,2.7vw,38px);
+      letter-spacing:-.035em;
+    }
+
+    .pipeline-desc{
+      color:#777;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      font-size:10px;
+      text-align:right;
+    }
+
+    /* /blog: Axiom/Vertex side by side, each a list of post rows */
+    .blog-columns{
+      margin-top:76px;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:clamp(40px,6vw,90px);
+    }
+
+    .blog-team-head{
+      padding-bottom:18px;
+      border-bottom:1px solid var(--line-strong);
+    }
+
+    .blog-team-name{
+      font-size:clamp(26px,2.6vw,34px);
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .blog-team-tagline{
+      margin-top:6px;
+      font-size:11px;
+      letter-spacing:.13em;
+      text-transform:uppercase;
+      color:#6a6a6a;
+    }
+
+    .blog-posts{ margin-top:8px; }
+
+    .blog-post{
+      display:flex;
+      align-items:flex-start;
+      gap:20px;
+      padding:22px 0;
+      border-bottom:1px solid var(--line);
+    }
+
+    .blog-post-text{ min-width:0; flex:1 1 auto; }
+
+    .blog-post-title{
+      display:block;
+      font-size:18px;
+      letter-spacing:-.02em;
+      font-weight:600;
+    }
+
+    .blog-post-sub{
+      display:block;
+      margin-top:6px;
+      font-size:13px;
+      line-height:1.5;
+      color:var(--muted);
+    }
+
+    .blog-post-thumb{
+      flex:0 0 auto;
+      width:180px;
+      height:112px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      background:#f4f4f4;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      font-weight:700;
+      color:#bbb;
+    }
+
+    .blog-post-thumb-img{ padding:0; overflow:hidden; }
+    .blog-post-thumb-img img{ width:100%; height:100%; object-fit:contain; display:block; }
+
+    .blog-post-placeholder{ cursor:default; }
+    .blog-post-placeholder:hover{ padding-left:0; }
+    .blog-post-placeholder .blog-post-title{ color:var(--muted); }
+    .blog-post-placeholder .blog-post-thumb{ border-style:dashed; font-size:16px; letter-spacing:.1em; }
+
+    .blog-empty{ color:var(--muted); font-size:14px; padding:16px 0; }
+
+    .blog-team-more{
+      display:block;
+      margin-top:18px;
+      text-align:right;
+      font-size:13px;
+      color:var(--muted);
+      transition:color .25s ease;
+    }
+    .blog-team-more:hover{ color:#000; }
+
+    @media (max-width:760px){
+      .blog-columns{ grid-template-columns:1fr; gap:56px; }
+      .blog-post-thumb{ width:120px; height:75px; }
+    }
+
+    .manifesto{
+      min-height:72vh;
+      display:flex;
+      align-items:center;
+    }
+
+    .manifesto-inner{
+      padding-block:140px;
+    }
+
+    .manifesto h2{
+      font-size:clamp(55px,9.5vw,138px);
+      line-height:.9;
+      letter-spacing:-.06em;
+      font-weight:570;
+      max-width:1120px;
+    }
+
+    .manifesto p{
+      margin-top:42px;
+      max-width:760px;
+      font-size:18px;
+      line-height:1.7;
+      color:#555;
+    }
+
+    .formula{
+      margin-top:62px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      font-size:clamp(19px,2.6vw,34px);
+      letter-spacing:-.025em;
+    }
+
+    .formula .muted{color:#999}
+
+    footer{
+      padding:44px 0 56px;
+    }
+
+    .footer-inner{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+
+    .footer-brand{
+      font-size:26px;
+      letter-spacing:-.03em;
+      font-weight:600;
+    }
+
+    .footer-note{
+      max-width:520px;
+      color:#777;
+      font-size:12px;
+      line-height:1.6;
+      text-align:right;
+    }
+
+    .footer-bottom{
+      margin-top:36px;
+      padding-top:22px;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+
+    .footer-contact{
+      font-size:15px;
+      font-weight:600;
+      color:#000;
+      transition:color .25s ease;
+    }
+
+    .footer-contact:hover{
+      color:#000;
+      text-decoration:underline;
+    }
+
+    .reveal{
+      opacity:0;
+      transform:translateY(22px);
+      transition:opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1);
+    }
+
+    .reveal.visible{
+      opacity:1;
+      transform:none;
+    }
+
+    @media (max-width:900px){
+      .nav-links{display:none}
+      .hero-orbit{width:70vw;right:-30vw;top:22vh}
+      .section-head{grid-template-columns:1fr;gap:26px}
+      .section-copy{margin-top:24px}
+      .metric-row{grid-template-columns:1fr 1fr}
+      .flow{grid-template-columns:1fr}
+      .flow-item{min-height:150px}
+      .flow-arrow{
+        top:auto;
+        right:50%;
+        bottom:-11px;
+        transform:translateX(50%) rotate(90deg);
+      }
+      .pipeline-row{
+        grid-template-columns:40px 1fr;
+      }
+      .pipeline-desc{
+        grid-column:2;
+        text-align:left;
+      }
+    }
+
+    @media (max-width:580px){
+      .hero h1{font-size:clamp(64px,20vw,100px)}
+      .hero-lede{font-size:24px}
+      .metric-row{grid-template-columns:1fr}
+      .hero-tags{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:14px;
+      }
+      .hero-tags span:after{display:none}
+      .footer-inner{align-items:flex-start;flex-direction:column}
+      .footer-note{text-align:left}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      .reveal{opacity:1;transform:none;transition:none}
+      *{animation:none!important;transition:none!important}
+    }
   </style>
 </head>
 <body>
-  <nav class="nav">
+
+  <nav class="nav" aria-label="Primary">
     <div class="nav-inner">
-      <div class="left">
-        <img src="250711_logo_neomatrix_NM_BK@2x.png" alt="NeoMatrix Logo" style="height:48px; margin-right:8px; vertical-align:middle;">
-        <div class="brand-center" style="font-size:24px;">NeoMatrix AI</div>
-      </div>
-      <div class="jump">
+      <a class="brand" href="#top">
+        <img src="250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix" style="height:48px;vertical-align:middle">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
         <a href="#blog">Blog</a>
+        <a href="#scale">Machine Scale</a>
+        <a href="#nonlinear">Nonlinear</a>
         <a href="#manifold">Manifold</a>
-        <a href="#neoquant">Neoquant</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#dashboard">Dashboard</a>
-        <a href="#data">Data</a>
-        <a href="#contact">Contact</a>
+        <a href="#adaptive">Self-Evolving AI</a>
+        <a href="#pipeline">AlphaGen</a>
       </div>
     </div>
   </nav>
 
-  <div class="wrap">
-    <header class="hero">
-      <h1>One account.<br/>Every strategy.</h1>
-      <p class="sub">Most systems stop at the backtest. Ours goes all the way. The same code, live on one real account, every strategy still scored honestly, every minute, right now on <strong>Bitget futures</strong>. That's the proof. <strong>Manifold</strong> is the destination. A platform where you compose a strategy like this yourself, publish it, and watch it run for real.</p>
-    </header>
-
-    <section class="banner" id="thesis">
-      <div class="mono">/thesis</div>
-      <h2 class="big-statement">The proof, then the platform.</h2>
-      <p class="sub" style="margin-top:12px">A backtest can prove almost anything. Real money only proves whether the strategy survives contact with it. So before we built a platform, we built one strategy that had to survive, real slippage, real drawdown, real risk, no do-overs. Everything below is downstream of that.</p>
-      <div class="grid" style="margin-top:28px">
-        <div class="card">
-          <p class="sublabel" style="margin:0 0 8px">Now</p>
-          <h3>Live on real capital</h3>
-          <p>Not a demo. Not paper trading. One real position on Bitget futures, right now, scored honestly every minute. Built on <strong>livesys</strong>, our own execution engine, watched by <strong>finwatcher</strong>.</p>
-        </div>
-        <div class="card">
-          <p class="sublabel" style="margin:0 0 8px">Next</p>
-          <h3>A faster engine underneath</h3>
-          <p>Surviving was the bar for one strategy. Carrying many, for anyone, takes more. We're rebuilding what runs underneath. Coming soon.</p>
-        </div>
-        <div class="card">
-          <p class="sublabel" style="margin:0 0 8px">The goal</p>
-          <h3>Manifold, opened up</h3>
-          <p>You can already try it below. It's a browser IDE where you compose an alpha, group it into a portfolio, package it into a fund. Today that publishes onto our account. The goal is for it to publish onto yours. AI‑native from the start, built with Claude Code, Cursor or your own tools.</p>
+  <main id="top">
+    <section class="hero">
+      <div class="grid"></div>
+      <div class="hero-orbit" aria-hidden="true"></div>
+      <div class="shell hero-content">
+        <div class="eyebrow reveal">NeoMatrix / AI-Native Systematic Investing</div>
+        <h1 class="reveal">Alpha<br>Manifold.</h1>
+        <p class="hero-lede reveal">
+          Modeling high-dimensional, nonlinear market structures to discover alpha beyond conventional factors.
+        </p>
+        <p class="hero-sub reveal">
+          AI-native systematic investing powered by advanced models, large-scale computation, and rigorous validation.
+        </p>
+        <div class="hero-tags reveal">
+          <span>Research</span>
+          <span>Models</span>
+          <span>Simulation</span>
+          <span>Trading</span>
         </div>
       </div>
     </section>
 
-    <section class="banner" id="blog">
-      <div class="mono">/blog</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From our blog.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Short updates on X, long‑form research and architecture notes on Substack.</p>
-      <div class="blog-grid" style="margin-top:14px">
-        <a class="blog-card" href="https://substack.com/@neomatrixai" target="_blank" rel="noopener">
-          <div class="blog-icon substack">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>Substack</h3>
-            <p>Our infrastructure &amp; alpha research, what we've learned, what we're building, what's next</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
-        <a class="blog-card" href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">
-          <div class="blog-icon x">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-          </div>
-          <div class="blog-info">
-            <h3>X (Twitter)</h3>
-            <p>News, updates &amp; short takes</p>
-          </div>
-          <span class="blog-arrow">→</span>
-        </a>
-      </div>
-
-      <div class="blog-tabs" role="tablist">
-        <button class="blog-tab-btn active" data-blog-tab="substack">Substack</button>
-        <button class="blog-tab-btn" data-blog-tab="x">X</button>
-      </div>
-
-      <div class="blog-tab-panel active" id="blog-tab-substack">
-        <div class="blog-teams">
-          <div class="blog-team-col" id="blog-team-axiom">
-            <div class="team-intro">
-              <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/axiom" target="_blank" rel="noopener">Axiom</a></h3>
-              <p class="team-tagline">Financial AI Infrastructure</p>
-              <p class="team-about">The team building and running the infrastructure that keeps every strategy live, every minute, on real capital.</p>
-            </div>
-            <div class="posts-col">
-              <p class="posts-label">Latest Posts</p>
-              <div class="team-posts"></div>
-            </div>
-          </div>
-          <div class="blog-team-col" id="blog-team-vertex">
-            <div class="team-intro">
-              <h3 class="team-name"><a href="https://neomatrixai.substack.com/s/vertex" target="_blank" rel="noopener">Vertex</a></h3>
-              <p class="team-tagline">Quantitative Alpha Research</p>
-              <p class="team-about">The team researching and validating the alpha signals that go into every strategy.</p>
-            </div>
-            <div class="posts-col">
-              <p class="posts-label">Latest Posts</p>
-              <div class="team-posts"></div>
+    <section id="blog">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">Blog</div>
+          <div>
+            <h2 class="section-title">From Axiom<br>and Vertex.</h2>
+            <p class="section-copy">
+              Engineering and research notes from the teams building and validating what runs on real capital.
+            </p>
+            <div class="blog-subscribe-row">
+              <a class="blog-subscribe" href="https://neomatrixai.substack.com/" target="_blank" rel="noopener">
+                Subscribe
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+              </a>
+              <a class="blog-subscribe blog-subscribe-x" href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">
+                Follow on X
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+              </a>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="blog-tab-panel" id="blog-tab-x">
-        <p class="posts-label">Latest Posts</p>
-        <div class="x-posts"></div>
-      </div>
-    </section>
-
-    <section class="banner" id="manifold">
-      <div class="mono">/manifold</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Write the strategy, not the plumbing.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">A browser IDE where you compose an <strong>alpha</strong>, group alphas into a <strong>portfolio</strong>, package portfolios into a <strong>fund</strong>, and publish it straight onto the real account above. <strong>Sample data, no signup.</strong></p>
-      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)">Your code stays yours. Credentials are never written into a config, they're injected at publish. Connect it to Claude Code, Cursor or VS Code over MCP and keep using your own subscription.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px">
-        <a class="btn" href="demo/manifold/editor.html">Strategy Editor →</a>
-        <a class="btn secondary" href="demo/manifold/data.html">Data Explorer →</a>
-        <a class="btn secondary" href="demo/manifold/community.html">Community →</a>
-      </div>
-    </section>
-
-    <section class="banner" id="neoquant">
-      <div class="mono">/neoquant</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Neoquant</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Description coming soon.</p>
-    </section>
-
-    <section class="banner" id="how-it-works">
-      <div class="mono">/how-it-works</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">From your strategy to a live book.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Write each strategy once, the same code for backtest and live. The platform validates it, nets it together with every other strategy in the account, executes the orders, and records everything around the clock.</p>
-
-      <div class="hero-flow-wrap">
-        <svg class="hero-flow" viewBox="0 0 640 140" role="img" aria-label="Many strategies, each their own signal, crossing and netting into one account line">
-          <defs>
-            <linearGradient id="hfg1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
-              <stop offset="0%" stop-color="#4f7cac" />
-              <stop offset="100%" style="stop-color:var(--fg)" />
-            </linearGradient>
-            <linearGradient id="hfg2" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
-              <stop offset="0%" stop-color="#c97b3d" />
-              <stop offset="100%" style="stop-color:var(--fg)" />
-            </linearGradient>
-            <linearGradient id="hfg3" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
-              <stop offset="0%" stop-color="#6fa287" />
-              <stop offset="100%" style="stop-color:var(--fg)" />
-            </linearGradient>
-            <linearGradient id="hfg4" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="360" y2="0">
-              <stop offset="0%" stop-color="#9b6b9e" />
-              <stop offset="100%" style="stop-color:var(--fg)" />
-            </linearGradient>
-          </defs>
-          <g class="hf-strategies">
-            <path id="hfp1" class="hf-line" stroke="url(#hfg1)" d="M0,15 C100,15 140,92 190,90 C250,88 320,72 360,65" />
-            <path id="hfp2" class="hf-line" stroke="url(#hfg2)" d="M0,45 C90,52 150,100 200,78 C260,60 320,64 360,65" />
-            <path id="hfp3" class="hf-line" stroke="url(#hfg3)" d="M0,86 C90,78 150,32 200,50 C260,66 320,66 360,65" />
-            <path id="hfp4" class="hf-line" stroke="url(#hfg4)" d="M0,119 C100,119 140,40 190,42 C250,44 320,58 360,65" />
-          </g>
-          <path class="hf-main" d="M360,65 L640,65" />
-          <circle class="hf-dot" r="3.2" style="fill:#4f7cac">
-            <animateMotion dur="4.2s" begin="0s" repeatCount="indefinite" path="M0,15 C100,15 140,92 190,90 C250,88 320,72 360,65 L640,65" />
-          </circle>
-          <circle class="hf-dot" r="3.2" style="fill:#c97b3d">
-            <animateMotion dur="4.9s" begin="-1s" repeatCount="indefinite" path="M0,45 C90,52 150,100 200,78 C260,60 320,64 360,65 L640,65" />
-          </circle>
-          <circle class="hf-dot" r="3.2" style="fill:#6fa287">
-            <animateMotion dur="4.5s" begin="-2.2s" repeatCount="indefinite" path="M0,86 C90,78 150,32 200,50 C260,66 320,66 360,65 L640,65" />
-          </circle>
-          <circle class="hf-dot" r="3.2" style="fill:#9b6b9e">
-            <animateMotion dur="5.2s" begin="-3.1s" repeatCount="indefinite" path="M0,119 C100,119 140,40 190,42 C250,44 320,58 360,65 L640,65" />
-          </circle>
-          <text class="hf-label" x="0" y="136">every strategy, its own signal</text>
-          <text class="hf-label" x="500" y="136">one account</text>
-        </svg>
-      </div>
-
-      <p class="sublabel" style="margin:18px 0 0">Build · same code, backtest to live</p>
-      <div class="grid" style="margin-top:10px">
-        <div class="card">
-          <h3>1. Compose</h3>
-          <p>Build an alpha, group alphas into a portfolio, package portfolios into a fund, all in the same browser IDE.</p>
-        </div>
-        <div class="card">
-          <h3>2. Backtest</h3>
-          <p>Run it against real historical data. Results persist and export, so you can compare runs over time.</p>
-        </div>
-        <div class="card">
-          <h3>3. Go Live</h3>
-          <p>Publish the exact same code. It's netted together with every other strategy in the account and traded live.</p>
+        <div class="blog-columns">
+          <div class="blog-team">
+            <div class="blog-team-head">
+              <div class="blog-team-name">Axiom</div>
+              <div class="blog-team-tagline">Financial AI Infrastructure</div>
+            </div>
+            <div class="blog-posts" id="blog-posts-axiom"></div>
+            <a class="blog-team-more" href="blog/axiom/index.html">More from Axiom →</a>
+          </div>
+          <div class="blog-team">
+            <div class="blog-team-head">
+              <div class="blog-team-name">Vertex</div>
+              <div class="blog-team-tagline">Quantitative Alpha Research</div>
+            </div>
+            <div class="blog-posts" id="blog-posts-vertex"></div>
+            <a class="blog-team-more" href="blog/vertex/index.html">More from Vertex →</a>
+          </div>
         </div>
       </div>
+    </section>
 
-      <p class="sublabel" style="margin:24px 0 0">Trusted with real capital</p>
-      <div class="grid" style="margin-top:10px">
-        <div class="card">
-          <h3>Guardrails, always on</h3>
-          <p>Allocations never exceed 100%. A failed strategy holds its position instead of being force‑sold.</p>
+    <section id="scale">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">Machine Scale</div>
+          <div>
+            <h2 class="section-title">Alpha at<br>Machine Scale.</h2>
+            <p class="section-copy">
+              We transform research into hypotheses, hypotheses into models, and models into systematically validated trading signals. AI agents expand the search space; computation tests what survives.
+            </p>
+          </div>
         </div>
-        <div class="card">
-          <h3>Nothing hidden</h3>
-          <p>Every minute, every scorecard is checked against the real account. Any gap is shown, never absorbed.</p>
+
+        <div class="statement reveal">
+          <strong>Large-Scale Evidence.</strong> Machine-Driven Discovery.
         </div>
-        <div class="card">
-          <h3>One code, backtest to live</h3>
-          <p>The exact same code runs in backtest and production. No rewrites, no drift.</p>
+
+        <div class="metric-row reveal">
+          <div class="metric">
+            <span class="metric-label">Input</span>
+            <span class="metric-value">Research</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Engine</span>
+            <span class="metric-value">AI Models</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Scale</span>
+            <span class="metric-value">GPU Compute</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Output</span>
+            <span class="metric-value">Alpha</span>
+          </div>
         </div>
       </div>
-
-      <p class="arch-note">All of it runs on Kubernetes. Self‑healing and snapshotted for audit. You bring the strategy. We keep it running.</p>
     </section>
 
-    <section class="banner" id="dashboard">
-      <div class="mono">/dashboard</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">See the fund, live.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">One real account, its portfolios, and every alpha inside them, measured against the real account, not a backtest. <strong>Sample data, no signup.</strong></p>
-      <div style="margin-top:16px">
-        <a class="btn" href="demo/fund.html">See the fund →</a>
+    <section id="nonlinear">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">Nonlinear Markets</div>
+          <div>
+            <h2 class="section-title">Markets Are<br>Nonlinear.</h2>
+            <p class="section-copy">
+              Financial markets are shaped by complex interactions that cannot be reduced to a few linear factors. NeoMatrix models these relationships across high-dimensional representations to uncover structures conventional approaches may miss.
+            </p>
+          </div>
+        </div>
+
+        <div class="statement reveal">
+          Beyond linear factors. Beyond predefined signals.
+        </div>
       </div>
     </section>
 
-    <section class="banner" id="data">
-      <div class="mono">/data</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Built on a deep market dataset.</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Crypto spot &amp; futures, derivatives &amp; sentiment, macro &amp; on‑chain, Korean equities. Collected, reconciled, and served through our own API.</p>
+    <section id="manifold">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">Latent Structure</div>
+          <div>
+            <h2 class="section-title">Modeling the<br>Alpha Manifold.</h2>
+            <p class="section-copy">
+              Markets generate enormous amounts of observable information. Beneath those observations lies a deeper structure. NeoMatrix models that latent structure to identify nonlinear relationships, regimes, and predictive patterns.
+            </p>
+          </div>
+        </div>
 
-      <div class="stats-row">
-        <div class="stat"><div class="stat-num">1,300+</div><div class="stat-label">Crypto symbols</div></div>
-        <div class="stat"><div class="stat-num">3+ yrs</div><div class="stat-label">Minute‑level history</div></div>
-        <div class="stat"><div class="stat-num">2 → N</div><div class="stat-label">Exchanges (expanding)</div></div>
-        <div class="stat"><div class="stat-num">30+</div><div class="stat-label">REST endpoints</div></div>
+        <div class="flow reveal" aria-label="Alpha manifold process">
+          <div class="flow-item">
+            <span class="flow-num">01</span>
+            <span class="flow-label">Observable<br>Markets</span>
+            <span class="flow-arrow">→</span>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">02</span>
+            <span class="flow-label">High-Dimensional<br>Representations</span>
+            <span class="flow-arrow">→</span>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">03</span>
+            <span class="flow-label">Latent Market<br>Structure</span>
+            <span class="flow-arrow">→</span>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">04</span>
+            <span class="flow-label">Alpha<br>Manifold</span>
+            <span class="flow-arrow">→</span>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">05</span>
+            <span class="flow-label">Trading<br>Signals</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="banner" id="contact">
-      <div class="mono">/contact</div>
-      <h2 style="margin:0;font-size:28px;letter-spacing:-.01em">Get in touch</h2>
-      <p style="margin:6px 0 0;color:#1a1a1a">Questions, partnerships, or just want to say hi. Reach out anytime.</p>
-      <div style="margin-top:16px">
-        <a class="btn" href="mailto:info@neomatrix.ai"
-           onclick="navigator.clipboard&&navigator.clipboard.writeText('info@neomatrix.ai');var t=this.textContent;this.textContent='Copied! ✓';setTimeout(function(e,o){return function(){e.textContent=o}}(this,t),1500);">info@neomatrix.ai →</a>
+    <section id="adaptive">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">Self-Evolving AI</div>
+          <div>
+            <h2 class="section-title">Self-Evolving AI<br>for Adaptive Markets.</h2>
+            <p class="section-copy">
+              Markets move through continuously changing states.
+            </p>
+            <p class="section-copy" style="margin-top:18px;">
+              NeoMatrix deploys self-evolving AI agents to navigate the Alpha Manifold—learning from feedback, adapting decision policies, and reallocating capital as market structure evolves.
+            </p>
+          </div>
+        </div>
+
+        <div class="statement reveal">
+          <strong>Learn.</strong> Refine. Evolve.
+        </div>
       </div>
     </section>
 
-    <footer>
-      <div>© <span id="y"></span> NeoMatrix Inc.</div>
-      <div><a href="#">Terms</a> · <a href="#">Privacy</a></div>
-    </footer>
-  </div>
+    <section id="pipeline">
+      <div class="shell section-pad">
+        <div class="section-head reveal">
+          <div class="section-kicker">AlphaGen</div>
+          <div>
+            <h2 class="section-title">Alpha Discovery<br>and Generation.</h2>
+            <p class="section-copy">
+              Alpha discovery is engineered as a computational pipeline. Ideas are generated at machine scale, tested through simulation, and filtered systematically before reaching the portfolio.
+            </p>
+          </div>
+        </div>
+
+        <div class="pipeline reveal">
+          <div class="pipeline-row">
+            <span class="pipeline-index">01</span>
+            <span class="pipeline-name">Research & Data</span>
+            <span class="pipeline-desc">Source</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">02</span>
+            <span class="pipeline-name">AI Agents</span>
+            <span class="pipeline-desc">Explore</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">03</span>
+            <span class="pipeline-name">Hypothesis Generation</span>
+            <span class="pipeline-desc">Form</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">04</span>
+            <span class="pipeline-name">Alpha Candidates</span>
+            <span class="pipeline-desc">Construct</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">05</span>
+            <span class="pipeline-name">GPU Compute</span>
+            <span class="pipeline-desc">Scale</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">06</span>
+            <span class="pipeline-name">Simulation</span>
+            <span class="pipeline-desc">Stress</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">07</span>
+            <span class="pipeline-name">Validation</span>
+            <span class="pipeline-desc">Filter</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">08</span>
+            <span class="pipeline-name">Portfolio Construction</span>
+            <span class="pipeline-desc">Allocate</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-index">09</span>
+            <span class="pipeline-name">Execution</span>
+            <span class="pipeline-desc">Trade</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="shell footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <a class="footer-contact" href="mailto:info@neomatrix.ai">Contact</a>
+    </div>
+  </footer>
 
   <script src="posts_data.js"></script>
   <script>
-    document.getElementById('y').textContent = new Date().getFullYear();
-
-    // Blog (/blog section): top-level tabs are the platform, X and Substack.
-    // Substack shows Axiom and Vertex side by side (no sub-tabs). Every list
-    // is newest-first: title, one-line subtitle, and a monogram thumbnail
-    // (no real photo, since these posts have no real image yet). No date
-    // shown. A post flagged `example: true` isn't live yet (draft link, not
-    // public): link to the team's Substack section instead of the draft
-    // URL. Flip the flag off (and point `url` at the real published post)
-    // once it actually goes live. An empty tab renders an honest line,
-    // never a fake post.
+    // /blog: Axiom left, Vertex right, newest first, title + subtitle +
+    // monogram thumbnail. A post with `localUrl` links to its real page on
+    // this site; otherwise it falls back to the team's Substack section
+    // (or the live Substack URL once `example` is dropped) — the same
+    // fallback rule as index.html, so this keeps working post by post as
+    // real pages get added, never breaks on a post that isn't ready yet.
     (function () {
       const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
       const teamPage = { axiom: 'https://neomatrixai.substack.com/s/axiom', vertex: 'https://neomatrixai.substack.com/s/vertex' };
-      const renderInto = (selector, posts, emptyMsg) => {
+      const renderTeam = (selector, team) => {
         const panel = document.querySelector(selector);
         if (!panel) return;
-        const sorted = posts.slice().sort((a, b) => b.date.localeCompare(a.date));
-        panel.innerHTML = sorted.length
-          ? sorted.map(p => {
-              const href = p.example ? (teamPage[p.team] || 'https://substack.com/@neomatrixai') : p.url;
-              const mono = (p.team || p.platform || p.title).charAt(0).toUpperCase();
-              const sub = p.subtitle ? '<span class="prow-sub">' + esc(p.subtitle) + '</span>' : '';
-              return '<a class="post-row" href="' + esc(href) + '" target="_blank" rel="noopener">' +
-                '<span class="prow-text"><span class="prow-title">' + esc(p.title) + '</span>' + sub + '</span>' +
-                '<span class="prow-thumb" aria-hidden="true">' + esc(mono) + '</span></a>';
+        const posts = all.filter(p => p.team === team).slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+        panel.innerHTML = posts.length
+          ? posts.map(p => {
+              const thumbInner = p.thumb
+                ? '<img src="' + esc(p.thumb) + '" alt="">'
+                : esc(p.placeholder ? '···' : team.charAt(0).toUpperCase());
+              const sub = p.subtitle ? '<span class="blog-post-sub">' + esc(p.subtitle) + '</span>' : '';
+              const inner = '<span class="blog-post-text"><span class="blog-post-title">' + esc(p.title) + '</span>' + sub + '</span>' +
+                '<span class="blog-post-thumb' + (p.thumb ? ' blog-post-thumb-img' : '') + '" aria-hidden="true">' + thumbInner + '</span>';
+              if (p.placeholder) {
+                return '<div class="blog-post blog-post-placeholder">' + inner + '</div>';
+              }
+              const href = p.localUrl || (p.example ? (teamPage[p.team] || 'https://substack.com/@neomatrixai') : p.url);
+              return '<a class="blog-post" href="' + esc(href) + '"' + (p.localUrl ? '' : ' target="_blank" rel="noopener"') + '>' + inner + '</a>';
             }).join('')
-          : '<p class="blog-empty">' + emptyMsg + '</p>';
+          : '<p class="blog-empty">No ' + team.charAt(0).toUpperCase() + team.slice(1) + ' posts linked yet.</p>';
       };
-      renderInto('#blog-tab-x .x-posts', all.filter(p => p.platform === 'x'), 'No X posts linked yet.');
-      renderInto('#blog-team-axiom .team-posts', all.filter(p => p.team === 'axiom'), 'No Axiom posts linked yet.');
-      renderInto('#blog-team-vertex .team-posts', all.filter(p => p.team === 'vertex'), 'No Vertex posts linked yet.');
+      renderTeam('#blog-posts-axiom', 'axiom');
+      renderTeam('#blog-posts-vertex', 'vertex');
+    })();
+  </script>
 
-      document.querySelectorAll('.blog-tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const target = btn.dataset.blogTab;
-          document.querySelectorAll('.blog-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-          document.querySelectorAll('.blog-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'blog-tab-' + target));
-        });
+  <script>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          io.unobserve(entry.target);
+        }
       });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i % 4, 3) * 80}ms`;
+      io.observe(el);
+    });
+  </script>
+
+  <script>
+    (function () {
+      const link = document.querySelector('.footer-contact');
+      if (link) {
+        const original = link.textContent;
+        link.addEventListener('click', function () {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText('info@neomatrix.ai').catch(function () {});
+          }
+          link.textContent = 'Copied!';
+          setTimeout(function () { link.textContent = original; }, 1500);
+        });
+      }
+
+      if (location.hash) {
+        const target = document.querySelector(location.hash);
+        if (target) target.scrollIntoView();
+        setTimeout(function () {
+          history.replaceState(null, '', location.pathname + location.search);
+        }, 50);
+      }
     })();
   </script>
 </body>
