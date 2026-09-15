@@ -75,10 +75,27 @@
       letter-spacing:-.01em;
       color:#111;
       white-space:nowrap;
+      transition:letter-spacing .35s ease;
     }
     .brand-text .accent{
       font-weight:500;
       color:var(--muted);
+      transition:color .3s ease;
+    }
+    .brand:hover .brand-text{ letter-spacing:.03em; }
+    .brand:hover .brand-text .accent{ color:#111; }
+
+    .brand-text .bl{
+      display:inline-block;
+      opacity:0;
+      transform:translateY(8px);
+      animation:brand-in .55s cubic-bezier(.2,.8,.2,1) forwards;
+      animation-delay:calc(var(--i) * 32ms + 120ms);
+    }
+    @keyframes brand-in{ to{ opacity:1; transform:translateY(0); } }
+    @media (prefers-reduced-motion:reduce){
+      .brand-text .bl{ animation:none; opacity:1; transform:none; }
+      .brand-text, .brand-text .accent{ transition:none; }
     }
 
     @media (max-width:520px){
@@ -651,7 +668,7 @@
     <div class="nav-inner">
       <a class="brand" href="#top">
         <img src="250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix" style="height:48px;vertical-align:middle">
-        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+        <span class="brand-text"><span class="bl" style="--i:0">N</span><span class="bl" style="--i:1">e</span><span class="bl" style="--i:2">o</span><span class="bl" style="--i:3">M</span><span class="bl" style="--i:4">a</span><span class="bl" style="--i:5">t</span><span class="bl" style="--i:6">r</span><span class="bl" style="--i:7">i</span><span class="bl" style="--i:8">x</span><span class="accent"> <span class="bl" style="--i:9">A</span><span class="bl" style="--i:10">I</span></span></span>
       </a>
       <div class="nav-links">
         <a href="#blog">Blog</a>
