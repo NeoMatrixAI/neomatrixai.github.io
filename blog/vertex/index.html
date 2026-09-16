@@ -95,6 +95,10 @@
     .blog-post-thumb-img{ padding:0; overflow:hidden; }
     .blog-post-thumb-img img{ width:100%; height:100%; object-fit:contain; display:block; }
 
+    .blog-post-placeholder{ cursor:default; }
+    .blog-post-placeholder .blog-post-title{ color:var(--muted); }
+    .blog-post-placeholder .blog-post-thumb{ border-style:dashed; font-size:16px; letter-spacing:.1em; }
+
     .list-empty{ color:var(--muted); font-size:14px; padding:16px 0 80px; }
     .list-foot{ padding:40px 0 80px; }
 
@@ -177,11 +181,14 @@
         ? posts.map(p => {
             const thumbInner = p.thumb
               ? '<img src="' + esc(p.thumb.replace('blog/' + team + '/', '')) + '" alt="">'
-              : esc(team.charAt(0).toUpperCase());
+              : esc(p.placeholder ? '···' : team.charAt(0).toUpperCase());
             const sub = p.subtitle ? '<span class="blog-post-sub">' + esc(p.subtitle) + '</span>' : '';
-            const href = p.localUrl ? p.localUrl.replace('blog/' + team + '/', '') : (p.example ? teamPage : p.url);
             const inner = '<span class="blog-post-text"><span class="blog-post-title">' + esc(p.title) + '</span>' + sub + '</span>' +
               '<span class="blog-post-thumb' + (p.thumb ? ' blog-post-thumb-img' : '') + '" aria-hidden="true">' + thumbInner + '</span>';
+            if (p.placeholder) {
+              return '<div class="blog-post blog-post-placeholder">' + inner + '</div>';
+            }
+            const href = p.localUrl ? p.localUrl.replace('blog/' + team + '/', '') : (p.example ? teamPage : p.url);
             return '<a class="blog-post" href="' + esc(href) + '"' + (p.localUrl ? '' : ' target="_blank" rel="noopener"') + '>' + inner + '</a>';
           }).join('')
         : '<p class="list-empty">No Vertex posts linked yet.</p>';

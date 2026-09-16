@@ -39,30 +39,12 @@
 // Teams, for reference: Axiom = trading systems & infrastructure team,
 // Vertex = quantitative alpha research team.
 const LATEST_POSTS = [
-    // Axiom (trading systems / infrastructure team), not yet published, draft links only
-    { title: 'Next From Axiom', subtitle: 'A new Axiom post is coming soon.',
-      platform: 'substack', team: 'axiom', example: true, localUrl: 'blog/axiom/001-we-build-automated-trading-systems.html',
-      thumb: 'blog/axiom/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/6c2cff7d-ba70-43d0-b27d-09eff8fd2ae3', date: '2026-09-14' },
-    { title: 'More From Axiom', subtitle: 'Another new post is coming soon.',
-      platform: 'substack', team: 'axiom', example: true, localUrl: 'blog/axiom/002-example-post.html',
-      thumb: 'blog/axiom/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/a9b71ef8-1d2f-4aa7-a159-91257f59f6d8', date: '2026-09-13' },
-    { title: 'Even More From Axiom', subtitle: 'Coming soon.',
-      platform: 'substack', team: 'axiom', example: true, localUrl: 'blog/axiom/003-another-example-post.html',
-      thumb: 'blog/axiom/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/a9b71ef8-1d2f-4aa7-a159-91257f59f6d8', date: '2026-09-12' },
-    // Vertex (quantitative alpha research team), not yet published, draft links only
-    { title: 'Next From Vertex', subtitle: 'A new Vertex post is coming soon.',
-      platform: 'substack', team: 'vertex', example: true, localUrl: 'blog/vertex/001-vertex-builds-trading-signals.html',
-      thumb: 'blog/vertex/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/42a97c7d-3fb3-4f55-a95e-c4a1d683e359', date: '2026-09-14' },
-    { title: 'More From Vertex', subtitle: 'Another new post is coming soon.',
-      platform: 'substack', team: 'vertex', example: true, localUrl: 'blog/vertex/002-example-post.html',
-      thumb: 'blog/vertex/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/b96fe760-1236-4fbc-a140-7ff3a73aa17e', date: '2026-09-13' },
-    { title: 'Even More From Vertex', subtitle: 'Coming soon.',
-      platform: 'substack', team: 'vertex', example: true, localUrl: 'blog/vertex/003-another-example-post.html',
-      thumb: 'blog/vertex/example-thumb.svg',
-      url: 'https://neomatrixai.substack.com/p/b96fe760-1236-4fbc-a140-7ff3a73aa17e', date: '2026-09-12' },
+    // No real post has gone out yet for either team. Each team gets exactly
+    // one `placeholder: true` slot (see schema above) instead of several
+    // fabricated "coming soon" titles — remove a team's placeholder entry
+    // and add its first real entry the day that team's first post goes live.
+    { title: 'More from Axiom', subtitle: 'The first Axiom post is on the way.',
+      platform: 'substack', team: 'axiom', placeholder: true, date: '2026-09-16' },
+    { title: 'More from Vertex', subtitle: 'The first Vertex post is on the way.',
+      platform: 'substack', team: 'vertex', placeholder: true, date: '2026-09-16' },
 ];
