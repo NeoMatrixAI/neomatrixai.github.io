@@ -43,8 +43,8 @@ const LATEST_POSTS = [
     // one `placeholder: true` slot (see schema above) instead of several
     // fabricated "coming soon" titles — remove a team's placeholder entry
     // and add its first real entry the day that team's first post goes live.
-    { title: 'More from Axiom', subtitle: 'The first Axiom post is on the way.',
+    { title: 'More from Axiom', subtitle: 'A new Axiom post is coming soon.',
       platform: 'substack', team: 'axiom', placeholder: true, date: '2026-09-16' },
-    { title: 'More from Vertex', subtitle: 'The first Vertex post is on the way.',
+    { title: 'More from Vertex', subtitle: 'A new Vertex post is coming soon.',
       platform: 'substack', team: 'vertex', placeholder: true, date: '2026-09-16' },
 ];
