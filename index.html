@@ -274,6 +274,25 @@
       line-height:1.72;
     }
 
+    /* Blog is a simple pointer to posts, not a philosophy statement like the
+       sections below it — smaller, centered, deliberately quieter. */
+    #blog .section-head{
+      display:block;
+      text-align:center;
+      max-width:640px;
+      margin-inline:auto;
+    }
+    #blog .section-title{
+      font-size:clamp(32px,4.5vw,52px);
+      max-width:none;
+    }
+    #blog .section-copy{
+      margin-inline:auto;
+    }
+    #blog .blog-subscribe-row{
+      justify-content:center;
+    }
+
     .blog-subscribe-row{
       display:flex;
       flex-wrap:wrap;
@@ -719,7 +738,7 @@
         <div class="section-head reveal">
           <div class="section-kicker">Blog</div>
           <div>
-            <h2 class="section-title">From Axiom<br>and Vertex.</h2>
+            <h2 class="section-title">Thinking Machine</h2>
             <p class="section-copy">
               Engineering and research notes from the teams building and validating what runs on real capital.
             </p>
