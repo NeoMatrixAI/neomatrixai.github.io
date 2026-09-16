@@ -269,8 +269,7 @@
       font-size:12px;
       color:#777;
     }
-    .footer-contact{ font-size:15px; font-weight:600; color:#000; transition:color .25s ease; }
-    .footer-contact:hover{ color:#000; text-decoration:underline; }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
 
     @media (max-width:720px){
       .footer-inner{ align-items:flex-start; flex-direction:column; }
@@ -355,7 +354,7 @@
     </div>
     <div class="footer-bottom">
       <div>© 2026 NeoMatrix Inc.</div>
-      <a class="footer-contact" href="mailto:info@neomatrix.ai">Contact</a>
+      <div class="footer-contact">info@neomatrix.ai</div>
     </div>
   </footer>
 
@@ -393,20 +392,6 @@
     })();
   </script>
 
-  <script>
-    (function () {
-      const link = document.querySelector('.footer-contact');
-      if (!link) return;
-      const original = link.textContent;
-      link.addEventListener('click', function () {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText('info@neomatrix.ai').catch(function () {});
-        }
-        link.textContent = 'Copied!';
-        setTimeout(function () { link.textContent = original; }, 1500);
-      });
-    })();
-  </script>
 
 </body>
 </html>

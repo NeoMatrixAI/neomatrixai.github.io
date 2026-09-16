@@ -628,12 +628,6 @@
       font-size:15px;
       font-weight:600;
       color:#000;
-      transition:color .25s ease;
-    }
-
-    .footer-contact:hover{
-      color:#000;
-      text-decoration:underline;
     }
 
     .reveal{
@@ -966,7 +960,7 @@
     </div>
     <div class="shell footer-bottom">
       <div>© 2026 NeoMatrix Inc.</div>
-      <a class="footer-contact" href="mailto:info@neomatrix.ai">Contact</a>
+      <div class="footer-contact">info@neomatrix.ai</div>
     </div>
   </footer>
 
@@ -1025,18 +1019,6 @@
 
   <script>
     (function () {
-      const link = document.querySelector('.footer-contact');
-      if (link) {
-        const original = link.textContent;
-        link.addEventListener('click', function () {
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText('info@neomatrix.ai').catch(function () {});
-          }
-          link.textContent = 'Copied!';
-          setTimeout(function () { link.textContent = original; }, 1500);
-        });
-      }
-
       if (location.hash) {
         const target = document.querySelector(location.hash);
         if (target) target.scrollIntoView();
