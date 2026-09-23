@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A single roughness number hides the question that actually matters." />
+  <title>Bitcoin Is Fractal. That’s Not the Edge You Think. · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Bitcoin Is Fractal. That’s Not the Edge You Think.</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>A single roughness number hides the question that actually matters.</em></p>
+
+      <p>A price path can be rough the same way at every scale, or rough in bursts that come and go. A single roughness number cannot tell the two apart. A curve of them can, though what the curve measures is scaling, not direction.</p>
+
+      <p>The first post in this series set out the standard this team applies when constructing a signal, and how an idea moves from proposal to alpha. One candidate went through that standard: a measure of how a price path is rough, never traded on its own.</p>
+
+      <img src="002-bitcoin-is-fractal/cover.jpg" alt="A rugged coastline meeting a calm sea">
+
+      <p><em>Photo: <a href="https://commons.wikimedia.org/wiki/File:%28Landscape_of_coastline_and_rugged_cliffs_in_Japan%29_-_DPLA_-_091169579991f0dfbc3da8d3d9d870fc.jpg">Sherwin John Carlquist</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, cropped</em></p>
+
+      <h2>Asking the Roughness Question More Than Once</h2>
+
+      <p>The standard tool for describing how rough a time series is has been around since the 1950s. H.E. Hurst, working on the hydrology of the Nile, found in 1951 that river flows and other natural records had long memory: their range grew with the length of the record faster than independent draws would allow, as <a href="https://arxiv.org/abs/1406.6018">Graves, Gramacy, Watkins and Franzke (2017)</a> recount. That behavior collapses into one number, the Hurst exponent, between zero and one.</p>
+
+      <p>Seventeen years later, Benoit Mandelbrot and John van Ness showed that fractional Brownian motion reproduces Hurst's finding, and that model gives the exponent its modern definition. Under that model, an exponent above one half means persistent increments: a rise tends to be followed by another rise. Below one half, increments are anti-persistent, and a rise tends to be followed by a fall. At one half, increments are uncorrelated, as in a plain random walk. Real prices are not fractional Brownian motion, and neither property on its own establishes that returns are predictable.</p>
+
+      <p>One number is convenient, and it is also a compression. Real return series do not always scale the same way at every size of fluctuation. The quiet stretches and the violent ones can behave as though two different processes are layered on top of each other, one gentle and one wild. A single exponent averages that difference away. Measuring it at more than one magnitude of fluctuation, and reading off the whole curve instead of one point, is the more demanding question, and a more informative one.</p>
+
+      <h2>The Method: A Curve Instead of a Point</h2>
+
+      <p>The tool for that more demanding question is multifractal detrended fluctuation analysis, introduced by <a href="https://arxiv.org/abs/physics/0202070">Kantelhardt, Zschiegner, Koscielny-Bunde, Havlin, Bunde and Stanley in 2002</a>. It generalizes detrended fluctuation analysis, the method <a href="https://link.aps.org/doi/10.1103/PhysRevE.49.1685">Peng, Buldyrev, Havlin, Simons, Stanley and Goldberger introduced in 1994</a> to find long-range structure in DNA sequences.</p>
+
+      <p>The mechanics: build a profile by cumulatively summing the demeaned return series, then split that profile into non-overlapping segments of length <em>s</em>, working from both ends of the sample. Locally detrend each segment with a simple linear fit and average the squared residual to get that segment's local fluctuation, <em>F²(s,v)</em>. Raise those local fluctuations to the power <em>q</em>/2, average across all segments, and take the 1/<em>q</em> power:</p>
+
+      <img src="002-bitcoin-is-fractal/equation-1.png" alt="F_q(s) = { 1/(2N_s) × sum over v = 1..2N_s of [F²(s,v)]^(q/2) }^(1/q), for q ≠ 0">
+
+      <p>Do that across a range of segment lengths <em>s</em>, and <em>F_q(s)</em> scales as a power law in <em>s</em>. The exponent of that power law is the generalized Hurst exponent <em>h(q)</em>. Large positive <em>q</em> weights the calculation toward the segments with the biggest fluctuations. Large negative <em>q</em> weights it toward the calmest ones. A series is monofractal when <em>h(q)</em> is flat across <em>q</em>: the same roughness governs the calm and the wild parts alike. It is multifractal when <em>h(q)</em> varies with <em>q</em>: small and large fluctuations of the same series scale differently.</p>
+
+      <p>From <em>h(q)</em>, the singularity spectrum follows, a standard transform in this literature:</p>
+
+      <img src="002-bitcoin-is-fractal/equation-2.png" alt="τ(q) = q·h(q) − 1;  α = dτ/dq;  f(α) = qα − τ(q)">
+
+      <p>The spectrum's <strong>width</strong>, the distance between its largest and smallest α, is a single number that nonetheless describes a whole curve. It estimates how heterogeneous the scaling is under the chosen MFDFA specification: the range of <em>q</em>, the range of segment scales and the order of the local detrending. A wide spectrum says small and large fluctuations scale very differently under that specification. A narrow one says they scale about the same. Width alone carries no direction, and it does not say where the heterogeneity comes from.</p>
+
+      <p><strong>In plain terms:</strong> an average steepness cannot say whether a hiking trail is a gentle, uniform incline or a flat approach followed by a brutal scramble. The spectrum width is the difference between those two trails, made quantitative. It still says nothing about which way the trail leads.</p>
+
+      <h2>From Measurement to Signal</h2>
+
+      <p>The width is computed per asset over a rolling window of that asset's own returns. The window length is a mechanism choice, not a free parameter. It has to be long enough for the scaling estimate to settle rather than sample noise, and short enough to respond when the scaling itself shifts. The two demands pull in opposite directions. The window sits at whatever balance that tension allows.</p>
+
+      <p>The construction uses width's own cross-sectional rank as the score directly, wide end long, narrow end short. That follows from the standard applied to every candidate at this stage. It asks first whether the raw measurement's own rank predicts what happens next, not whether it improves something else. Ranking width directly is the simplest construction that poses exactly that question. That makes return predictability its own hypothesis, tested separately: that the wide end of the cross-section outperforms the narrow end. It is not a claim that any individual asset is trending, and a wide spectrum is not read as evidence of one.</p>
+
+      <p>Turning per-asset scores into a position starts with a cross-sectional rank rather than a fixed threshold, computed after clipping the most extreme readings. Ranking beats a hard cutoff: it keeps the whole distribution's information instead of a binary call. The cost is a small tilt for assets in the ambiguous middle. Each tilt is then scaled toward a target volatility, so no single quiet or violent mover dominates the risk budget. It is split between long and short legs by a deliberate allocation, capped per asset, and zeroed when negligible. The resulting weights are smoothed against the prior period's and held unless the move clears a minimum threshold. They are then scaled again at the portfolio level toward an overall volatility target. Re-evaluation runs on a fixed schedule rather than continuously. The underlying estimate is itself a rolling-window statistic that only shifts meaningfully across many observations, and trading it faster than it can change would mean trading its noise.</p>
+
+      <p>Width could have gated a separately built trend measure instead of being ranked directly. It was not: the rank check is what the standard asks for at this stage. Ranking rather than thresholding was chosen to preserve the full cross-section rather than force every asset into one of two buckets. Smoothing and a minimum-move threshold trade slower reaction to a genuine shift in the estimate for lower turnover, a deliberate cost given how noisy the underlying estimate can be from one re-evaluation to the next. The same sample-to-sample variance in the width estimate feeds directly into the rank that decides long from short, mattering most for assets closest to the middle of the cross-section.</p>
+
+      <h2>Being Real Is Not the Same as Being a Strategy</h2>
+
+      <p>A signal built this way was checked the same way as every other factor in its cohort. The rule was simple: strip out any parameter search, use only default settings, and test whether the raw measurement's cross-sectional rank predicted next-period returns, broken out year by year rather than pooled into a single average. That rule throws away an optimizer's best attempt on purpose, trading a flattering average for a stricter test. A relationship that appears only once the years are averaged together, and flips or disappears within some of them individually, is not treated as real. One that holds its sign across most of the years tested is, and is carried into further construction.</p>
+
+      <p>That is a check on whether a measurement is real. It is a separate and later question from whether that measurement earns a place as an alpha, and both get asked under the same standard, in that order. A candidate can pass the first test and still fail the second: realness earns no guaranteed place on its own.</p>
+
+      <p>This one was never run on its own. It was carried forward, alongside several other signals, into a broader model that combined multiple factors into one portfolio view through a statistical weighting step. That broader model was evaluated the same way as every other candidate, against the same standard. It was not deployed either.</p>
+
+      <h2>Reproducing the Method on Public Data</h2>
+
+      <p>The chart below computes spectrum width on BTC/USDT hourly closes, pulled from <a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints">Binance's public klines API</a> (no key required), over rolling 60-day windows stepped weekly across the past two years. The specification is moment orders <em>q</em> from −3 to 3, segment scales from 24 to 360 hours, and linear detrending. Those choices and the window length were made independently for this illustration and do not disclose any internal configuration.</p>
+
+      <img src="002-bitcoin-is-fractal/mfdfa-spectrum-width.png" alt="Line chart of BTC/USDT spectrum width over time above a gray shuffled-null band">
+
+      <p><em>MFDFA spectrum width, BTC/USDT hourly, rolling 60-day windows, against a 1,000-shuffle null per window. Data: Binance. Chart: Vertex.</em></p>
+
+      <p>The width moves. It is not a flat line, which would say the market's scaling behavior never changes. The benchmark it has to beat comes from the method's original paper: shuffle the returns inside a window and recompute. Shuffling destroys time order and leaves the distribution of returns untouched, so a shuffled series keeps whatever width fat tails and finite-sample estimation noise produce on their own. Each window here gets 1,000 shuffles, which form that window's own null distribution. The gray band in the chart is its 5th to 95th percentile.</p>
+
+      <p>Observed width sits above the 95th percentile of its own null in 84 of the 96 windows, above the 99th in 77, and above all 1,000 shuffles in 64. That last count is the resolution limit of an empirical p-value at this many shuffles. The median window sits 3.8 standard deviations above its null mean. Twelve windows do not clear the 95th percentile, and seven of them fall between May and August 2026, where observed width drops back inside the band. Consecutive windows share about 88 percent of their data, so these are not 96 independent tests, and they are not pooled into one p-value.</p>
+
+      <p>What the comparison supports is narrow. In most windows, observed width exceeds the shuffled benchmark, so the time ordering of returns contributes to it. That ordering can be volatility clustering or nonstationarity as easily as anything tradable. Width is not additive either, so the gap between the blue line and the band is not the share of width due to temporal dependence.</p>
+
+      <h2>What This Does Not Establish</h2>
+
+      <p>A wide spectrum is an estimate of heterogeneous scaling under one MFDFA specification. Several things besides temporal dependence can widen it: heavy tails, nonstationarity within the window, finite-sample bias, and the choice of moment orders, scale range and detrending order. It does not reveal direction, and it does not, on its own, show that anything is profitable to trade. Regime structure, trend persistence and expected-return predictability are three separate hypotheses, and each needs its own test.</p>
+
+      <p><a href="https://arxiv.org/abs/cond-mat/0302434">Di Matteo, Aste and Dacorogna (2005)</a> used generalized scaling exponents to characterize currencies, equity indices and fixed-income markets by their stage of development. Establishing that a market scales heterogeneously is a different claim from establishing that anyone can trade that heterogeneity at a profit after costs.</p>
+
+      <p>Spectrum width estimates on a few thousand data points, at the more extreme moment orders, carry real sample-to-sample variance. That variance is a known property of the method on short samples, part of why a width estimate belongs alongside other evidence rather than standing on its own.</p>
+
+      <p>None of this addresses what happens when a wide-spectrum factor is combined with other signals into a single portfolio. That is a separate question, decided by different criteria.</p>
+
+      <h2>Where It Stands</h2>
+
+      <p>The width measure was constructed, evaluated on the same terms as every other candidate against that standard, and never traded on its own. It was later folded into a larger model, alongside several other factors, and that larger model was not deployed either. Both followed from the same standard, carried through to a considered decision not to deploy.</p>
+
+      <h2>What Generalizes From This</h2>
+
+      <p>A candidate factor's predictive power is not averaged across years and left there. The check is broken out year by year, using only the version with no parameter search behind it, before any optimizer approaches it.</p>
+
+      <p>A quantity can be real, well grounded in decades of published work, and still say nothing on its own about whether it belongs in a portfolio. Those are different questions, asked in that order, with a willingness to answer the second one no. That ordering is the actual discipline.</p>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Graves, T., Gramacy, R., Watkins, N. and Franzke, C. (2017). "A Brief History of Long Memory: Hurst, Mandelbrot and the Road to ARFIMA, 1951–1980." <em>Entropy</em> 19(9), 437. <a href="https://arxiv.org/abs/1406.6018">Link</a></li>
+        <li>Kantelhardt, J.W., Zschiegner, S.A., Koscielny-Bunde, E., Havlin, S., Bunde, A. and Stanley, H.E. (2002). "Multifractal Detrended Fluctuation Analysis of Nonstationary Time Series." <em>Physica A</em> 316(1-4), 87–114. <a href="https://arxiv.org/abs/physics/0202070">Link</a></li>
+        <li>Peng, C.K., Buldyrev, S.V., Havlin, S., Simons, M., Stanley, H.E. and Goldberger, A.L. (1994). "Mosaic Organization of DNA Nucleotides." <em>Physical Review E</em> 49(2), 1685–1689. <a href="https://link.aps.org/doi/10.1103/PhysRevE.49.1685">Link</a></li>
+        <li>Binance. "Market Data Endpoints: Kline/Candlestick Data" — public Spot API documentation. <a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints">Link</a></li>
+        <li>Di Matteo, T., Aste, T. and Dacorogna, M.M. (2005). "Long-Term Memories of Developed and Emerging Markets: Using the Scaling Analysis to Characterize Their Stage of Development." <em>Journal of Banking &amp; Finance</em> 29(4), 827–851. Preprint: arXiv:cond-mat/0302434. <a href="https://arxiv.org/abs/cond-mat/0302434">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .slice().sort((a, b) => b.date.localeCompare(a.date))
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        meta.textContent = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+      }
+    })();
+  </script>
+
+
+</body>
+</html>

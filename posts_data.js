@@ -39,12 +39,22 @@
 // Teams, for reference: Axiom = trading systems & infrastructure team,
 // Vertex = quantitative alpha research team.
 const LATEST_POSTS = [
-    // No real post has gone out yet for either team. Each team gets exactly
-    // one `placeholder: true` slot (see schema above) instead of several
-    // fabricated "coming soon" titles — remove a team's placeholder entry
-    // and add its first real entry the day that team's first post goes live.
-    { title: 'More from Axiom', subtitle: 'A new Axiom post is coming soon.',
-      platform: 'substack', team: 'axiom', placeholder: true, date: '2026-09-16' },
-    { title: 'More from Vertex', subtitle: 'A new Vertex post is coming soon.',
-      platform: 'substack', team: 'vertex', placeholder: true, date: '2026-09-16' },
+    // Posts sharing a date keep this array's order (the sort is stable), so
+    // within one day list the later-numbered post first.
+    { title: 'The Text File That Ran Real Money',
+      subtitle: 'Axiom is NeoMatrix\'s systems and infrastructure team. This series covers what broke, how we found it, and what\'s still unresolved.',
+      platform: 'substack', team: 'axiom', localUrl: 'blog/axiom/002-the-text-file-that-ran-real-money.html',
+      url: 'https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money', date: '2026-09-23' },
+    { title: 'Nobody Approves These Trades',
+      subtitle: 'Axiom is NeoMatrix\'s systems and infrastructure team. This series covers what broke, how we found it, and what\'s still unresolved.',
+      platform: 'substack', team: 'axiom', localUrl: 'blog/axiom/001-nobody-approves-these-trades.html',
+      url: 'https://neomatrixai.substack.com/p/nobody-approves-these-trades', date: '2026-09-23' },
+    { title: 'Bitcoin Is Fractal. That’s Not the Edge You Think.',
+      subtitle: 'A single roughness number hides the question that actually matters.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/002-bitcoin-is-fractal.html',
+      url: 'https://neomatrixai.substack.com/p/bitcoin-is-fractal-thats-not-the', date: '2026-09-23' },
+    { title: 'Your Backtest Is Lying. Here’s How We Catch It.',
+      subtitle: 'Vertex is NeoMatrix\'s alpha research team. This series shows how signals are reasoned out and built.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/001-your-backtest-is-lying.html',
+      url: 'https://neomatrixai.substack.com/p/your-backtest-is-lying-heres-how', date: '2026-09-23' },
 ];

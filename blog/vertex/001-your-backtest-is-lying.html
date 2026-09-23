@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Vertex is NeoMatrix&#x27;s alpha research team. This series shows how signals are reasoned out and built." />
+  <title>Your Backtest Is Lying. Here’s How We Catch It. · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Your Backtest Is Lying. Here’s How We Catch It.</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Vertex is NeoMatrix's alpha research team. This series shows how signals are reasoned out and built.</em></p>
+
+      <p>Team Vertex is NeoMatrix's alpha research group. Its work is generation first: finding a mechanism worth building, then constructing it into a signal that scores an entire universe, and only afterward subjecting it to the checks that decide whether it earns a place in a live book.</p>
+
+      <p>Validation catches what generation misses. It does not replace it.</p>
+
+      <p>This is the first post in a short series about that work, told by the team that builds it.</p>
+
+      <h2>Where Candidates Begin</h2>
+
+      <p>A candidate can start from one published paper, replicated exactly before anything of the team's own is added. It can come from a search tool built to mine that same literature, and the team's own history of attempts, for directions nobody has tried yet. Or it can be years old, brought back with a sharper validation method or a more honest cost model than the one available the first time.</p>
+
+      <p>Whatever the source, the same standard applies before a line of code exists: a short written rationale, a named mechanism, and the evidence that would falsify it.</p>
+
+      <p>The range behind that mechanism is wide on purpose. Information theory, stochastic analysis, scaling and fractal methods, market microstructure, network methods and the classical factor literature are all active parts of the repertoire. A later post in this series follows one candidate built on the scaling side of that list: how a price path's roughness behaves across time, and what it does and does not imply about a market's dynamics.</p>
+
+      <p>The same standard applies to the team's own tools, not only to outside ideas. An internal idea-generation tool, tested against two source papers it had never seen, once returned directions matching neither. That was treated as a defect to fix, not a curiosity to mention in passing.</p>
+
+      <blockquote>A number with no mechanism behind it is not a finding, however it back-tests.</blockquote>
+
+      <img src="001-your-backtest-is-lying/cover.jpg" alt="Miners panning for gold at a creek">
+
+      <p><em>Photo: John C. H. Grabill, 1889, public domain</em></p>
+
+      <h2>What Construction Demands</h2>
+
+      <p><strong>A mechanism is not yet a signal.</strong> Turning one into a number that ranks every asset in a universe cross-sectionally means re-deciding things the source paper never had to. A paper written on decades of equity data assumes a trading calendar, a rebalance cadence and a normalization convention that do not automatically carry over to a market that never closes. Each of those has to be re-argued from the mechanism, not copied from the paper's own setup.</p>
+
+      <p>A momentum paper built on daily closes assumes the close happens once, at a fixed hour, because the exchange shuts for the day. Crypto has no such hour, so a "daily" return has to be pinned to an arbitrary but consistent cutover, chosen once and applied everywhere.</p>
+
+      <p><strong>A faithful reconstruction is not a convenient one.</strong> The measurement window, the treatment of assets with short history, and the exact point where a return gets normalized against volatility are each a choice implied by the mechanism, not a free parameter to tune toward a better number. Getting one wrong rarely breaks the code. It just changes, quietly, what is actually being measured.</p>
+
+      <p>Two researchers can build the same published idea and disagree on several of these points before either has looked at a single return. Resolving them from the mechanism first, and checking what the resulting signal says only afterward, is what the construction step is actually for.</p>
+
+      <h2>What Still Must Hold</h2>
+
+      <p>Before anything reaches a live book, a candidate clears four stages, in order.</p>
+
+      <p><strong>1. Statistical evidence and multiple testing.</strong> A t-statistic is judged against the number of attempts behind it. <a href="https://academic.oup.com/rfs/article-abstract/29/1/5/1843824">Harvey, Liu and Zhu (2016)</a> showed that the textbook threshold of 2.0 is too easy to clear once the factors tried before publication are counted. The same arithmetic applies to every configuration tried in-house, so the bar rises with the size of the search.</p>
+
+      <p><strong>2. Costs and capacity.</strong> Economic costs come out of the gross edge: fees, the bid-ask spread, slippage, funding and execution shortfall. A published fee schedule is only a starting point. Binance's USDⓈ-M futures schedule, for example, listed <a href="https://www.binance.com/en/fee/futureFee">two basis points for a maker order and five for a taker</a> for a regular (VIP 0) account when checked on September 11, 2026. Actual rates move with product, account tier, discounts and order type. A maker order also carries costs the schedule omits: it may never fill, and the fills it does get arrive disproportionately just before the price moves against it. Tests therefore price each trade at account-specific fees, together with spread, fill probability, slippage, market impact and <a href="https://www.binance.com/en/support/faq/introduction-to-binance-futures-funding-rates-360033525031">funding</a>, which varies over time.</p>
+
+      <p>Capacity is the separate half of that stage: how much capital the signal can carry before its own trading erodes the edge. The answer comes from participation in average daily volume, order-book depth, estimated market impact, crowding among similar strategies, and the time needed to liquidate a position. A signal that is cheap to trade at small size can still fail here.</p>
+
+      <p><strong>3. Time-series validation and overfitting.</strong> Validation runs on <a href="https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086">combinatorial purged cross-validation</a>, the method López de Prado set out in <em>Advances in Financial Machine Learning</em> (2018). Purging and embargoing stop one kind of overfitting: information leaking between training and test slices. A second kind survives that guard untouched. Trying enough configurations that one fits the test slices by chance, rather than the mechanism, is the selection bias <a href="https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf">Bailey and López de Prado's deflated Sharpe ratio</a> (2014) was built to discount. Both are checked, because a process guarding against only one eventually loses to the other.</p>
+
+      <p>The path matters as much as the average. An annualized Sharpe ratio says nothing about whether the capital survived it, and a compound-loss floor now exists because one candidate's did not.</p>
+
+      <p><strong>4. Untouched holdout and data integrity.</strong> A holdout window never touched during research is run exactly once, and its result stands.</p>
+
+      <p>The data behind every stage gets the same scrutiny. A gap-fill routine can interpolate a missing price from the neighbor on both sides, including one that has not happened yet. A daily figure labeled at midnight can still be unfinished until the last bar of the day lands in it. Both share one signature: a label that reads the past while the content holds the future. Every signal now runs one blunt test: its output at a given time must not change once later bars are appended and it is rerun.</p>
+
+      <p>What clears all four stages is approved for the book, and stays checked against the backtest that cleared it for as long as it trades.</p>
+
+      <h2>What Comes Next</h2>
+
+      <p>This series stays on process, not results. Every mechanism traces to a public method, a paper or a dataset.</p>
+
+      <p>The work ahead breaks into a few recurring dimensions.</p>
+
+      <ul>
+        <li><strong>Signal construction.</strong> Turning a published mechanism into a number that scores an entire universe.</li>
+        <li><strong>Statistical rigor.</strong> The bars a candidate has to clear before a result counts as evidence.</li>
+        <li><strong>Costs and capacity.</strong> Pricing a signal against real frictions, and sizing it to what the market can absorb.</li>
+        <li><strong>Failure analysis.</strong> Individual defects, told in enough mechanism detail to look for the same one elsewhere.</li>
+      </ul>
+
+      <p>The successes will be the least instructive part.</p>
+
+      <p>Starting with the next post.</p>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .slice().sort((a, b) => b.date.localeCompare(a.date))
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        meta.textContent = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
