@@ -109,6 +109,8 @@
       font-size:13px;
       color:var(--muted);
     }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
 
     .article-body{
       width:min(100%, var(--article-max) + var(--pad) * 2);
@@ -199,6 +201,10 @@
       border:none;
       border-top:1px solid var(--line);
     }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
 
     .article-foot{
       width:min(100%, var(--article-max) + var(--pad) * 2);
@@ -461,7 +467,29 @@
       if (self && meta) {
         const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
         const dateParts = self.date.split('-').map(Number);
-        meta.textContent = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
       }
     })();
   </script>
