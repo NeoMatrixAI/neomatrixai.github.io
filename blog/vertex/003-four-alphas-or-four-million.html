@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Breadth costs capacity when it demands speed, illiquidity or crowding." />
+  <title>Four Alphas or Four Million: When Breadth Costs Capacity · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Four Alphas or Four Million: When Breadth Costs Capacity</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Breadth costs capacity when it demands speed, illiquidity or crowding.</em></p>
+
+      <p>AQR's Style Premia strategy runs on four ideas. Renaissance's Medallion fund, which <a href="https://www.wealthmanagement.com/alternative-investments/renaissance-mints-another-billionaire-with-two-more-on-the-cusp">Bloomberg called</a> "probably the world's most successful money machine" in 2017, trades a very slight edge hundreds of thousands of times a day and keeps its own size capped.</p>
+
+      <p>Both designs are coherent. Signal breadth and capacity are different quantities, and more of one costs the other only under specific conditions. The public record of the two firms shows when those conditions bind.</p>
+
+      <img src="003-four-alphas-or-four-million/hero.jpg" alt="A fully loaded container ship at sea, low hills behind it.">
+
+      <p><em>Photo: Bernard Spragg. NZ, CC0 1.0.</em></p>
+
+      <h2>The Few-Signal Discipline</h2>
+
+      <p>The strategy, offered to US investors as the AQR Style Premia Alternative Fund, rests on four styles: value, momentum, carry and defensive. Its <a href="https://www.sec.gov/Archives/edgar/data/0001444822/000119312526198088/d42635d497k.htm">May 2026 prospectus</a> describes them held long and short across equities, bonds, interest rates, commodities and currencies. Two AQR researchers, <a href="https://images.aqr.com/-/media/AQR/Documents/Insights/Journal-Article/Understanding-Style-Premia.pdf">Israel and Maloney (2014)</a>, define a style as "a disciplined, systematic method of investing that can produce long-term positive returns across markets and asset groups, backed by robust data and economic theory." The same paper explains why size, one of the most celebrated factors in academic finance, is not among the four: it "has not proven as robust, can't be easily applied across other asset groups, and often entails betting on illiquid securities."</p>
+
+      <p><a href="https://rpc.cfainstitute.org/research/financial-analysts-journal/2017/your-complete-guide-to-factor-based-investing">Berkin and Swedroe (2016)</a> later set out five criteria for any factor that describe much the same bar: persistent, pervasive, robust, investable and intuitive. The case for that austerity is protection against data mining. If a thousand people each flip a coin ten times, someone flips ten heads, and that person is not a genius. A strategy that admits few signals, each carrying an economic rationale, is structurally protected from hiring that person.</p>
+
+      <p>Israel and Maloney put the four styles' combined backtest at a Sharpe ratio above 2, called that figure "likely too high to be the basis of return expectations", and presented a more realistic version, with estimated costs and a heavy discount applied, at a Sharpe ratio close to 1.</p>
+
+      <p>The years that followed were harsher. The Style Premia fund lost money in 2018, 2019 and 2020, according to <a href="https://funds.aqr.com/api/funds/funddownload?id=%7B121866CD-7A6B-432F-9777-8FD9C6279264%7D&amp;fid=%7BCC45CACE-C00F-46D9-BF68-2EEDA9E84494%7D">its own fact sheet</a>. In May 2020, AQR's <a href="https://www.aqr.com/Insights/Perspectives/Is-Systematic-Value-Investing-Dead">Cliff Asness wrote</a> that value spreads were near or beyond their prior extremes, which had been set in 2000 or 2008 depending on the measure.</p>
+
+      <p>Firm and fund sit at very different scales. AQR as a whole reported <a href="https://www.sec.gov/Archives/edgar/data/1131013/000119312526082160/d864531d497k.htm">about $187.3 billion under management as of December 31, 2025</a>, spread across many strategies. The Style Premia fund itself reported about $2.5 billion in assets as of June 30, 2026, on the same fact sheet. The design favors capacity: slow styles, with portfolio turnover reported in the prospectus at 142 percent of average assets for the most recent fiscal year. Slow turnover across broad markets lets a strategy grow without its own trading destroying the prices it depends on. AQR sells durable, explainable returns at scale, not the highest ones.</p>
+
+      <h2>The Many-Signal Discipline</h2>
+
+      <p>The Medallion quote that matters comes from Gregory Zuckerman's <a href="https://www.penguinrandomhouse.com/books/557104/the-man-who-solved-the-market-by-gregory-zuckerman/">The Man Who Solved the Market</a>, in which Robert Mercer, who shared Renaissance's CEO title with Peter Brown, tells a friend: "We're right 50.75 percent of the time... but we're 100 percent right 50.75 percent of the time." Zuckerman notes that Mercer likely wasn't giving the firm's exact edge. The point was that the advantage was slight. A coin flip is 50 percent. The entire miracle is in the counting.</p>
+
+      <img src="003-four-alphas-or-four-million/equation-1.png" alt="P(ahead) = P(X &gt; N/2), where X ~ Binomial(N, 0.5075)">
+
+      <p>Flip that coin a hundred times and the odds of finishing ahead are barely better than even. Flip it ten thousand times and the odds approach ninety-three percent. Flip it a million times and being ahead is a statistical certainty.</p>
+
+      <img src="003-four-alphas-or-four-million/breadth-binomial-chart.png" alt="Line chart rising from 52% at 100 bets to 93% at 10,000 and 100% at 1,000,000 bets.">
+
+      <p><em>Probability of finishing ahead with a 50.75% per-bet edge, by number of independent bets (binomial; 50.75% from Mercer's remark as quoted in Zuckerman, 2019). Chart: Vertex.</em></p>
+
+      <p>Medallion, as reported in the same book, executes 150,000 to 300,000 trades a day and holds positions for days to weeks. By Bloomberg's 2017 count, it had made about $55 billion over the previous 29 years, with average returns after fees of about 40 percent, for a fund that manages money only for Renaissance's employees. It is not smarter per trade. It built a way to place a very slightly favorable bet an enormous number of times: the edge and the counting are separable, and Medallion industrialized the counting.</p>
+
+      <p>The binomial arithmetic assumes every flip is independent, and trades are not. Many of them share a horizon, overlap in exposure, or express the same signal across related stocks. The count of independent bets therefore sits well below the count of trades, and the curve above describes independent bets only.</p>
+
+      <p>According to the book, by 1997 more than half of the trading signals the team was discovering were nonintuitive, and statistically strong ones were traded anyway, with limited money at first. "If there were signals that made a lot of sense that were very strong, they would have long-ago been traded out," Peter Brown explains in the book. A few-signal discipline cannot operate that way. A many-signal discipline almost has to.</p>
+
+      <p>Grinold and Kahn's <a href="https://www.robeco.com/en-int/insights/2018/04/fundamental-law-of-active-management-shows-way-to-higher-information-ratio">fundamental law of active management</a> formalizes the relationship: the information ratio grows with skill times the square root of breadth. Breadth in that law is the number of independent investment opportunities, not the number of signals or trades. A thousand highly correlated signals behave more like a handful of bets than like a thousand. Effective breadth depends on how correlated the signals are, how much their exposures overlap, how their horizons line up, and how much of each forecast the portfolio's constraints let through to positions. Raw signal count is the easy term to grow. Effective breadth is the one the law rewards.</p>
+
+      <h2>The Industrial Middle</h2>
+
+      <p>AQR and Medallion sit far apart on signal count, holding period and capacity. WorldQuant pushes signal count furthest.</p>
+
+      <img src="003-four-alphas-or-four-million/comparison-table.png" alt="Comparison table of AQR Style Premia, Medallion and WorldQuant across signals, holding period, capacity, ownership and objective.">
+
+      <p><em>Vertex summary, drawing on AQR's 2026 prospectus, Zuckerman (2019), Bloomberg (2017), Tulchinsky (2022) and Hedgeweek (2024). Table: Vertex.</em></p>
+
+      <p>In 2010 WorldQuant <a href="https://www.worldquant.com/ideas/the-power-of-exponential-thinking/">set itself a target</a> of one million alphas, which it describes as "the algorithms we use to build our strategies", at a time when it was producing only several thousand a year. It hit the target by 2016 and has since described its repository as being in the millions. Part of the mining is crowdsourced: its <a href="https://www.worldquant.com/brain/">BRAIN platform</a> lists more than 16,000 research consultants.</p>
+
+      <p>That is a raw count. Alphas mined from the same data tend to overlap, and effective breadth is what remains once the overlap is accounted for. Pooling signals into combined strategies is also one of the ways breadth and capacity can grow together: when signals are combined before trading, opposing views net out internally, so more signals need not mean more trades.</p>
+
+      <p>WorldQuant's capital has grown alongside its signal count. The firm managed money only for Millennium until 2018. By 2024 it ran about $10 billion for other clients through a joint venture with Millennium, plus about $7 billion for Millennium itself, <a href="https://www.hedgeweek.com/worldquants-non-millennium-assets-up-to-10bn/">Hedgeweek reported</a>, and its leadership named a goal of $100 billion across its platforms.</p>
+
+      <h2>The Natural Experiment</h2>
+
+      <p>Renaissance itself supplies the clearest evidence of when breadth costs capacity. Medallion's assets are capped at about ten billion dollars, and each year's profit on that capped base is paid out rather than reinvested in the fund, as Bloomberg reported in 2017. The same report put the whole firm at about $42 billion, most of it in funds open to outside investors. The likely reason for the cap is capacity: at Medallion's trading speed, additional capital would move prices before the edge could be collected.</p>
+
+      <p>Those outside funds run on longer horizons. The Renaissance Institutional Equities Fund (RIEF) has "a 6-month to one-year holding time", a Medallion investor told <a href="https://www.institutionalinvestor.com/article/2bswms7wco7as686o8ikg/portfolio/renaissances-medallion-fund-surged-76-in-2020-but-funds-open-to-outsiders-tanked">Institutional Investor</a>. Same firm. In 2020, the same report said, Medallion gained 76 percent, citing one of its investors, while RIEF lost 22.62 percent and the Renaissance Institutional Diversified Alpha fund (RIDA) 33.58 percent through December 25, citing HSBC's weekly scoreboard. The report put RIEF's annualized return at 8.05 percent, below the S&amp;P 500's 9.6 percent over the same period.</p>
+
+      <p>The longer horizon buys capacity by giving up the short holding periods and dense betting behind Medallion's edge. The trade-off binds here because Medallion's breadth comes from speed, and fast turnover is precisely the condition under which more capital means more market impact.</p>
+
+      <h2>When the Trade-Off Binds</h2>
+
+      <p>AQR answers one question: how much durable, explainable return large pools of capital can actually hold. Medallion answers a different one: how much return a fixed, small pool of capital can extract once capacity is abandoned entirely.</p>
+
+      <p>Breadth and capacity are separate properties, not one budget. Additional breadth reduces capacity when it requires faster turnover, less-liquid assets, or correlated trading that adds market impact. It need not when the new signals trade slowly, reach into broader and deeper markets, net against each other before execution, or carry low correlation with what is already held. Better execution raises both at once.</p>
+
+      <p>Whether more signals cost capacity is an empirical question about turnover, liquidity and correlation, answered design by design.</p>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Roux, P. and Burton, K. (2017). "Renaissance Mints Another Billionaire, With Two More on the Cusp." Bloomberg, April 25, 2017, as syndicated by WealthManagement.com. <a href="https://www.wealthmanagement.com/alternative-investments/renaissance-mints-another-billionaire-with-two-more-on-the-cusp">Link</a></li>
+        <li>AQR Funds (2026). <em>AQR Style Premia Alternative Fund, Summary Prospectus</em>, May 1, 2026. SEC Form 497K. <a href="https://www.sec.gov/Archives/edgar/data/0001444822/000119312526198088/d42635d497k.htm">Link</a></li>
+        <li>Israel, R. and Maloney, T. (2014). "Understanding Style Premia." <em>The Journal of Investing</em> 23(4), 15–22. <a href="https://images.aqr.com/-/media/AQR/Documents/Insights/Journal-Article/Understanding-Style-Premia.pdf">Link</a></li>
+        <li>Fridson, M. (2018). Review of Berkin, A. L. and Swedroe, L. E. (2016), <em>Your Complete Guide to Factor-Based Investing: The Way Smart Money Invests Today</em>. <em>Financial Analysts Journal</em> book review, CFA Institute, July 12, 2018. <a href="https://rpc.cfainstitute.org/research/financial-analysts-journal/2017/your-complete-guide-to-factor-based-investing">Link</a></li>
+        <li>AQR Funds (2026). <em>AQR Style Premia Alternative Fund, Fact Sheet</em>, as of June 30, 2026. <a href="https://funds.aqr.com/api/funds/funddownload?id=%7B121866CD-7A6B-432F-9777-8FD9C6279264%7D&amp;fid=%7BCC45CACE-C00F-46D9-BF68-2EEDA9E84494%7D">Link</a></li>
+        <li>Asness, C. (2020). "Is (Systematic) Value Investing Dead?" AQR Capital Management, May 8, 2020. <a href="https://www.aqr.com/Insights/Perspectives/Is-Systematic-Value-Investing-Dead">Link</a></li>
+        <li>GuideStone Funds (2026). Prospectus supplement, February 27, 2026, sub-adviser description of AQR Capital Management. SEC Form 497K. <a href="https://www.sec.gov/Archives/edgar/data/1131013/000119312526082160/d864531d497k.htm">Link</a></li>
+        <li>Zuckerman, G. (2019). <em>The Man Who Solved the Market: How Jim Simons Launched the Quant Revolution</em>. Portfolio/Penguin Random House. <a href="https://www.penguinrandomhouse.com/books/557104/the-man-who-solved-the-market-by-gregory-zuckerman/">Link</a></li>
+        <li>Robeco (2018). "Fundamental Law of Active Management Shows Way to Higher Information Ratio." Robeco Insight, April 9, 2018. <a href="https://www.robeco.com/en-int/insights/2018/04/fundamental-law-of-active-management-shows-way-to-higher-information-ratio">Link</a></li>
+        <li>Tulchinsky, I. (2022). "The Power of Exponential Thinking." WorldQuant. <a href="https://www.worldquant.com/ideas/the-power-of-exponential-thinking/">Link</a></li>
+        <li>WorldQuant. "WorldQuant BRAIN." Platform page, accessed September 2026. <a href="https://www.worldquant.com/brain/">Link</a></li>
+        <li>Hedgeweek (2024). "WorldQuant's non-Millennium assets up to $10bn." July 24, 2024. <a href="https://www.hedgeweek.com/worldquants-non-millennium-assets-up-to-10bn/">Link</a></li>
+        <li>Celarier, M. (2021). "Renaissance's Medallion Fund Surged 76% in 2020. But Funds Open to Outsiders Tanked." <em>Institutional Investor</em>, January 13, 2021. <a href="https://www.institutionalinvestor.com/article/2bswms7wco7as686o8ikg/portfolio/renaissances-medallion-fund-surged-76-in-2020-but-funds-open-to-outsiders-tanked">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .slice().sort((a, b) => b.date.localeCompare(a.date))
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>

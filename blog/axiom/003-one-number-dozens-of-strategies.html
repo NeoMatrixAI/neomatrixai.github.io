@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="One real position, unlimited virtual strategies underneath it. That&#x27;s Compositor, our blend engine." />
+  <title>One Number. Dozens of Strategies. · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Axiom Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Axiom</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">One Number. Dozens of Strategies.</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>One real position, unlimited virtual strategies underneath it. That's Compositor, our blend engine.</em></p>
+
+      <p><a href="https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money">An earlier post walked through LiveSys</a>, our original live trading engine, built on a simple assumption: one exchange account runs one strategy file. That assumption held from the day the engine shipped until very recently.</p>
+
+      <p>It is also the exact assumption Compositor was built to break.</p>
+
+      <p>Compositor now carries production. The account that used to trade a single strategy was handed over to it without closing its positions, and the other accounts that each ran one strategy have been consolidated into the same Fund. It is also young, so this post covers what it changes, why, and what still isn't done.</p>
+
+      <hr>
+
+      <h2>The One-Line Idea</h2>
+
+      <p>If you take one thing away from this post, take this: <strong>the sum is anchored to reality, only the split is modeled.</strong></p>
+
+      <p>Here's what that means in practice. An exchange (Bitget, Binance, whichever) only ever sees one thing per account: a single net position. It doesn't know or care that the number it's looking at is actually the combined output of five different strategies pulling in different directions. <strong>Say Alpha A wants to be 3 BTC long, and Alpha B, running in the same account, wants to be 1 BTC short. The exchange never sees either of those numbers. It sees 2 BTC long, the netted-out sum, because that's the only position that physically exists.</strong></p>
+
+      <p>Everything below that netted sum (which strategy is "responsible" for how much of it, how each one is performing, how capital is split between them) is a virtual ledger. And critically, it's computed <strong>forward</strong>: the system decides the split first, then executes the sum. It is never reverse-engineered by trying to guess, after the fact, which strategy caused which fill. That distinction is the whole architecture in one sentence.</p>
+
+      <p>For anyone reading this who isn't neck-deep in the code: think of it like a single company bank account that the bank statement never breaks down by department. The company's own internal accounting still tracks exactly how much each department contributed and how each one is performing. That bookkeeping is completely real and completely trustworthy; it's just a layer the bank itself never sees.</p>
+
+      <hr>
+
+      <h2>Six Layers, One Bank Account</h2>
+
+      <p>Compositor breaks this down into several layers, starting from the one real thing and building virtual structure on top of it:</p>
+
+      <ul>
+        <li><strong>Fund</strong>: a real exchange account, the one that holds the API key. This is the only layer that physically exists on an exchange's books. Everything built on top of it is virtual.</li>
+        <li><strong>Alpha Table</strong>: the full list of alphas registered to that Fund.</li>
+        <li><strong>Alpha Pool</strong>: a grouping, inside the Alpha Table, of alphas that share similar characteristics.</li>
+        <li><strong>Portfolio (×M)</strong>: a virtual book-keeping split of the Fund's capital. A Fund can have any number of Portfolios.</li>
+        <li><strong>Alpha</strong>: a strategy picked from an Alpha Pool, running inside a Portfolio at some weight.</li>
+        <li><strong>Sleeve</strong>: the pairing of one specific Portfolio with one specific Alpha (<code>portfolioId</code>, <code>alphaId</code>). This is the actual unit that performance and allocation get tracked against. The term itself is borrowed from an existing practice in institutional asset management: sleeve-level accounting already describes exactly this pattern, tracking several strategies inside one custodial account with each sleeve's own cash and positions kept separate internally, even though the custodian only ever sees one account-level number.</li>
+      </ul>
+
+      <p>The analogy the team uses internally is a single bank account with several traders sharing it. That one account is the Fund. It's split among several traders (the Portfolios), each getting a book-keeping share of the account's capital, not a physically separate account. Each trader, in turn, blends several strategies at their own chosen weights. Those are the Alphas, and a trader running one strategy is a Sleeve. But no matter how many traders or how many strategies each one runs, the bank itself only ever sees one net number move in or out of the one real account.</p>
+
+      <p>The blending itself happens in two stages, in a module called <code>blender.py</code>. First, within a single Portfolio, the weights of its Alphas combine into that Portfolio's own net weight. Second, across all the Portfolios in a Fund, those Portfolio net weights combine into the single account-level net weight sent to the exchange. Schematically, it looks like this. This is illustrative of the two-stage shape, not the literal engine code:</p>
+
+      <pre><code># blender.py — two-stage blend (illustrative shape, not literal engine code)
+
+def blend_portfolio_weight(alpha_weights: dict) -&gt; float:
+    # Stage 1: alpha-to-alpha, inside one portfolio.
+    # Uses the built-in Calmar-ratio policy (`__calmar__`).
+    return calmar_weighted_sum(alpha_weights)
+
+def blend_fund_weight(portfolio_weights: dict, portfolio_capital_share: dict) -&gt; float:
+    # Stage 2: portfolio-to-portfolio, inside one fund.
+    # Each portfolio's share follows its own capital, which compounds on
+    # its own results. Nothing re-allocates capital between portfolios
+    # (see "Calmar Allocation" below).
+    return sum(w * portfolio_capital_share[p] for p, w in portfolio_weights.items())</code></pre>
+
+      <p>If the same Alpha is selected by two different Portfolios in the same Fund, that is simply two Sleeves: the Alpha's code is shared, but each pairing is tracked on its own.</p>
+
+      <img src="003-one-number-dozens-of-strategies/compositor-layers.png" alt="Compositor&#x27;s six-layer architecture and real-vs-virtual boundary">
+
+      <hr>
+
+      <h2>What's Different</h2>
+
+      <h3>One Strategy Becomes Many Alphas</h3>
+
+      <p>The older execution model assumes one account runs one strategy file. Compositor breaks that assumption on purpose: a single Fund can run any number of Alphas, spread across any number of virtual Portfolios. This isn't a minor parameter tweak. It's the reason this layered model and the two-stage blend exist at all. Without it, there'd be nothing to blend.</p>
+
+      <h3>The Leverage Model Got a Third Knob</h3>
+
+      <p>Multi-alpha blending raises a question the older model never had to answer: if five Alphas can each declare their own leverage, and the Fund itself has a margin ceiling, how do those two numbers interact without either silently overriding the other? Compositor's answer is three separate knobs. <code>L_a</code> is each Alpha's own declared leverage. <code>m</code> (capped at 3.0, default 1.0) scales the whole Fund's exposure up or down. Return and drawdown move roughly proportionally with <code>m</code>, but Sharpe ratio doesn't, since it's scale-invariant. <code>L_fund</code> is a margin ceiling, and it's deliberately kept separate from that exposure scale in the math:</p>
+
+      <p><em>net weight = (m × fund exposure) / margin ceiling</em></p>
+
+      <p>Dividing by the margin ceiling this way constrains capital usage without distorting the exposure scale itself. It's a small piece of arithmetic doing real work: it lets Alpha-declared leverage reach execution while guaranteeing Alphas that don't declare one keep trading at exactly the notional they always did.</p>
+
+      <h3>CrashGuard Is Gone, Replaced By Something Structurally Different</h3>
+
+      <p>The older architecture has a component called CrashGuard, a dynamic Kubernetes Job that does minute-scale position scaling, but only for strategies that define a <code>crashguard(data, positions, config_dict)</code> function. It hooks directly into the assumption that there's exactly one strategy file per account to inspect.</p>
+
+      <p>That hook doesn't survive the move to multi-alpha. Once an account can run any number of strategies simultaneously, "the one strategy file's crashguard function" stops meaning anything: there is no longer a single function to call. So CrashGuard-the-component is removed entirely in Compositor. The database columns it depended on are still there, unused. Leaving them costs nothing, while dropping columns from a live trading database is a risk with no upside, so that cleanup migration is deliberately left unapplied.</p>
+
+      <p>Compositor still has an equivalent safety net, built differently, in two pieces. One lives inside the same shared engine that computes an Alpha's signal in the first place (more on that engine-sharing in a later post): if an Alpha's target weights add up to more exposure than the cap it declared, the engine scales them back down proportionally in the same cycle, with no separate Job and no user-defined function to write. The other sits at the Fund level and acts twice before an order executes: if the blended target would tie up more than 90% of the account's balance as margin, the whole target is scaled down evenly, and any new order that still needs more margin than is available is held back.</p>
+
+      <h3>Calmar Allocation: Only Half-Alive</h3>
+
+      <p>Compositor introduces a real, built-in allocation policy called <code>__calmar__</code>, based on the Calmar ratio, a return-over-drawdown metric that a commodity trading advisor named Terry Young published in 1991 specifically to fold a strategy's worst losing stretch into its score alongside how much it made overall. It governs how weight shifts between Alphas <strong>within</strong> a single Portfolio.</p>
+
+      <p>The second tier, capital <strong>between</strong> Portfolios inside a Fund, works differently. Each Portfolio starts with the capital declared when it was registered, and from then on that capital moves only with the Portfolio's own profit and loss. Nothing reallocates capital between Portfolios: each trader compounds their own results, and no trader's gains are lent to another.</p>
+
+      <h3>How Costs Land on Each Sleeve</h3>
+
+      <p>Because only a netted position ever reaches the exchange, its fees and funding payments arrive as fund-level numbers, and the system has to decide which Sleeve pays for what. Those rules are deterministic and written down in advance.</p>
+
+      <p>Fees are charged only on the net order that actually went to the exchange, then split across Sleeves in proportion to how much each one moved: its allocation times the change in its weight. Where two Sleeves cancel each other inside the net, such as Alpha A buying while Alpha B sells, there is no exchange fee to split, so that internal crossing costs nothing. Funding follows positions rather than turnover, so it is split in proportion to what each Sleeve held. Whatever rounding is left over goes to the largest share, so the pieces always add back up exactly to the total, and a cost with no Sleeve to attach to is kept on an explicit unallocated line, so it never disappears.</p>
+
+      <p>Two parts are deliberately simple. Every Sleeve that trades a symbol in the same cycle shares one volume-weighted fill price, so there is no per-Sleeve execution price and no per-Sleeve slippage. Slippage shows up instead as the gap between a Sleeve's intended curve and its executed curve. The check that ties the ledger back to reality is also a tolerance, not an identity: the Sleeves' combined value is compared with the account's real equity, and drift beyond the tolerance raises an alert while trading keeps running. The split between Sleeves is modeled, and the sum stays anchored to what the exchange reports.</p>
+
+      <h3>The Dashboard Is Being Rebuilt Around It</h3>
+
+      <p>The older setup ran two dashboards side by side: Grafana JSON dashboards, and a self-hosted HTML dashboard (a portfolio view and a per-strategy grid) served directly by the API pod. Compositor retires Grafana entirely and expands that HTML groundwork into the primary dashboard, one that talks directly to <code>MainAdapter</code> and the database, and embeds TradingView's lightweight-charts library, no more Grafana iframes. It's a continuation of something that had already started before it.</p>
+
+      <h3>Per-Alpha Stops Move From the Exchange to the Ledger</h3>
+
+      <p>Exchange-native stop-loss and take-profit orders attach to a position on the exchange, and that is where the netting model changes things. In the older model, a strategy owns its own position, so it's meaningful to attach a stop to "this strategy's position." In Compositor, only one blended net position ever reaches the exchange. Alpha A's theoretical 3 BTC long and Alpha B's theoretical 1 BTC short don't exist as separate exchange-level positions to protect; only their sum, 2 BTC long, does. So there is no per-Alpha position on the exchange for a stop order to attach to, and those order paths were removed.</p>
+
+      <p>The risk exit itself didn't disappear. It moved into the virtual ledger, where every Sleeve does exist. An Alpha can declare a maximum drawdown, and when a Sleeve's drawdown crosses it, the system sets that Sleeve's allocation to zero and marks it stopped. Nothing is sent to the exchange. The stop changes the Fund's next net target, and the netting step closes the exposure on the next cycle, the same way it handles any other change in weights. Only the Sleeve that broke down is stopped, so the same Alpha keeps running in other Portfolios, and a Portfolio-level version of the same rule exists too. Restarting a stopped Sleeve is an explicit action that never happens on its own. What Compositor doesn't have yet is take-profit exits or price-based stops per Alpha. Those are on the backlog.</p>
+
+      <img src="003-one-number-dozens-of-strategies/earlier-vs-compositor-table.png" alt="Earlier architecture vs Compositor comparison table">
+
+      <hr>
+
+      <h2>Exchange-Agnostic By Inheritance</h2>
+
+      <p>Here's a detail that's easy to undersell: Compositor's core code never branches on which exchange it's talking to. The exchange name is just a string stored with each Fund and threaded through to the order layer below it.</p>
+
+      <p>That's possible because the actual multi-exchange routing problem was already solved, not by Compositor, but by the architecture before it. <code>MainAdapter</code> is the single routing entry point that normalizes response-schema differences across exchanges, and it already sits underneath both Bitget and Binance execution paths (via <code>Bitget Adapter</code> and <code>Binance Adapter</code>). Compositor's contribution here isn't building new routing. It's that it never had to touch that layer at all. The Fund layer just reads a string and passes it downstream. That's not an accident. It's a sign the routing abstraction underneath was designed correctly the first time, years before Compositor needed to depend on it.</p>
+
+      <p><code>MainAdapter</code> itself wasn't the obvious choice at the time it was built, and it's worth saying what the alternative was. The team had a working, detailed design for a different approach: an adapter pattern built directly into the shared library every service imports, its own network service skipped entirely. What killed that design wasn't a flaw in the pattern: it was noticing that the routing and normalization logic it would have required was already being duplicated by hand in more than one place that touched an exchange, and adding a second exchange was about to double that duplication again. A library gets vendored into every service that imports it, so fixing a routing bug means redeploying everyone; a service sitting behind one network hop means fixing it once. That's the whole argument for <code>MainAdapter</code> existing as a standalone service over a shared package, and it's also, quietly, the precondition for the sentence two paragraphs up: Compositor gets to inherit exchange-agnosticism for free specifically because that earlier decision put the abstraction in a place a new caller could just point at, a place it would otherwise have had to re-vendor.</p>
+
+      <hr>
+
+      <h2>What This Means, In Plain Terms</h2>
+
+      <p>If you're reading this as an investor or a non-developer rather than as an engineer, here's the takeaway without the implementation detail: Compositor is the difference between "this account runs one bet" and "this account runs a portfolio of bets, each one individually accountable, while the exchange itself only ever sees one clean number." That matters because it's what lets the platform run many strategies per account without multiplying the number of exchange accounts, and it's what makes strategy-level performance attribution possible without ever having to guess after the fact which trade belongs to which idea.</p>
+
+      <p>Compositor is no longer a design on paper. It is what trades real money on Bitget futures today, and four Portfolios are running on it. It is also young: the team is still finding and closing edge-case bugs, as recently as this week. That's a normal, healthy state for a system at this stage, and it's worth stating plainly rather than rounding up to "finished."</p>
+
+      <p>The next post takes up the trading API layer that sits underneath both LiveSys and Compositor: the routing, auth, and data-query layer that Compositor inherited rather than rebuilt.</p>
+
+      <img src="003-one-number-dozens-of-strategies/netting-example.png" alt="Netting example: two alphas blend into one net position">
+
+      <hr>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Vestmark. "Sleeves, Tagging, and the Pathway to Improved Accounting." Vestmark blog. <a href="https://www.vestmark.com/resources/blog/sleeves-tagging-and-the-pathway-to-improved-accounting">Link</a></li>
+        <li>Young, T.W. (1991, October 1). "Calmar Ratio: A Smoother Tool." <em>Futures</em>, as cited in <a href="https://en.wikipedia.org/wiki/Calmar_ratio">Calmar ratio</a>, Wikipedia.</li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Axiom</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .slice().sort((a, b) => b.date.localeCompare(a.date))
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
