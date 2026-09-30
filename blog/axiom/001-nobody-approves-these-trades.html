@@ -402,8 +402,9 @@
       const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
       const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
       const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
       const ranked = all.filter(p => p.team === team && p.localUrl)
-        .slice().sort((a, b) => b.date.localeCompare(a.date))
         .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
 
       const panel = document.getElementById('article-side-list');

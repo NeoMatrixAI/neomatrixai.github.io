@@ -41,7 +41,8 @@
 const LATEST_POSTS = [
     // Posts sharing a date keep this array's order (the sort is stable), so
     // within one team, entries go in the actual draft/publish order (001,
-    // 002, ...), not by within-day timestamp.
+    // 002, ...), not by within-day timestamp. Each article's sidebar list
+    // numbers posts by this same array order, so the number is the post number.
     { title: 'Nobody Approves These Trades',
       subtitle: 'We\'re Axiom, NeoMatrix\'s trading systems team. Here\'s what it takes to build and run one.',
       platform: 'substack', team: 'axiom', localUrl: 'blog/axiom/001-nobody-approves-these-trades.html',
