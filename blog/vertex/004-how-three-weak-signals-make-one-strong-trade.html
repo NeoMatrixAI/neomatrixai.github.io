@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A crypto composite that trades only where three measurements agree." />
+  <title>How Three Weak Signals Make One Strong Trade · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">How Three Weak Signals Make One Strong Trade</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>A crypto composite that trades only where three measurements agree.</em></p>
+
+      <p>Momentum has the deepest published record of any cross-sectional effect in crypto. It also fires on every asset with a recent trend, including the ones whose trend is noise. A composite built to tell the two apart trades momentum only where three unrelated measurements agree with it. From 2022 through 2025, on the 50 largest crypto perpetual futures, it returned 19.8 percent a year net of trading costs and funding, with a Sharpe ratio of 1.30, a maximum drawdown of 10.4 percent and a gain in every calendar year.</p>
+
+      <p>The three measurements come from fields well outside the usual crypto factor menu: ordinal-pattern entropy from nonlinear dynamics, the shape of a yield curve from fixed income, and a pair of competing Kalman filters from estimation theory. None of them sets direction. Each one decides how far momentum should be trusted, asset by asset, at every rebalance. The construction is called Concord here.</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/cover.jpg" alt="A white triangulation pillar on a grassy hilltop above a wide plain">
+
+      <p><em>Photo: Anthony O'Neil, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, cropped</em></p>
+
+      <h2>Three Readings From Three Fields</h2>
+
+      <p><strong>Ordinal entropy.</strong> <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.88.174102">Bandt and Pompe (2002)</a> proposed permutation entropy, a complexity measure that looks only at the order of neighbouring values. Slide a window of length <em>m</em> along a return series, record which of the <em>m</em>! possible orderings each window shows, and take the Shannon entropy of their frequencies, normalised by its maximum:</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/equation-1.png" alt="H = −(1 / ln m!) × sum over π of p(π)·ln p(π), with 0 ≤ H ≤ 1">
+
+      <p>A value of one means every ordering is equally likely, which is what a random walk produces. Lower values mean some orderings recur, and recurring order is structure. <a href="https://ideas.repec.org/a/eee/phsmap/v388y2009i14p2854-2864.html">Zunino, Zanin, Tabak, Pérez and Rosso (2009)</a> found that permutation entropy is lower in less efficient stock markets. The rationale for using it here is direct. A bet on a trend should pay when price formation has structure, and it should shrink when price formation looks random.</p>
+
+      <p><strong>Funding-curve shape.</strong> A perpetual future has no expiry, so it is tied to spot by a periodic transfer: longs pay shorts a funding rate proportional to the gap between the two prices, as <a href="https://arxiv.org/abs/2212.06888">He, Manela, Ross and von Wachter</a> set out. Averaging that rate over several nested horizons, from days to months, gives each asset a term curve. In government bonds, <a href="https://www.aeaweb.org/articles?id=10.1257/0002828053828581">Cochrane and Piazzesi (2005)</a> showed that a single tent-shaped combination of forward rates, a statistic of the curve's shape rather than its level, predicts excess bond returns with an R² of up to 0.44. <a href="https://doi.org/10.1016/j.jfineco.2017.11.002">Koijen, Moskowitz, Pedersen and Vrugt (2018)</a> showed that carry predicts returns across asset classes. The crypto analogue fits a quadratic to mean funding against the logarithm of the horizon and keeps the curvature:</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/equation-2.png" alt="f̄(h) = a + b·ln h + c·(ln h)², κ = 2c">
+
+      <p>Level says how crowded a position is. Slope says whether the crowding is building. Curvature says whether that build-up is accelerating or bending over: it is the butterfly spread of the funding curve. The mechanism is leverage demand. Funding is what crowded leverage pays, and a crowd that is still accelerating behaves differently from one that is tiring. Whether the bond-market sign carries over to crypto was not assumed. It was left open as a construction choice and settled on the sample.</p>
+
+      <p><strong>Competing filters.</strong> A <a href="https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html">Kalman (1960)</a> filter estimates a hidden state from noisy observations. Here the hidden state is an asset's short-run expected return, and two filters run side by side on the same returns. One assumes that expected return persists from bar to bar. The other assumes it reverses. Each produces a posterior mean <em>μ</em> and variance <em>P</em>, and their discordance is a standardised gap:</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/equation-3.png" alt="D = (μ_persist − μ_revert)² / (2·(P_persist + P_revert))">
+
+      <p>When the recent path fits both stories, <em>D</em> is small and the reading says nothing. When it fits one story far better, <em>D</em> is large and takes the sign of whichever filter's estimate is larger in size. A regime that is decisively persistent or decisively reverting is one in which the recent past carries information about the next step.</p>
+
+      <h2>From Readings to One Score</h2>
+
+      <p>The four inputs are momentum, entropy, curvature and discordance. Each is first turned into a z-score across the universe on every rebalance date, with extreme values capped. From there on, a reading only matters relative to the same reading on every other asset.</p>
+
+      <p>Curvature and discordance are then residualised against momentum with a cross-sectional regression, and discordance is residualised a second time against the curvature residual. This is Gram–Schmidt orthogonalisation applied to factor scores. What remains of each reading is the part that momentum, and for discordance curvature too, did not already say.</p>
+
+      <p>The residuals then vote. On each asset, a reading agrees when its residual has the same sign as momentum. Two agreeing votes give the position its full weight. One agreeing vote gives it a partial weight. None sets it to zero. Size comes from the geometric mean of the three magnitudes, and entropy enters as a gate that ramps from zero to one:</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/equation-4.png" alt="s_i = g_i · v_i · sign(m_i) · ( |m_i| · |κ_i^⊥| · |D_i^⊥| )^(1/3)">
+
+      <p>Here <em>m</em> is momentum, <em>κ</em>⊥ and <em>D</em>⊥ are the residual readings, <em>v</em> is the vote multiplier and <em>g</em> is the gate.</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/concord-construction.png" alt="Diagram: four readings, residualised, voting on momentum&#x27;s sign, combined into one score">
+
+      <p><em>Order of operations from readings to score. Schematic, no parameter values. Diagram: Vertex.</em></p>
+
+      <p>The gate is cross-sectional, not absolute. At intraday frequencies absolute permutation entropy barely moves. On hourly BTC/USDT returns from <a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints">Binance's public market data</a>, across 24 monthly windows from September 2024 to September 2026, it ranged from 0.991 to 0.997, always just under the value a random walk would produce. A fixed threshold on numbers that close together would switch almost every asset off, or almost every asset on. Ranked against each other on the same date, the same numbers sort the universe into the relatively structured and the relatively random.</p>
+
+      <h2>The Choices That Shaped It</h2>
+
+      <p><strong>Momentum owns the direction.</strong> Of the four inputs, momentum has the deepest published record in the crypto cross-section: <a href="https://doi.org/10.1111/jofi.13119">Liu, Tsyvinski and Wu (2022)</a> found that market, size and momentum factors capture the cross-section of expected cryptocurrency returns. Curvature and discordance have no comparable record. A construction that let them flip a position would be betting on the weaker evidence. In Concord they can confirm a momentum position, shrink it or veto it, but never reverse it.</p>
+
+      <p><strong>Residualise before voting.</strong> Funding moves with price, and a Kalman filter run on returns partly restates the recent return. Without the residualisation step, a vote of three would often be one opinion counted three times. With it, an agreeing vote is independent evidence. The order matters too. Discordance is residualised last, so its vote counts only what neither momentum nor curvature already carried.</p>
+
+      <p><strong>Multiply, do not add.</strong> A weighted sum is compensatory. One strong reading can carry a position past two readings that contradict it. A product makes disagreement expensive. The geometric mean collapses toward zero whenever any one magnitude is small, and the vote removes a position outright when both residuals dissent. The cost is breadth: on many dates a large share of the universe carries little or no weight, and the book holds fewer names at higher conviction. A fourth reading added to the vote made the composite worse in every form tried. One more veto shrank the signal faster than it added information.</p>
+
+      <h2>From Score to Book</h2>
+
+      <p>The universe is the 50 largest USDT-margined crypto perpetual futures by market capitalisation, re-ranked daily from the previous day's ranks, with stablecoin and gold-token contracts excluded. At each rebalance the score is ranked across that universe. The top tail forms the long book and the bottom tail the short book, and the middle is left flat. Each name is sized in proportion to its score and inversely to its own volatility. The two books are balanced against each other, and the whole book is scaled to a volatility target under a cap on gross leverage.</p>
+
+      <p>Rebalancing runs on a fixed cycle measured in weeks. Entropy and discordance are both estimated from noisy intraday data, and trading them faster than they can genuinely change would mean trading their noise. Over the sample the book turned over about 24 times its size per year.</p>
+
+      <h2>The Backtest</h2>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/concord-backtest.png" alt="Line chart of cumulative net return rising to 106 percent, with a drawdown panel below">
+
+      <p><em>Backtest, in-sample, 2022–2025, net of trading costs and funding. Top-50 crypto perpetuals. Chart: Vertex.</em></p>
+
+      <p>From 1 January 2022 to 31 December 2025 the composite compounded to a gain of 106 percent, or 19.8 percent a year, at an annualised volatility of 14.7 percent. The Sharpe ratio was 1.30 and the Sortino ratio 2.09. Every calendar year was positive, with Sharpe ratios running from 0.59 in 2025 to 1.86 in 2023. The deepest drawdown, 10.4 percent, came in October and November 2025. Sixty percent of months closed positive.</p>
+
+      <img src="004-how-three-weak-signals-make-one-strong-trade/concord-years-table.png" alt="Table of yearly net return, Sharpe ratio, maximum drawdown and volatility, 2022 to 2025">
+
+      <p><em>Backtest statistics by calendar year, in-sample. Table: Vertex.</em></p>
+
+      <p>Costs were charged on every trade. Trading costs consumed about an eighth of the gross return. Funding was a small net receipt, worth about three percentage points across the four years.</p>
+
+      <p>The backtest was run under these settings:</p>
+
+      <ul>
+        <li><strong>Sample.</strong> 1 January 2022 to 31 December 2025, in-sample: the composite's settings were selected over this window.</li>
+        <li><strong>Universe.</strong> The 50 largest USDT-margined crypto perpetual futures by market capitalisation, re-ranked daily.</li>
+        <li><strong>Costs.</strong> 6 basis points of commission and 5 basis points of slippage on all traded notional, with funding charged or credited at each contract's historical rate.</li>
+        <li><strong>Rebalance.</strong> A fixed cycle measured in weeks.</li>
+        <li><strong>Look-ahead controls.</strong> Every input is computed from bars and funding prints strictly before the rebalance time, and universe ranks lag by one day.</li>
+        <li><strong>Status.</strong> Never deployed.</li>
+      </ul>
+
+      <h2>What This Does Not Establish</h2>
+
+      <p>The four years are one sample, one universe and one cost model, and the settings were chosen over the same window the statistics describe. The figures measure how well the construction fits that period as much as how much edge it holds. The weakest year, 2025, is also the most recent.</p>
+
+      <p>None of the three readings was a strong signal when traded alone. The backtest shows that their agreement was informative on this sample. It does not show which reading carried the result, and it does not show that the bond-market curvature effect exists in crypto, because the sign of the curvature reading was settled on the data.</p>
+
+      <p>Permutation entropy at this frequency separates assets by differences in the third decimal place. Ranking makes those differences usable, and it also leaves the gate sensitive to estimation noise for assets near the middle of the ranking.</p>
+
+      <h2>Where It Stands</h2>
+
+      <p>Concord was built, backtested and never deployed. It was later used as one leg of a larger combination, alongside a second composite whose readings come from a different family of risk premia.</p>
+
+      <h2>What Generalizes From This</h2>
+
+      <p>When several weak readings are combined, residualise them before they vote. An agreeing vote is evidence only if it is independent of the reading it agrees with.</p>
+
+      <p>Let the reading with the deepest external evidence own the direction, and let the others decide size. A composite that multiplies its inputs is only as strong as the agreement among them, which is the property that makes it worth building.</p>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Bandt, C. and Pompe, B. (2002). "Permutation Entropy: A Natural Complexity Measure for Time Series." <em>Physical Review Letters</em> 88(17), 174102. <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.88.174102">Link</a></li>
+        <li>Zunino, L., Zanin, M., Tabak, B.M., Pérez, D.G. and Rosso, O.A. (2009). "Forbidden Patterns, Permutation Entropy and Stock Market Inefficiency." <em>Physica A</em> 388(14), 2854–2864. <a href="https://ideas.repec.org/a/eee/phsmap/v388y2009i14p2854-2864.html">Link</a></li>
+        <li>He, S., Manela, A., Ross, O. and von Wachter, V. "Fundamentals of Perpetual Futures." arXiv:2212.06888. <a href="https://arxiv.org/abs/2212.06888">Link</a></li>
+        <li>Cochrane, J.H. and Piazzesi, M. (2005). "Bond Risk Premia." <em>American Economic Review</em> 95(1), 138–160. <a href="https://www.aeaweb.org/articles?id=10.1257/0002828053828581">Link</a></li>
+        <li>Koijen, R.S.J., Moskowitz, T.J., Pedersen, L.H. and Vrugt, E.B. (2018). "Carry." <em>Journal of Financial Economics</em> 127(2), 197–225. <a href="https://doi.org/10.1016/j.jfineco.2017.11.002">Link</a></li>
+        <li>Kalman, R.E. (1960). "A New Approach to Linear Filtering and Prediction Problems." <em>Journal of Basic Engineering</em> 82(1), 35–45. <a href="https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html">Link</a></li>
+        <li>Binance. "Market Data Endpoints: Kline/Candlestick Data." Public Spot API documentation. <a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints">Link</a></li>
+        <li>Liu, Y., Tsyvinski, A. and Wu, X. (2022). "Common Risk Factors in Cryptocurrency." <em>Journal of Finance</em> 77(2), 1133–1177. <a href="https://doi.org/10.1111/jofi.13119">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>

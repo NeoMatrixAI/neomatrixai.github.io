@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Both US sprint relays dropped the baton in Beijing in 2008. A trade in our system is a six-stage relay, and every failure in this post happened at a handoff." />
+  <title>You Think Placing a Trade Is One Step. It's Six. · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Axiom Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Axiom</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">You Think Placing a Trade Is One Step. It's Six.</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Both US sprint relays dropped the baton in Beijing in 2008. A trade in our system is a six-stage relay, and every failure in this post happened at a handoff.</em></p>
+
+      <p>On August 21, 2008, in the Olympic heats in Beijing, the US men's 4x100m relay team <a href="https://www.france24.com/en/20080821-bad-baton-drop-row-us-relay-beijing-2008-sprint">dropped the baton</a> as Darvis Patton handed it to Tyson Gay. Later that day the US women's team dropped theirs on the final exchange. Neither team reached the final.</p>
+
+      <p>A trade in our system is a relay too: six stages, each owned by one service, from market data to the number on a dashboard. We built every stage to do one job and do it well. The failures in this post all happened between stages.</p>
+
+      <img src="004-you-think-placing-a-trade-is-one-step-its-six/relay-baton-exchange.jpg" alt="A black-and-white photo of runners passing a baton on a dirt track, watched by men in hats.">
+
+      <p><em>A baton pass during a relay race at Kincaid Field, sometime in the first two decades of the twentieth century. Photo: University of Oregon Libraries, via <a href="https://commons.wikimedia.org/wiki/File:Relay_race_-_DPLA_-_b67c7fccd7b01360073c6cb2c8070f7a.jpg">Wikimedia Commons</a>, public domain.</em></p>
+
+      <hr>
+
+      <h2>Six Stages, Eight Services</h2>
+
+      <p>Every trade on our platform reaches the outside world through one layer: the trading API layer. <a href="https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money">LiveSys</a>, our live trading engine, and <a href="https://neomatrixai.substack.com/p/one-number-dozens-of-strategies">Compositor</a>, the core that runs it in production today, place their orders through it. Latent, our backtest engine, reads its market data from it.</p>
+
+      <p>No single service in that layer does the whole job of "place a trade and record what happened." Market data, exchange key custody, order routing, order execution and result recording each belong to a separate service. Eight services do the work across six stages: the execution stage has one adapter per exchange, and the last stage is two read-only query services. One of them, Auth API, is a single point of failure on purpose, and we'll get to why.</p>
+
+      <img src="004-you-think-placing-a-trade-is-one-step-its-six/trading-api-architecture.png" alt="Trading API layer architecture across six stages">
+
+      <hr>
+
+      <h2>Stage 1: Data API, Where the Trade Starts</h2>
+
+      <p>Before any order exists, something has to decide what the order should be, and that decision runs on market data. Data API is the one service that supplies it: candles, funding rates, market cap, order books down to tick level and the rest of the market data we use, for Bitget and Binance, plus funding rates for Hyperliquid. It's a Go API (Gin and GORM) over Postgres, with ClickHouse holding the heaviest data (tick-level order books, one-second bars, liquidations), and Python collectors feeding both.</p>
+
+      <p>The strategy jobs that compute target weights read it, and so does Latent, the backtest engine, so a strategy sees the same history in a backtest that it sees live. Analytics API reads the same market database directly for its benchmark prices. A strategy is judged against the market it traded in, so the benchmark has to come from the same numbers the strategy saw.</p>
+
+      <p>This first stage is also where the first dropped baton was. <strong>A request for thirty days of one-minute data came back with HTTP 200 and exactly 10,000 rows. The database held 43,200.</strong> The endpoint allowed 10,000 rows for each requested symbol but spent that allowance across the whole request in alphabetical symbol order, so with several symbols the first ones could use up the budget and the rest came back empty, which looks exactly like a symbol with no data. Seventy-seven percent of the requested rows were missing, behind a success response.</p>
+
+      <p>Our first move was to ask for the API to fail loudly when a request was too big. Then we withdrew the request. A cap that returns what fits is a normal contract, and paging is the caller's job. The caller was ours: the backtest engine split long requests by calendar month, not by how many rows the cap allows. The fix went on our side of the handoff. Requests are now split to fit the cap, and a page that comes back exactly at the cap is treated as cut off and fetched again in halves.</p>
+
+      <p>Chunk sizes worked out from the cap are the first line of defense and that check is the second. A forty-day open-interest request came to 11,520 rows, over the cap, so without the guard 13% of it would have vanished silently. If a request can't be split small enough, the fetch aborts instead of returning less. A test feeds the splitter a stand-in endpoint that silently cuts at the cap and asserts that a full month of one-minute rows comes back with no duplicates. The API itself still gives no sign that a response was cut off, so the caller has to infer it from the row count. LiveSys had been splitting its own requests to fit the cap all along, so live trading wasn't affected.</p>
+
+      <hr>
+
+      <h2>Stage 2: Nothing Moves Without Auth API</h2>
+
+      <p>Auth API sits in front of the credentials database. It's a FastAPI service, and it is the only place in the system that holds exchange API keys. An exchange adapter asks it for the user's key right before it signs an order.</p>
+
+      <p>Every request to MainAdapter or to an exchange adapter is checked against Auth API, with no caching. Query API and Analytics API, which only read results, remember a successful check for three minutes and one minute. LiveSys's own API checks every call, and its trading jobs carry the user's key down to MainAdapter, where it's checked again. The read services cache because one fund screen fires five Query API calls and ten Auth checks, and only successful checks are remembered, so a failure is never replayed. The price is that a revoked key stops an order on its very next request but can keep a result view open for three minutes at most.</p>
+
+      <p>Keeping the keys in one place is a deliberate trade-off: exchange keys live in one database and nowhere else. <a href="https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money">The post on LiveSys</a> explains why that's worth it and what happens when Auth API goes down, real incident included. The short version: when Auth API is down the system fails closed, and no trade executes anywhere until it is healthy again.</p>
+
+      <hr>
+
+      <h2>Stage 3: MainAdapter, the Only Door to an Exchange</h2>
+
+      <p>Once a request is authorized, the order still has to go somewhere. That somewhere is always MainAdapter, a FastAPI service that every order passes through no matter which exchange it's headed for. No other service in our code calls Bitget or Binance directly. LiveSys calls MainAdapter to place orders, and Query API calls it to read live balances and positions.</p>
+
+      <p>MainAdapter also does the tedious part nobody above it should have to think about. Bitget and Binance return the same information in different shapes, so MainAdapter uses Bitget's shape as the standard and translates Binance's responses, and some of its requests, into it. The services above never learn that the two exchanges disagree about the format.</p>
+
+      <pre><code># MainAdapter, illustrative shape (not literal source)
+ADAPTER_BY_EXCHANGE = {
+    "bitget": "&lt;Bitget Adapter URL&gt;",
+    "binance": "&lt;Binance Adapter URL&gt;",
+}
+
+async def forward(exchange: str, path: str, body: dict) -&gt; JSONResponse:
+    resp = await client.post(f"{ADAPTER_BY_EXCHANGE[exchange]}{path}", json=body)
+    # keep the exchange's verdict: a 400 from the exchange stays a 400
+    return JSONResponse(status_code=resp.status_code,
+                        content=normalize(exchange, resp.json()))</code></pre>
+
+      <p>We trade on Bitget today. MainAdapter already routes to Binance, and a few of its routes still have no Binance counterpart.</p>
+
+      <p>The comment in that sketch is there because of the second dropped baton. An early version of the forwarding function returned only the response body and threw away the HTTP status code. An exchange rejecting an order with a <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1">400</a> arrived at every caller looking exactly like a <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.1">200</a>. LiveSys tells "this order was rejected for a normal reason, skip it" apart from "something broke, stop" by checking that status, so routine rejections, like an order below the exchange's minimum size, turned into hard failures with an alert instead of a skip. The bug sat in the code for nearly three weeks. It first showed up as an intermittent KeyError in a smoke test, and the cause surfaced when the same call made directly to an exchange adapter and through MainAdapter came back as 400 in one case and 200 in the other. The fix changed the function's return type from a bare body to a status and a body, sent on as a real HTTP response that keeps its status, with a test that a 400 from the exchange arrives as a 400.</p>
+
+      <p>It's also why <a href="https://neomatrixai.substack.com/p/one-number-dozens-of-strategies">Compositor</a> didn't need a routing layer of its own. Its code never branches on the exchange name. The name is a string stored with each account and passed down to the order layer, and MainAdapter takes it from there unmodified.</p>
+
+      <hr>
+
+      <h2>Stage 4: Bitget Adapter and Binance Adapter, Where the Order Lands</h2>
+
+      <p>Below MainAdapter sit the two services that place the order on the exchange. Bitget Adapter wraps Bitget's official Python SDK. Binance Adapter uses a small signing client we wrote ourselves. In our code, each has exactly one caller: MainAdapter. No dashboard, no strategy job and no analytics service talks to them directly.</p>
+
+      <p>That split keeps two kinds of knowledge apart. MainAdapter is the one place that decides which exchange an order goes to. Each adapter is the one place that knows what its exchange expects a request to look like. Supporting a third exchange means writing one more adapter behind the same door.</p>
+
+      <p>"What the exchange expects" turned out to include the number of decimal places, which brought the third dropped baton. In a test on Binance's demo environment, LiveSys sent a closing order for 226.00622056689443 XRP, the raw result of a <a href="https://docs.python.org/3/tutorial/floatingpoint.html">floating-point</a> division. Bitget accepted orders like that, so on Bitget nobody had noticed. Binance rejected it with error <a href="https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/error-code">-1111</a>, "Precision is over the maximum defined for this asset." A position that was supposed to shrink didn't. It surfaced in the fourth round of running demo-account sessions against Binance, where each round exposed one more gap.</p>
+
+      <p>The fix lives in the Binance adapter. The place-order path rounds the quantity down to the symbol's allowed <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#exchange-information">step size</a> before it's sent, in exact <a href="https://docs.python.org/3/library/decimal.html">decimal arithmetic</a>, with each symbol's step size cached for ten minutes. If the exchange answers the step-size lookup with an error, the original quantity goes through unchanged and the exchange is left to reject it loudly. We would rather see a rejection than send a guess. The same quantity can be invisible on one exchange and fatal on another, and that's the strongest argument we have for giving each exchange its own adapter.</p>
+
+      <hr>
+
+      <h2>Stage 5: Finwatcher Records What Happened</h2>
+
+      <p>The order call in Stage 4 gets back an acknowledgment: the exchange has accepted the order. <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade#new-order">Binance's futures endpoint</a> answers with an ACK by default, and <a href="https://www.bitget.com/docs/catalog/classic-contract-trade/classic-contract-trade#place-order">Bitget's</a> returns only the order ID. That is not a fill, and the system doesn't treat it as one. Decisions come from the exchange itself: every rebalancing cycle starts by reading the account's real positions, so a late fill shows up in the next cycle's read. The durable record comes from Finwatcher, a component inside LiveSys that runs at the top of every minute.</p>
+
+      <p>Each minute, Finwatcher first records results: account and per-symbol results, each Sleeve's virtual book (the per-strategy ledger <a href="https://neomatrixai.substack.com/p/one-number-dozens-of-strategies">Compositor</a> keeps), and the fill and position history. Then it runs its checks: sessions that have ended or are stuck, deposits and withdrawals, and risk indicators like drawdown against the alert thresholds a user set.</p>
+
+      <p>Fills reach the record by polling. Finwatcher reads them through MainAdapter once a minute, and there's no WebSocket fill feed in the trading path today. So the record can run up to a minute behind the exchange. Trading decisions don't wait on that lag, because each cycle reads positions straight from the exchange. An order still unfilled three minutes after it was accepted is recorded as an event and flagged, a check that exists because one order sat unfilled for three cycles in a row. A push-based fill feed, like <a href="https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/user-data-streams">Binance's user data stream</a> or <a href="https://www.bitget.com/docs/classic/websocket/contract/private/Fill-Channel">Bitget's fill channel</a>, would shorten the lag, and it's a piece we haven't built.</p>
+
+      <p>Finwatcher isn't the only path that writes results. A final snapshot is taken just before a session closes, and a backfill job fills gaps from the exchange's own history. All three write the same way: a row is added only if its key, the account, the minute and the result column, isn't already in the table (<em><a href="https://www.postgresql.org/docs/current/sql-insert.html">ON CONFLICT DO NOTHING</a></em>). A rerun, a late snapshot or a backfill can fill a hole, but none of them can overwrite a number that's already there.</p>
+
+      <hr>
+
+      <h2>Stage 6: Query API and Analytics API Serve It Back Out</h2>
+
+      <p>Everything downstream of the results database reads from it. Query API is a FastAPI service over that database (SQLAlchemy, a pgBouncer connection pool, Redis for caching) that serves fills, positions, minute-by-minute results and portfolio views across several accounts. It also keeps summary tables built from those results, so a long range doesn't have to be computed from minute data every time. Analytics API reads the same database and computes performance metrics: Sharpe, Sortino and Calmar ratios, alpha and beta against a benchmark, and rolling indicators.</p>
+
+      <p>Analytics API runs on a fork of <a href="https://github.com/quantopian/empyrical">empyrical</a>, the metrics library Quantopian open-sourced. We forked it because crypto trades around the clock, weekends included, while most finance analytics assume a price that closes once a day and a market that shuts on weekends. <a href="https://github.com/quantopian/empyrical/blob/master/empyrical/periods.py">Its period table</a> stops at daily, with a year set to 252 business days, so the constants that turn per-minute returns into annual figures had to be added for a market that trades every minute of every day.</p>
+
+      <p>A per-minute <a href="https://web.stanford.edu/~wfsharpe/art/sr/SR.htm">Sharpe ratio</a> on a market that never closes has to be annualized, and that means multiplying by the square root of the number of minutes in a year:</p>
+
+      <p><em>Sharpe_annual = Sharpe_minute × √(525,600) ≈ Sharpe_minute × 725</em></p>
+
+      <p>On a daily-close market, the same slot holds 252, roughly the number of trading days in a year. Same metric by name, different multiplier, because the market underneath runs on a different clock.</p>
+
+      <p>That multiplier is the standard square-root-of-time rule, and <a href="https://doi.org/10.2469/faj.v58.n4.2453">Andrew Lo showed</a> that it is correct only when returns are independent and identically distributed: uncorrelated from one period to the next, with a stable mean and volatility. When they aren't, the right multiplier is a different number, and the naive one can overstate or understate the annual figure. Minute returns satisfy that assumption only approximately, so the measurement window matters. Query API's summary Sharpe ratio uses minute bars for short windows, quarter-hour and hourly bars for longer ones, and UTC daily bars with the square root of 365 for windows past about six weeks, because this market trades every day of the year. The cut-offs came from query time, not from statistics: a 30-day view read as 15-minute buckets took about eight seconds and as hourly buckets under two, and a 90-day view took 4.8 seconds hourly against half a second as daily buckets.</p>
+
+      <p>That closes the loop: a decision made from Data API's data, authorized by Auth API, routed by MainAdapter, executed by an exchange adapter, recorded by Finwatcher, and served back by Query API and Analytics API. Six stages, one trade.</p>
+
+      <hr>
+
+      <h2>Where the Batons Dropped</h2>
+
+      <p>Look back over the tour. Each stage did what its own contract said. Data API returned what fit under its cap. MainAdapter's forwarding function returned the body, because the body was all its contract named. Bitget's servers rounded a sloppy quantity for us.</p>
+
+      <p>Every failure sat between two stages: a caller that assumed a page was complete, a proxy that kept the body and dropped the verdict, a quantity that one exchange forgave and the other didn't. Each one surfaced somewhere other than where it started, as missing data in a backtest, a failed cycle or a position that didn't shrink.</p>
+
+      <p>So each fix wrote down what crosses the handoff, not just what each side does. A page at the cap is treated as cut off. The exchange's verdict travels with the body. A quantity is rounded to what the exchange accepts before it leaves, and if we can't tell what that is, we let the exchange say no.</p>
+
+      <p>None of these guards is general. The cap check lives in the caller, the status test covers the forwarding path, and the quantity case relies on the exchange refusing and has no test of its own yet. We don't yet have a check that catches a failure that looks like success anywhere along the chain. Today each guard sits at the handoff where its incident happened.</p>
+
+      <img src="004-you-think-placing-a-trade-is-one-step-its-six/failures-at-the-handoffs.png" alt="The three failures in this post, placed at the handoffs where they happened">
+
+      <p><strong>Give every stage one owner, then write down what each handoff does with a short page, a rejection and a sloppy number.</strong></p>
+
+      <p>The next post takes up Latent, the backtest engine that reads from this same layer, and why we built our own instead of adapting someone else's.</p>
+
+      <hr>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>France 24 (2008). "Bad baton drop row for US relay." <a href="https://www.france24.com/en/20080821-bad-baton-drop-row-us-relay-beijing-2008-sprint">Link</a></li>
+        <li>"Athletics at the 2008 Summer Olympics – Men's 4 × 100 metres relay." Wikipedia. <a href="https://en.wikipedia.org/wiki/Athletics_at_the_2008_Summer_Olympics_%E2%80%93_Men%27s_4_%C3%97_100_metres_relay">Link</a></li>
+        <li>Fielding, R., Nottingham, M. and Reschke, J. (eds.) (2022). "HTTP Semantics." RFC 9110 (STD 97), IETF. <a href="https://www.rfc-editor.org/rfc/rfc9110.html">Link</a></li>
+        <li>Python Software Foundation. "Floating-Point Arithmetic: Issues and Limitations," Python 3 tutorial. <a href="https://docs.python.org/3/tutorial/floatingpoint.html">Link</a></li>
+        <li>Binance. "Error Codes" (-1111, precision over the maximum). <a href="https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/error-code">Link</a></li>
+        <li>Binance. "Exchange Information" (<code>stepSize</code>), USDⓈ-M Futures REST API. <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#exchange-information">Link</a></li>
+        <li>Python Software Foundation. "decimal: Decimal fixed-point and floating-point arithmetic," Python 3 documentation. <a href="https://docs.python.org/3/library/decimal.html">Link</a></li>
+        <li>Binance. "New Order" (<code>newOrderRespType</code>, default ACK), USDⓈ-M Futures REST API. <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade#new-order">Link</a></li>
+        <li>Bitget. "Place Order," Classic Contract Trade API. <a href="https://www.bitget.com/docs/catalog/classic-contract-trade/classic-contract-trade#place-order">Link</a></li>
+        <li>Binance. "User Data Streams," USDⓈ-M Futures. <a href="https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/user-data-streams">Link</a></li>
+        <li>Bitget. "Fill Channel," Classic Contract WebSocket API. <a href="https://www.bitget.com/docs/classic/websocket/contract/private/Fill-Channel">Link</a></li>
+        <li>PostgreSQL Global Development Group. "INSERT," PostgreSQL documentation. <a href="https://www.postgresql.org/docs/current/sql-insert.html">Link</a></li>
+        <li>Quantopian. "empyrical," <code>periods.py</code>. <a href="https://github.com/quantopian/empyrical/blob/master/empyrical/periods.py">Link</a></li>
+        <li>Sharpe, W. F. (1994). "The Sharpe Ratio." <em>The Journal of Portfolio Management</em> 21(1), 49-58. <a href="https://web.stanford.edu/~wfsharpe/art/sr/SR.htm">Link</a></li>
+        <li>Lo, A.W. (2002). "The Statistics of Sharpe Ratios." <em>Financial Analysts Journal</em> 58(4), 36-52. <a href="https://doi.org/10.2469/faj.v58.n4.2453">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Axiom</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
