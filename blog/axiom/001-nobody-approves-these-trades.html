@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="We&#x27;re Axiom, NeoMatrix&#x27;s trading systems team. Here&#x27;s what it takes to build and run one." />
+  <meta name="description" content="Forty-five minutes of orders nobody approved cost Knight Capital more than $460 million. We run one where nobody approves orders either." />
   <title>Nobody Approves These Trades · NeoMatrix</title>
 
   <style>
@@ -317,60 +317,64 @@
       tag looks like — delete it and put the real article here.
     -->
     <div class="article-body">
-      <p><em>We're Axiom, NeoMatrix's trading systems team. Here's what it takes to build and run one.</em></p>
+      <p><em>Forty-five minutes of orders nobody approved cost Knight Capital more than $460 million. We run one where nobody approves orders either.</em></p>
 
-      <p>Axiom is the team at NeoMatrix responsible for trading systems and infrastructure. Our work splits into two parts: running the automated trading system that moves real money, and continuing to rebuild its core so that one account can run many strategies at once.</p>
+      <p>One morning in August 2012, Knight Capital's automated order router turned 212 small retail orders into 4 million executions in about 45 minutes, and <a href="https://www.sec.gov/newsroom/press-releases/2013-222">the firm lost more than $460 million</a>. Nobody at Knight approved any of it.</p>
 
-      <p>This blog is where we write down what that involves: the parts we got right on the first try, the parts that took months and a few wrong guesses, and the parts we still haven't solved.</p>
+      <p>We run a trading system where no one approves individual orders either. We're Axiom, the NeoMatrix team that builds and runs it, and this blog is where we write down what stands between our system and a morning like Knight's.</p>
+
+      <img src="001-nobody-approves-these-trades/nyse-trading-floor.jpg" alt="Floor brokers at the New York Stock Exchange in 1963, one raising a slip of paper above the crowd.">
+
+      <p><em>The New York Stock Exchange floor in 1963, when people carried the orders. Photo: Thomas J. O'Halloran, U.S. News &amp; World Report, Library of Congress, via <a href="https://commons.wikimedia.org/wiki/File:NY_stock_exchange_traders_floor_LC-U9-10548-6.jpg">Wikimedia Commons</a>, public domain.</em></p>
 
       <hr>
 
-      <h2>What the System Does</h2>
+      <h2>What Runs Instead of an Approver</h2>
 
-      <p>A user uploads a strategy as code. A strategy is a function that answers one question: what should this account be holding right now, and how much of it? The answer looks something like 40% Bitcoin, 30% Ethereum, the rest in cash.</p>
+      <p>A user uploads a strategy as code. A strategy is code that answers one question: what should this account be holding right now, and how much of it? The answer looks something like 40% Bitcoin, 30% Ethereum, the rest in cash. Many strategies can run side by side, and the system adds their answers up into one target for the account.</p>
 
-      <p>From there the system takes over: on a fixed schedule, it runs the strategy and gets back the target weights, checks the exchange for what the account actually holds right now, and if the two don't match, builds orders to close the gap: sells first, so there's cash on hand, then buys with whatever that frees up. Nobody approves individual orders, but every order passes automated checks before it goes out. Sizes get rounded down to the increments the exchange accepts, and a new position too small to meet the exchange's minimum is skipped rather than sent. Exposure is capped in two places: a strategy that asks for more than it declared gets scaled back, and the account's overall margin use is clamped before anything is sent. Because each cycle sizes its orders as the gap between the target and what the exchange reports right now, a repeated cycle has nothing new to send once the gap is closed. Anything the exchange refuses, such as an order the balance can't cover, is recorded and raised as an alert. Losses have a limit too: a strategy or portfolio can carry a drawdown limit, and when it's crossed the system stops it automatically and closes its exposure on the next cycle. After that the fills get recorded, and from then on the account gets checked again every minute so what we think is true still matches reality. All of it runs continuously, for every user at once, and a person only touches two parts of it: uploading the strategy, and checking the results afterward.</p>
+      <p>From there the system takes over. On a fixed schedule, it runs the strategy and gets back the target weights, checks the exchange for what the account actually holds right now, and if the two don't match, builds orders to close the gap: closing trades first, so there's cash and margin on hand, then new ones with whatever that frees up.</p>
+
+      <p>Nobody approves individual orders, but every order passes automated checks before it goes out. Sizes get rounded down to the <a href="https://developers.binance.com/en/docs/products/spot/filters">increments the exchange accepts</a>, and a new position too small to meet the exchange's minimum is skipped rather than sent. Exposure is capped in two places: a strategy that asks for more than it declared gets scaled back, and the account's own limit is applied before anything is sent. On futures that limit is overall margin use, which is clamped. On spot there is no margin, so spending is capped at the cash the account holds. On futures, if a cycle's opening orders together would need more margin than the account has, they are held back, and the orders that close positions go out first as <a href="https://www.bitget.com/docs/catalog/classic-contract-trade/classic-contract-trade#place-order">reduce-only</a> orders. That margin clamp is a brake Knight did not have: a limit on total exposure that applies before the order leaves, without anyone looking at a screen. Each order carries an ID built from the cycle, the symbol and the direction, so every order can be traced back to the cycle that sent it. What keeps an order from going out twice is the sizing: each cycle sends only the gap between the target and what the exchange reports right now, so a repeated cycle has nothing new to send once the gap is closed. That property is called <a href="https://web.archive.org/web/2023/https://queue.acm.org/detail.cfm?id=2187821">idempotence</a>. Orders go out as market orders, so the limits that protect us are on size and margin, not on price. Anything the exchange refuses, such as an order the balance can't cover, is recorded, and a failure that needs a person is raised as an alert.</p>
+
+      <p>Losses have a limit too. A strategy or portfolio can carry a drawdown limit, and when it's crossed the system stops it automatically and closes its exposure on the next cycle. After that the fills get recorded, and from then on the account gets checked again every minute so what we think is true still matches reality. All of it runs continuously, for every user at once, and in normal operation a person only touches two parts of it: uploading the strategy, and checking the results afterward. A strategy that was stopped stays stopped until a person switches it back on.</p>
 
       <img src="001-nobody-approves-these-trades/rebalancing-cycle.png" alt="One rebalancing cycle, and the two points where a person is involved">
 
       <hr>
 
-      <h2>What's Hard</h2>
+      <h2>The Failure We Fear Most</h2>
 
-      <p>What ate our time going in was not what we'd braced for.</p>
+      <p><a href="https://www.sec.gov/files/litigation/admin/2013/34-70694.pdf">The SEC traced Knight's morning to a deployment</a>: a technician copied new code to seven of the firm's eight servers and missed the eighth. The new code reused a flag that used to switch on an old function called Power Peg, which Knight had stopped using years earlier but never deleted. On the eighth server, the flag woke it up. It was not a crash. The router kept running exactly as written, on the wrong instructions, and the warning was in people's inboxes before the market opened. A little after 8 a.m., an internal system began <a href="https://www.sec.gov/files/litigation/admin/2013/34-70694.pdf">emailing errors that read "Power Peg disabled"</a>, 97 of them before the open. The firm had not designed those messages to be alerts, and people generally didn't read them. Google's SRE book puts the standard in one line: <a href="https://sre.google/sre-book/monitoring-distributed-systems/">every page should be actionable</a>. Those 97 emails were true, and nobody was expected to act on them.</p>
 
-      <p>Crashes we could handle. A crash at least tells you where it died. The failure that doesn't show up anywhere is the one nobody warned us about: no exception, nothing in the logs, the screen showing the same kind of number it always shows, except this time the number is wrong.</p>
+      <p>Knight did have risk controls, but they were the kind a person has to watch. Its position monitor was a screen, not a brake: it was never wired to order entry, and the firm had no pre-set capital limit that would stop new orders by itself. The market access rule the SEC <a href="https://www.law.cornell.edu/cfr/text/17/240.15c3-5">adopted in 2010</a> requires exactly that kind of automated limit.</p>
+
+      <p>That is the failure we fear most, and going in we hadn't braced for it. Crashes we could handle. A crash at least tells you where it died. The bad one shows up nowhere: no exception, nothing in the logs, the screen showing the same kind of number it always shows, except this time the number is wrong.</p>
 
       <p><strong>We watched this happen once. A query came back with an empty list, no error, and the cleanup process reading that result decided every running session had been abandoned and shut them all down.</strong></p>
 
-      <p>The battle-tested quant libraries were mostly built for equities: markets close overnight, there's no trading on weekends, returns get annualized on trading days, order sizes are whole shares. None of that applies to crypto, and none of it is written down anywhere as "this is a stock-market assumption." It's baked into the code, and it doesn't fail loudly. It quietly produces the wrong number.</p>
+      <p>The battle-tested quant libraries were mostly built for equities: markets close overnight, there's no trading on weekends, returns get annualized on trading days, order sizes are whole shares. One of them, <a href="https://github.com/quantopian/empyrical/blob/master/empyrical/periods.py">empyrical</a>, sets a year to 252 business days. None of that applies to crypto, and none of it is written down anywhere as "this is a stock-market assumption." It's baked into the code, and it doesn't fail loudly. It quietly produces the wrong number.</p>
 
-      <p>Run the same strategy against historical data and against a real account and, left alone, the two never agree. Fill timing, fees, slippage, an indicator's warm-up window, minimum order size: get any one of these wrong and the backtest can drift from reality in either direction. Many of these mismatches make the backtest look better than live trading, which can make them harder to notice. Closing that gap is close to half the job.</p>
-
-      <hr>
-
-      <h2>What We'll Write About</h2>
-
-      <p>Each post covers one real incident, told roughly the way it unfolded for us: something broke, we didn't immediately know why, we tried a few things that didn't work, and eventually we found the actual cause. If something is still unresolved when we publish, we say so instead of rounding up to a clean ending.</p>
-
-      <p>We're not only picking the success stories either. The decisions we reversed and the wrong guesses we made along the way stay in the writeup, because that's usually the part someone hitting the same problem later can use.</p>
+      <p>Run the same strategy against historical data and against a real account and, left alone, the two never agree. Execution researchers have called the gap between a paper portfolio and the real one the implementation shortfall since <a href="https://doi.org/10.3905/jpm.1988.409150">André Perold named it in 1988</a>. Fill timing, fees, slippage, an indicator's warm-up window, minimum order size: get any one of these wrong and the backtest can drift from reality in either direction. Many of these mismatches make the backtest look better than live trading, which can make them harder to notice. Closing that gap is close to half the job.</p>
 
       <hr>
 
-      <h2>What We'll Cover</h2>
+      <h2>What We'll Write Down</h2>
+
+      <p>Each post covers one real incident, told roughly the way it unfolded for us: something broke, we didn't immediately know why, we tried a few things that didn't work, and eventually we found the actual cause. If something is still unresolved when we publish, we say so instead of rounding up to a clean ending. The decisions we reversed and the wrong guesses we made stay in the writeup, because that's usually the part someone hitting the same problem later can use.</p>
 
       <p>The system breaks into a handful of layers, and each one has accumulated its own kind of problem. Roughly in this order:</p>
 
       <ul>
-        <li><strong>The live trading engine</strong>: the core piece that runs strategies and sends orders. It started as a handful of processes on one server; today it's per-user jobs on Kubernetes, and we'll get into why that changed and what broke along the way.</li>
+        <li><strong>The live trading engine</strong>: the core piece that runs strategies and sends orders. It started as a handful of processes on one server; today it's Kubernetes jobs, one per user session per cycle, and we'll get into why that changed and what broke along the way.</li>
         <li><strong>The backtest engine.</strong> We took an open-source backtester and adapted it to crypto, and enough problems stacked up that we built our own instead. We'll get into what those problems were.</li>
-        <li>Every exchange has its own order format, error codes, and fee handling, and <strong>the exchange integration layer</strong> hides all of that so nothing above it has to think about which exchange it's talking to.</li>
+        <li>Every exchange has its own order format, error codes, and fee handling, and <strong>the exchange integration layer</strong> hides most of that so little above it has to think about which exchange it's talking to.</li>
         <li><strong>The data pipeline</strong>, where market data and indicators live. Live trading and backtesting need to see the same data, and any gap that opens up has to get backfilled later.</li>
         <li><strong>Results and metrics</strong>: the layer that computes what was made and how much risk it took, and the easiest place for a calculation to go quietly wrong.</li>
         <li>Deploys, monitoring, and what happens when something breaks at 3am, all under <strong>operations and incident response</strong>.</li>
       </ul>
 
-      <p>Real cases for each layer, none of which felt interesting while we were living through them, starting with the next post.</p>
+      <p>Knight had the signals: emails, a screen full of growing positions, people watching. What it lacked was a control that turned those signals into a stop. That is the standard we hold our own system to, and the rest of this blog is the record of how close we get. Real cases for each layer, none of which felt interesting while we were living through them, starting with the next post.</p>
     </div>
     <!-- ARTICLE CONTENT END -->
 

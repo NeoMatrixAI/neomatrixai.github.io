@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="One real position, unlimited virtual strategies underneath it. That&#x27;s Compositor, our blend engine." />
+  <meta name="description" content="Many strategies share one exchange account, and the exchange sees one net position per coin. Compositor writes down whose share is whose before each order." />
   <title>One Number. Dozens of Strategies. · NeoMatrix</title>
 
   <style>
@@ -317,11 +317,25 @@
       tag looks like — delete it and put the real article here.
     -->
     <div class="article-body">
-      <p><em>One real position, unlimited virtual strategies underneath it. That's Compositor, our blend engine.</em></p>
+      <p><em>Many strategies share one exchange account, and the exchange sees one net position per coin. Compositor writes down whose share is whose before each order.</em></p>
 
-      <p><a href="https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money">An earlier post walked through LiveSys</a>, our original live trading engine, built on a simple assumption: one exchange account runs one strategy file. That assumption held from the day the engine shipped until very recently.</p>
+      <p>Near Manaus, in Brazil, the dark Rio Negro flows into the pale, sandy Solimões, and for <a href="https://en.wikipedia.org/wiki/Meeting_of_Waters">about six kilometers</a> the two run side by side in one channel without mixing. They differ in temperature, speed and sediment, so the line between them holds.</p>
 
-      <p>It is also the exact assumption Compositor was built to break.</p>
+      <p>An exchange account that runs many strategies only ever shows the merged river: one net position per coin. Compositor, our trading core, is what keeps the colors apart. Before any order goes out, it writes down which strategy owns which share.</p>
+
+      <img src="003-one-number-dozens-of-strategies/meeting-of-waters.jpg" alt="The dark Rio Negro and the pale Amazon running side by side under a wide sky.">
+
+      <p><em>The Meeting of Waters near Manaus, Brazil, where the dark Rio Negro and the pale Amazon run side by side for kilometers without mixing. Photo: <a href="https://commons.wikimedia.org/wiki/File:Brazil-00288_-_Meeting_of_Waters_%2848962057606%29.jpg">Dennis G. Jarvis</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons.</em></p>
+
+      <hr>
+
+      <h2>What Compositor Is, and Isn't</h2>
+
+      <p><a href="https://neomatrixai.substack.com/p/the-text-file-that-ran-real-money">An earlier post walked through LiveSys</a>, our original live trading engine, built on a simple assumption: one exchange account runs one strategy file. That assumption held from the day the engine shipped until very recently. Compositor is the core we built to break it.</p>
+
+      <p>Compositor is the layer that lets alphas built in very different ways run reliably on one real account. It says nothing about how good any alpha is. That is a research question, and this post is about the accounting and execution underneath it.</p>
+
+      <p>None of the pieces is new. Asset managers have kept <a href="https://www.vestmark.com/resources/blog/sleeves-tagging-and-the-pathway-to-improved-accounting">sleeve-level accounting</a> for years, including netting trades between sleeves. <a href="https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/overview">QuantConnect's algorithm framework</a> separates alpha, portfolio construction, risk management and execution, and passes target positions from one stage to the next. <a href="https://nautilustrader.io/docs/latest/concepts/execution/">NautilusTrader's execution engine</a> can keep multiple virtual positions against a venue's single net position. What we built is this pattern for a futures account that trades real money, and the rest of this post is about what keeps it honest.</p>
 
       <p>Compositor now carries production. The account that used to trade a single strategy was handed over to it without closing its positions, and the other accounts that each ran one strategy have been consolidated into the same Fund. It is also young, so this post covers what it changes, why, and what still isn't done.</p>
 
@@ -331,128 +345,218 @@
 
       <p>If you take one thing away from this post, take this: <strong>the sum is anchored to reality, only the split is modeled.</strong></p>
 
-      <p>Here's what that means in practice. An exchange (Bitget, Binance, whichever) only ever sees one thing per account: a single net position. It doesn't know or care that the number it's looking at is actually the combined output of five different strategies pulling in different directions. <strong>Say Alpha A wants to be 3 BTC long, and Alpha B, running in the same account, wants to be 1 BTC short. The exchange never sees either of those numbers. It sees 2 BTC long, the netted-out sum, because that's the only position that physically exists.</strong></p>
+      <p>Here's what that means in practice. An exchange (Bitget, Binance, whichever) only ever sees one thing per coin in an account: a single net position. It doesn't know or care that the number it's looking at is actually the combined output of five different strategies pulling in different directions. <strong>Say Alpha A wants to be 3 BTC long, and Alpha B, running in the same account, wants to be 1 BTC short. The exchange never sees either of those numbers. It sees 2 BTC long, the netted-out sum, because that's the only position that physically exists.</strong></p>
+
+      <p>Compositor sends one net order per coin each cycle. The account's position mode is a separate exchange setting: <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade#change-position-mode">Binance documents</a> a one-way mode and a hedge mode, where long and short legs can be held side by side, and <a href="https://www.bitget.com/docs/catalog/classic-contract-account/classic-contract-account#change-position-mode">Bitget's account API</a> names the same two. Compositor's order path nets whatever the account holds in a coin into one number. The one exception is a reversal, which takes two orders: the old direction is closed first, then the new one is opened.</p>
 
       <p>Everything below that netted sum (which strategy is "responsible" for how much of it, how each one is performing, how capital is split between them) is a virtual ledger. And critically, it's computed <strong>forward</strong>: the system decides the split first, then executes the sum. It is never reverse-engineered by trying to guess, after the fact, which strategy caused which fill. That distinction is the whole architecture in one sentence.</p>
 
       <p>For anyone reading this who isn't neck-deep in the code: think of it like a single company bank account that the bank statement never breaks down by department. The company's own internal accounting still tracks exactly how much each department contributed and how each one is performing. That bookkeeping is completely real and completely trustworthy; it's just a layer the bank itself never sees.</p>
 
+      <img src="003-one-number-dozens-of-strategies/netting-sum-and-split.png" alt="Netting example: two strategies&#x27; targets become one net position, and the split is written in the ledger">
+
       <hr>
 
-      <h2>Six Layers, One Bank Account</h2>
+      <h2>Two Kinds of Structure</h2>
 
-      <p>Compositor breaks this down into several layers, starting from the one real thing and building virtual structure on top of it:</p>
+      <p>Compositor's six concepts fall into two groups that are easy to mix up. One group is a catalog of strategies. The other is the chain along which capital and results are tracked.</p>
+
+      <p><strong>The strategy catalog</strong></p>
+
+      <ul>
+        <li><strong>Alpha Table</strong>: the full list of alphas registered to a Fund.</li>
+        <li><strong>Alpha Pool</strong>: a grouping, inside the Alpha Table, of alphas that share similar characteristics.</li>
+      </ul>
+
+      <p><strong>Capital and accounting</strong></p>
 
       <ul>
         <li><strong>Fund</strong>: a real exchange account, the one that holds the API key. This is the only layer that physically exists on an exchange's books. Everything built on top of it is virtual.</li>
-        <li><strong>Alpha Table</strong>: the full list of alphas registered to that Fund.</li>
-        <li><strong>Alpha Pool</strong>: a grouping, inside the Alpha Table, of alphas that share similar characteristics.</li>
         <li><strong>Portfolio (×M)</strong>: a virtual book-keeping split of the Fund's capital. A Fund can have any number of Portfolios.</li>
-        <li><strong>Alpha</strong>: a strategy picked from an Alpha Pool, running inside a Portfolio at some weight.</li>
-        <li><strong>Sleeve</strong>: the pairing of one specific Portfolio with one specific Alpha (<code>portfolioId</code>, <code>alphaId</code>). This is the actual unit that performance and allocation get tracked against. The term itself is borrowed from an existing practice in institutional asset management: sleeve-level accounting already describes exactly this pattern, tracking several strategies inside one custodial account with each sleeve's own cash and positions kept separate internally, even though the custodian only ever sees one account-level number.</li>
+        <li><strong>Alpha</strong>: a strategy picked from an Alpha Pool, running inside a Portfolio at some weight. An Alpha is code. It keeps no books of its own.</li>
+        <li><strong>Sleeve</strong>: the pairing of one specific Portfolio with one specific Alpha (<code>portfolioId</code>, <code>alphaId</code>). This is the unit that holds a book, and the unit that performance and capital get tracked against. The term itself is borrowed from institutional asset management, where <a href="https://www.vestmark.com/resources/blog/sleeves-tagging-and-the-pathway-to-improved-accounting">sleeve-level accounting</a> tracks several strategies inside one custodial account with each sleeve's own cash and positions kept separate internally, even though the custodian only ever sees one account-level number.</li>
       </ul>
 
-      <p>The analogy the team uses internally is a single bank account with several traders sharing it. That one account is the Fund. It's split among several traders (the Portfolios), each getting a book-keeping share of the account's capital, not a physically separate account. Each trader, in turn, blends several strategies at their own chosen weights. Those are the Alphas, and a trader running one strategy is a Sleeve. But no matter how many traders or how many strategies each one runs, the bank itself only ever sees one net number move in or out of the one real account.</p>
+      <p>The analogy the team uses internally is a single bank account with several traders sharing it. That one account is the Fund. It's split among several traders (the Portfolios), each getting a book-keeping share of the account's capital. Nobody gets a separate account. Each trader, in turn, runs several strategies at their own chosen weights. Those are the Alphas, and one trader running one strategy is a Sleeve. But no matter how many traders or how many strategies each one runs, the bank itself only ever sees one net number move in or out of the one real account.</p>
 
-      <p>The blending itself happens in two stages, in a module called <code>blender.py</code>. First, within a single Portfolio, the weights of its Alphas combine into that Portfolio's own net weight. Second, across all the Portfolios in a Fund, those Portfolio net weights combine into the single account-level net weight sent to the exchange. Schematically, it looks like this. This is illustrative of the two-stage shape, not the literal engine code:</p>
+      <p>If the same Alpha is selected by two different Portfolios in the same Fund, that is simply two Sleeves: the Alpha's code is shared, but each pairing keeps its own book.</p>
 
-      <pre><code># blender.py — two-stage blend (illustrative shape, not literal engine code)
+      <img src="003-one-number-dozens-of-strategies/fund-real-vs-virtual.png" alt="Compositor&#x27;s six concepts inside one Fund: what is real and what is modeled">
 
-def blend_portfolio_weight(alpha_weights: dict) -&gt; float:
-    # Stage 1: alpha-to-alpha, inside one portfolio.
-    # Uses the built-in Calmar-ratio policy (`__calmar__`).
-    return calmar_weighted_sum(alpha_weights)
+      <h3>Two Clocks</h3>
 
-def blend_fund_weight(portfolio_weights: dict, portfolio_capital_share: dict) -&gt; float:
-    # Stage 2: portfolio-to-portfolio, inside one fund.
-    # Each portfolio's share follows its own capital, which compounds on
-    # its own results. Nothing re-allocates capital between portfolios
-    # (see "Calmar Allocation" below).
-    return sum(w * portfolio_capital_share[p] for p, w in portfolio_weights.items())</code></pre>
+      <p>Two schedules drive everything, and each has its own job.</p>
 
-      <p>If the same Alpha is selected by two different Portfolios in the same Fund, that is simply two Sleeves: the Alpha's code is shared, but each pairing is tracked on its own.</p>
+      <p>The first is each Alpha's rebalancing interval. A Sleeve trades only when its own Alpha is due. When it is not due, it keeps exactly the quantity it holds. It is not resized, and it is not re-weighted against the others. One thing overrides this: if a Portfolio's allocation sets a Sleeve's weight to zero, or its selection drops a Sleeve that still holds a position, that Sleeve closes at the allocation time even though its Alpha is not due, and its value goes back to the Portfolio.</p>
 
-      <img src="003-one-number-dozens-of-strategies/compositor-layers.png" alt="Compositor&#x27;s six-layer architecture and real-vs-virtual boundary">
+      <p>The second is each Portfolio's allocation interval. At that time the Portfolio's own selection and weighting code decides how its capital is split among its Alphas, and each Sleeve's capital is reset to that share. Between allocations, a Sleeve's capital moves only with its own profit and loss. Deposits and withdrawals wait as the Portfolio's unallocated cash until the next allocation. When an allocation and a rebalancing fall on the same minute, the allocation goes first, so the Sleeve trades with its new capital. Both clocks tick on fixed grids aligned to the hour.</p>
+
+      <p>Each cycle, then, works in two steps. First, every Sleeve states what it wants to hold. Then those holdings are added up per coin, and the Fund sends the gap between that sum and the account's current position as one order per coin. Schematically, and illustrative only, not the literal engine code:</p>
+
+      <pre><code># one cycle, illustrative shape (not literal engine code)
+
+def sleeve_target(sleeve, prices, k):
+    if not sleeve.is_due or sleeve.failed:
+        return dict(sleeve.held_qty)  # not its turn: keep what it holds
+    # its turn: the Alpha's exposure, sized by this Sleeve's own capital
+    return {s: k * e * sleeve.capital / prices[s] for s, e in sleeve.exposure.items()}
+
+def fund_orders(sleeves, account_position, prices, k):
+    target = {}
+    for sleeve in sleeves:
+        for sym, qty in sleeve_target(sleeve, prices, k).items():
+            target[sym] = target.get(sym, 0.0) + qty
+    # one net order per coin: the gap between the summed target and the account
+    return {s: q - account_position.get(s, 0.0) for s, q in target.items()}</code></pre>
+
+      <p>Here <code>k</code> is the Fund-wide sizing factor described further down.</p>
 
       <hr>
 
-      <h2>What's Different</h2>
+      <h2>One Trade, Start to Finish</h2>
 
-      <h3>One Strategy Becomes Many Alphas</h3>
+      <p>Take the example from earlier and run one cycle in which both Sleeves are due.</p>
 
-      <p>The older execution model assumes one account runs one strategy file. Compositor breaks that assumption on purpose: a single Fund can run any number of Alphas, spread across any number of virtual Portfolios. This isn't a minor parameter tweak. It's the reason this layered model and the two-stage blend exist at all. Without it, there'd be nothing to blend.</p>
+      <p>1. <strong>Targets, forward.</strong> Alpha A's Sleeve targets +3 BTC and Alpha B's Sleeve targets -1 BTC. Both exist before anything is sent. 2. <strong>Sum.</strong> The two add up to +2 BTC for this coin. A Fund-level margin limit then applies to the Sleeves trading this cycle, described below. 3. <strong>Order.</strong> The system compares the summed target with what the exchange says the account holds right now. If the account already holds +0.5 BTC, the order is one market buy of 1.5 BTC. 4. <strong>Books.</strong> Each Sleeve's book is updated to what the exchange filled, at one price for the coin: the volume-weighted average of the account's recent fills in it. When the order fills completely, that is the planned target. 5. <strong>Fee.</strong> The exchange charges one fee on those 1.5 BTC, and it is split between A and B in proportion to how much each one's position changed.</p>
 
-      <h3>The Leverage Model Got a Third Knob</h3>
+      <p>The interesting cases are the ones where the steps don't line up cleanly.</p>
 
-      <p>Multi-alpha blending raises a question the older model never had to answer: if five Alphas can each declare their own leverage, and the Fund itself has a margin ceiling, how do those two numbers interact without either silently overriding the other? Compositor's answer is three separate knobs. <code>L_a</code> is each Alpha's own declared leverage. <code>m</code> (capped at 3.0, default 1.0) scales the whole Fund's exposure up or down. Return and drawdown move roughly proportionally with <code>m</code>, but Sharpe ratio doesn't, since it's scale-invariant. <code>L_fund</code> is a margin ceiling, and it's deliberately kept separate from that exposure scale in the math:</p>
+      <ul>
+        <li><strong>A Sleeve that isn't due.</strong> It adds exactly its current holding to the sum, so its share of the order is zero. It pays none of the fee, and its book doesn't move. The one exception is a Sleeve that an allocation has just set to zero weight, which closes with that cycle's order and shares its fee.</li>
+        <li><strong>An order that never goes out.</strong> If the order for a coin is skipped (below the exchange minimum), held back by the margin pre-check, rejected, or never sent, every Sleeve's book stays at its previous quantity for that coin. Their books don't move, because the account didn't. The amount each Sleeve missed is recorded.</li>
+        <li><strong>Opposite trades that cancel.</strong> If Alpha A buys 1 BTC and Alpha B sells 1 BTC in the same cycle, the net is zero and nothing is sent. Each book still records its own side, A up 1 BTC and B down 1 BTC, with no fee, and the books still add up to what the exchange holds. Netting saves the fee, and the ledger keeps the trade between the two Sleeves.</li>
+        <li><strong>A partial fill.</strong> Say only 1 BTC of the 1.5 BTC fills. The books hold the filled quantity. Every Sleeve that was trading the coin gets the same fraction of its planned move, two thirds here, so the books still add up to what the account holds. The shortfall is logged. A Sleeve that came up short is not topped up by anyone else, and sizes itself again at its own next turn.</li>
+        <li><strong>A margin limit.</strong> If the Sleeves trading this cycle would push margin use past 90%, their targets are scaled down by one common factor. Sleeves that aren't due keep their holdings. The scaling is logged as an event, so it never appears as a silent change to one Sleeve.</li>
+      </ul>
 
-      <p><em>net weight = (m × fund exposure) / margin ceiling</em></p>
+      <hr>
 
-      <p>Dividing by the margin ceiling this way constrains capital usage without distorting the exposure scale itself. It's a small piece of arithmetic doing real work: it lets Alpha-declared leverage reach execution while guaranteeing Alphas that don't declare one keep trading at exactly the notional they always did.</p>
+      <h2>What Netting Takes Away</h2>
 
-      <h3>CrashGuard Is Gone, Replaced By Something Structurally Different</h3>
+      <p>Netting is the whole point, and it costs us two things we used to rely on.</p>
+
+      <h3>CrashGuard Is Gone, and Its Replacement Is Narrower</h3>
 
       <p>The older architecture has a component called CrashGuard, a dynamic Kubernetes Job that does minute-scale position scaling, but only for strategies that define a <code>crashguard(data, positions, config_dict)</code> function. It hooks directly into the assumption that there's exactly one strategy file per account to inspect.</p>
 
       <p>That hook doesn't survive the move to multi-alpha. Once an account can run any number of strategies simultaneously, "the one strategy file's crashguard function" stops meaning anything: there is no longer a single function to call. So CrashGuard-the-component is removed entirely in Compositor. The database columns it depended on are still there, unused. Leaving them costs nothing, while dropping columns from a live trading database is a risk with no upside, so that cleanup migration is deliberately left unapplied.</p>
 
-      <p>Compositor still has an equivalent safety net, built differently, in two pieces. One lives inside the same shared engine that computes an Alpha's signal in the first place (more on that engine-sharing in a later post): if an Alpha's target weights add up to more exposure than the cap it declared, the engine scales them back down proportionally in the same cycle, with no separate Job and no user-defined function to write. The other sits at the Fund level and acts twice before an order executes: if the blended target would tie up more than 90% of the account's balance as margin, the whole target is scaled down evenly, and any new order that still needs more margin than is available is held back.</p>
-
-      <h3>Calmar Allocation: Only Half-Alive</h3>
-
-      <p>Compositor introduces a real, built-in allocation policy called <code>__calmar__</code>, based on the Calmar ratio, a return-over-drawdown metric that a commodity trading advisor named Terry Young published in 1991 specifically to fold a strategy's worst losing stretch into its score alongside how much it made overall. It governs how weight shifts between Alphas <strong>within</strong> a single Portfolio.</p>
-
-      <p>The second tier, capital <strong>between</strong> Portfolios inside a Fund, works differently. Each Portfolio starts with the capital declared when it was registered, and from then on that capital moves only with the Portfolio's own profit and loss. Nothing reallocates capital between Portfolios: each trader compounds their own results, and no trader's gains are lent to another.</p>
-
-      <h3>How Costs Land on Each Sleeve</h3>
-
-      <p>Because only a netted position ever reaches the exchange, its fees and funding payments arrive as fund-level numbers, and the system has to decide which Sleeve pays for what. Those rules are deterministic and written down in advance.</p>
-
-      <p>Fees are charged only on the net order that actually went to the exchange, then split across Sleeves in proportion to how much each one moved: its allocation times the change in its weight. Where two Sleeves cancel each other inside the net, such as Alpha A buying while Alpha B sells, there is no exchange fee to split, so that internal crossing costs nothing. Funding follows positions rather than turnover, so it is split in proportion to what each Sleeve held. Whatever rounding is left over goes to the largest share, so the pieces always add back up exactly to the total, and a cost with no Sleeve to attach to is kept on an explicit unallocated line, so it never disappears.</p>
-
-      <p>Two parts are deliberately simple. Every Sleeve that trades a symbol in the same cycle shares one volume-weighted fill price, so there is no per-Sleeve execution price and no per-Sleeve slippage. Slippage shows up instead as the gap between a Sleeve's intended curve and its executed curve. The check that ties the ledger back to reality is also a tolerance, not an identity: the Sleeves' combined value is compared with the account's real equity, and drift beyond the tolerance raises an alert while trading keeps running. The split between Sleeves is modeled, and the sum stays anchored to what the exchange reports.</p>
-
-      <h3>The Dashboard Is Being Rebuilt Around It</h3>
-
-      <p>The older setup ran two dashboards side by side: Grafana JSON dashboards, and a self-hosted HTML dashboard (a portfolio view and a per-strategy grid) served directly by the API pod. Compositor retires Grafana entirely and expands that HTML groundwork into the primary dashboard, one that talks directly to <code>MainAdapter</code> and the database, and embeds TradingView's lightweight-charts library, no more Grafana iframes. It's a continuation of something that had already started before it.</p>
+      <p>What replaced it is narrower. By default, if an Alpha's weights add up to more exposure than it declared, the engine scales them back proportionally in the same cycle, and an Alpha can opt out of that policy. At the Fund level two limits act before an order goes out. If the Sleeves trading this cycle would push margin use above 90%, their targets are scaled down by one common factor. If the cycle's opening orders together would need more margin than is available, they are all held back while closing orders still go through. These limits bound how much risk can be on. They do not react to a fast drop the way a minute-scale scaling job did. Compositor reacts at its rebalancing cadence, and a drawdown stop acts at the next order cycle.</p>
 
       <h3>Per-Alpha Stops Move From the Exchange to the Ledger</h3>
 
-      <p>Exchange-native stop-loss and take-profit orders attach to a position on the exchange, and that is where the netting model changes things. In the older model, a strategy owns its own position, so it's meaningful to attach a stop to "this strategy's position." In Compositor, only one blended net position ever reaches the exchange. Alpha A's theoretical 3 BTC long and Alpha B's theoretical 1 BTC short don't exist as separate exchange-level positions to protect; only their sum, 2 BTC long, does. So there is no per-Alpha position on the exchange for a stop order to attach to, and those order paths were removed.</p>
+      <p>Exchange-native <a href="https://www.bitget.com/docs/catalog/classic-contract-trade/classic-contract-trade#place-order">stop-loss and take-profit orders</a> attach to a position on the exchange, and that is where the netting model changes things. In the older model, a strategy owns its own position, so it's meaningful to attach a stop to "this strategy's position." In Compositor, only one blended net position ever reaches the exchange. Alpha A's 3 BTC long and Alpha B's 1 BTC short don't exist as separate exchange-level positions to protect; only their sum, 2 BTC long, does. So there is no per-Alpha position on the exchange for a stop order to attach to, and those order paths were removed.</p>
 
-      <p>The risk exit itself didn't disappear. It moved into the virtual ledger, where every Sleeve does exist. An Alpha can declare a maximum drawdown, and when a Sleeve's drawdown crosses it, the system sets that Sleeve's allocation to zero and marks it stopped. Nothing is sent to the exchange. The stop changes the Fund's next net target, and the netting step closes the exposure on the next cycle, the same way it handles any other change in weights. Only the Sleeve that broke down is stopped, so the same Alpha keeps running in other Portfolios, and a Portfolio-level version of the same rule exists too. Restarting a stopped Sleeve is an explicit action that never happens on its own. What Compositor doesn't have yet is take-profit exits or price-based stops per Alpha. Those are on the backlog.</p>
+      <p>The risk exit itself didn't disappear. It moved into the virtual ledger, where every Sleeve does exist. An Alpha can declare a maximum drawdown, and so can a Portfolio. The drawdown is measured on the Sleeve's or Portfolio's own profit and loss, against the high of that curve, with deposits, withdrawals and allocation moves taken out, so moving capital around never reads as a loss. When it crosses the limit, the system stops it: the Sleeve's allocation goes to zero, and its position is closed in the Fund's next order cycle. Its cash returns to the Portfolio at the next allocation. Only the Sleeve that broke down is stopped, so the same Alpha keeps running in other Portfolios. A stopped Portfolio closes all of its Sleeves the same way. Restarting is an explicit action that never happens on its own, and a restart measures drawdown fresh from that point. What Compositor doesn't have yet is take-profit exits or price-based stops per Alpha. Those are on the backlog.</p>
 
-      <img src="003-one-number-dozens-of-strategies/earlier-vs-compositor-table.png" alt="Earlier architecture vs Compositor comparison table">
+      <p>Two things about stops are easy to miss. First, stopping a Sleeve can raise the Fund's net exposure. In the example above Alpha A is +3 BTC and Alpha B is -1 BTC, so the Fund holds +2 BTC. If B is stopped, its short is closed, and the Fund's net long grows to 3 BTC. A Sleeve-level stop limits that Sleeve's drawdown and says nothing about the Fund's exposure.</p>
+
+      <p>Second, timing. The stop takes effect at the Fund's next order cycle, and nothing pulls that cycle forward. If the processes that run the cycle stop, no exchange-side stop covers the gap. No failure closes positions on its own: a failing Alpha keeps its holdings, if every Alpha fails the Fund holds, and a system error keeps the session alive and alerts the admins. The failed turn is skipped with every Sleeve holding what it has, and each Sleeve waits for its own next turn.</p>
 
       <hr>
 
-      <h2>Exchange-Agnostic By Inheritance</h2>
+      <h2>Every Cost Has an Owner</h2>
 
-      <p>Here's a detail that's easy to undersell: Compositor's core code never branches on which exchange it's talking to. The exchange name is just a string stored with each Fund and threaded through to the order layer below it.</p>
+      <p>Splitting a position is half the job. The other half is money. Because only a netted position ever reaches the exchange, its fees and <a href="https://www.bitget.com/support/articles/12560603817155">funding payments</a> arrive as fund-level numbers, and the system has to decide which Sleeve pays for what. Those rules are deterministic and written down in advance.</p>
 
-      <p>That's possible because the actual multi-exchange routing problem was already solved, not by Compositor, but by the architecture before it. <code>MainAdapter</code> is the single routing entry point that normalizes response-schema differences across exchanges, and it already sits underneath both Bitget and Binance execution paths (via <code>Bitget Adapter</code> and <code>Binance Adapter</code>). Compositor's contribution here isn't building new routing. It's that it never had to touch that layer at all. The Fund layer just reads a string and passes it downstream. That's not an accident. It's a sign the routing abstraction underneath was designed correctly the first time, years before Compositor needed to depend on it.</p>
+      <p>Fees are charged only on the net order that actually went to the exchange. Each fill is matched to the plan that produced it, and its fee is split across the Sleeves in that plan in proportion to how much each one traded: the size of its change times the plan's price. A Sleeve that was not due traded nothing and pays nothing. Funding follows positions rather than trades, so it is split by what each Sleeve held when the payment settled, with a short counted as negative. Take the earlier example: Alpha A is long 3 BTC, Alpha B is short 1 BTC, and the Fund is long 2. If funding costs the Fund 200 for the period, A pays 300 and B receives 100. Netting hid B's short from the exchange, but not from the books. Whatever rounding is left over goes to the largest share, and a cost with no Sleeve to attach to is kept on an explicit unallocated line, so nothing is lost silently. If the exchange's funding records can't be read for over an hour, that stretch isn't booked to any Sleeve and raises an event and an alert instead. The rule is checkable. For every fee and every funding payment:</p>
 
-      <p><code>MainAdapter</code> itself wasn't the obvious choice at the time it was built, and it's worth saying what the alternative was. The team had a working, detailed design for a different approach: an adapter pattern built directly into the shared library every service imports, its own network service skipped entirely. What killed that design wasn't a flaw in the pattern: it was noticing that the routing and normalization logic it would have required was already being duplicated by hand in more than one place that touched an exchange, and adding a second exchange was about to double that duplication again. A library gets vendored into every service that imports it, so fixing a routing bug means redeploying everyone; a service sitting behind one network hop means fixing it once. That's the whole argument for <code>MainAdapter</code> existing as a standalone service over a shared package, and it's also, quietly, the precondition for the sentence two paragraphs up: Compositor gets to inherit exchange-agnosticism for free specifically because that earlier decision put the abstraction in a place a new caller could just point at, a place it would otherwise have had to re-vendor.</p>
+      <p><em>Σ_s cost_s + unallocated = cost charged to the Fund</em></p>
+
+      <p>The equality holds to floating-point precision. A repeated fill notification cannot create a position, because the books read the executed size recorded on each order rather than adding up fill notifications, and cost attribution reads fills past a cursor that two processes cannot move at the same time.</p>
+
+      <p>Two parts are deliberately simple. Every Sleeve that trades a coin in a cycle is booked at one price for that coin: the <a href="https://en.wikipedia.org/wiki/Volume-weighted_average_price">volume-weighted average</a> of the account's completed orders in it over the last half hour, or the market price when there are none. So there is no per-Sleeve execution price and no per-Sleeve slippage. Slippage shows up instead as the gap between a Sleeve's intended curve and its executed curve.</p>
+
+      <p>The check that ties the ledger back to reality is also a tolerance check, and it is really several checks, run every minute. Sleeves must add up to their Portfolio. The Portfolios' combined value is compared with the account's equity, less deposits and withdrawals still waiting to be allocated, within one percent by default. Per-coin weights and overall size are compared with what the exchange holds, each with its own tolerance. Every breach is stored as an event. Alerts go to the admins, at most once every six hours per Fund, and not in the first few minutes after an order while it settles. By design the check only alerts. It never halts trading or closes anything by itself. The split between Sleeves is modeled, and the sum stays anchored to what the exchange reports.</p>
+
+      <hr>
+
+      <h2>What We Have Verified, and What We Haven't</h2>
+
+      <p>What we can say today:</p>
+
+      <ul>
+        <li>Compositor trades real money on Bitget futures, with several Portfolios running on it. This post does not include live results.</li>
+        <li>Its code is covered by nearly 2,000 automated tests in the Compositor suite: plans, ledger, blending, allocation, reconciliation, Sleeve lifecycle. They include invariant checks (Sleeves that aren't due send nothing, the Sleeve books add up to the Fund's position, allocated costs plus the unallocated line equal the total), restart and retry cases, and fault injection through a switch that the production deployment ignores.</li>
+        <li>Reconciliation runs every minute and only alerts.</li>
+      </ul>
+
+      <p>What this post does not claim:</p>
+
+      <ul>
+        <li><strong>A scale limit.</strong> The design removes the one-strategy-per-account constraint. We have not published a throughput limit, and the number in the title describes the idea and promises no tested ceiling.</li>
+        <li><strong>That a Sleeve's profit and loss means more than it says.</strong> It is the result attributed inside this Fund under the rules above. It is not what the Alpha would have earned alone, and it is not the Alpha's marginal effect on the Fund. Those are different questions and need different measurements.</li>
+        <li><strong>That a capital split is risk isolation.</strong> Every Sleeve in a Fund draws on one exchange account. Where an exchange runs <a href="https://www.binance.com/en/support/faq/differences-between-isolated-margin-and-cross-margin-b4e9e6ad70934bd082e8e09e33e69513">cross margin</a>, margin is shared among positions, so a Portfolio's capital is bookkeeping only.</li>
+        <li><strong>That every Sleeve got exactly what it asked for.</strong> The exchange sees one net order. When it fills only part of it, the books split the shortfall among the Sleeves that traded the coin in proportion to what each one asked for, and that split is modeled. If the exchange doesn't report the filled quantity within a couple of minutes, the books fall back to the plan, and the gap shows up in the reconciliation checks until the next order closes it.</li>
+        <li><strong>Take-profit exits and price-based stops per Alpha.</strong> Not built yet.</li>
+      </ul>
+
+      <hr>
+
+      <h2>Everything Else That Changed</h2>
+
+      <h3>One Strategy Becomes Many Alphas</h3>
+
+      <p>The older execution model assumes one account runs one strategy file. Compositor breaks that assumption on purpose: a single Fund can run any number of Alphas, spread across any number of virtual Portfolios. This isn't a minor parameter tweak. It's the reason this layered model and the netting step exist at all. Without it, there'd be nothing to net.</p>
+
+      <h3>How Big Each Order Is</h3>
+
+      <p>Three numbers set the size of a Sleeve's position, and the exchange leverage is not one of them. <code>L_a</code> is the Alpha's own declared leverage: its weights become an exposure of up to <code>L_a</code> times its capital, and an Alpha that declares none gets 1. <code>m</code> (default 1.0, capped at 3.0, and allowed to move by at most 1.0 per cycle) scales exposure for the whole Fund. The total allocation is the share of capital the Fund puts to work, 0.8 by default. When a Sleeve is due, its target notional in a coin is:</p>
+
+      <p><em>notional = total allocation × m × Sleeve capital × exposure</em></p>
+
+      <p>The Fund's leverage setting on the exchange only decides how much margin that notional ties up.</p>
+
+      <p>An example with round numbers. An Alpha declares <code>L_a</code> = 2 and puts a 30% weight on BTC, so its BTC exposure is 0.6. Its Sleeve holds 5,000 of capital. With <code>m</code> = 1 the target notional is 0.8 × 1 × 5,000 × 0.6 = 2,400. With <code>m</code> = 2 it is 4,800. At an exchange leverage of 5, that needs 480 or 960 of margin. A new <code>m</code> reaches a Sleeve only when that Sleeve next trades, so a Sleeve that isn't due keeps the size it was given. Return and drawdown move roughly in proportion to <code>m</code>, not exactly, because of compounding. The Sharpe ratio stays <a href="https://web.stanford.edu/~wfsharpe/art/sr/SR.htm">unchanged</a> only when return and risk scale by the same factor, which assumes costs scale with size and no limit binds. Funding, fees and caps can break that.</p>
+
+      <h3>Calmar Allocation</h3>
+
+      <p>Compositor includes a built-in allocation function based on the <a href="https://en.wikipedia.org/wiki/Calmar_ratio">Calmar ratio</a>, a return-over-drawdown metric that a commodity trading advisor named Terry Young published in 1991 specifically to fold a strategy's worst losing stretch into its score alongside how much it made overall. The rules are explicit. The score is annualized return divided by maximum drawdown, with the drawdown floored at one percent so a near-zero drawdown cannot produce an infinite score. Scores are capped. Anything at or below zero gets zero weight, and so does an Alpha with less than thirty days of history. No single weight may exceed forty percent. Weights are the capped scores normalized to one, and whatever the caps leave over stays unallocated. It looks at the whole recorded history and uses no rolling window.</p>
+
+      <p>Two honest notes. First, where it runs today: the function is wired only to a Fund-level step between Portfolios, and that step is switched off. Even switched on, it could pause a Portfolio but not resize one. Inside a Portfolio, the Alpha weights come from the Portfolio's own selection and weighting code, run on its allocation clock. No policy moves capital between Portfolios: a Portfolio's capital changes only with its own profit and loss and its share of the Fund's deposits and withdrawals. Second, the function scores each Alpha on its own, so two strong Alphas that move together count as two strong Alphas. It has no correlation or overlap handling. The policy was ported from strategy-team research on multi-portfolio allocation, and this post describes the rule, not the evidence for choosing it.</p>
+
+      <h3>The Dashboard Is Being Rebuilt Around It</h3>
+
+      <p>The older setup ran two dashboards side by side: Grafana JSON dashboards, and a self-hosted HTML dashboard served directly by the API pod. Compositor retires Grafana and expands the HTML groundwork into the primary dashboard, which talks directly to <code>MainAdapter</code> and the database and embeds TradingView's <a href="https://github.com/tradingview/lightweight-charts">lightweight-charts</a> library.</p>
+
+      <h3>Exchange Support Is Inherited</h3>
+
+      <p>Compositor's core code never branches on which exchange it's talking to. The exchange name is just a string stored with each Fund and passed down to the order layer. That works because <code>MainAdapter</code>, the single routing entry point that normalizes response differences across exchanges, was built before Compositor and sits under both the Bitget and Binance execution paths. It exists as a standalone service rather than a shared library for one reason, the <a href="https://martinfowler.com/articles/microservices.html#ComponentizationViaServices">usual argument for services over libraries</a>: a library is vendored into every service that imports it, so fixing a routing bug means redeploying everyone, while a service behind one network hop is fixed once.</p>
+
+      <img src="003-one-number-dozens-of-strategies/earlier-vs-compositor-table.png" alt="What changes with Compositor">
 
       <hr>
 
       <h2>What This Means, In Plain Terms</h2>
 
-      <p>If you're reading this as an investor or a non-developer rather than as an engineer, here's the takeaway without the implementation detail: Compositor is the difference between "this account runs one bet" and "this account runs a portfolio of bets, each one individually accountable, while the exchange itself only ever sees one clean number." That matters because it's what lets the platform run many strategies per account without multiplying the number of exchange accounts, and it's what makes strategy-level performance attribution possible without ever having to guess after the fact which trade belongs to which idea.</p>
+      <p>If you're reading this as an investor or a non-developer, here's the takeaway without the implementation detail: Compositor is the difference between "this account runs one bet" and "this account runs a portfolio of bets, each one individually accountable, while the exchange itself only ever sees one clean number per coin." That matters because it's what lets the platform run many strategies per account without multiplying the number of exchange accounts, and it's what makes strategy-level performance attribution possible without ever having to guess after the fact which trade belongs to which idea.</p>
 
-      <p>Compositor is no longer a design on paper. It is what trades real money on Bitget futures today, and four Portfolios are running on it. It is also young: the team is still finding and closing edge-case bugs, as recently as this week. That's a normal, healthy state for a system at this stage, and it's worth stating plainly rather than rounding up to "finished."</p>
+      <p>A ledger like this also matters for what we build next. If anyone ever trains or selects strategies from realized profit and loss, the attribution rules become part of the training signal: a strategy can look better because a neighbor's opposite trade cut its costs, or look worse because a Fund-level limit scaled it down. This is a direction, not something Compositor does today. It is the reason we treat the ledger as more than back-office bookkeeping.</p>
 
-      <p>The next post takes up the trading API layer that sits underneath both LiveSys and Compositor: the routing, auth, and data-query layer that Compositor inherited rather than rebuilt.</p>
+      <p>Compositor is no longer a design on paper. It is what trades real money on Bitget futures today. It is also young: the team is still finding and closing edge-case bugs, as recently as this week. That's a normal, healthy state for a system at this stage, and it's worth stating plainly rather than rounding up to "finished."</p>
 
-      <img src="003-one-number-dozens-of-strategies/netting-example.png" alt="Netting example: two alphas blend into one net position">
+      <p>Downstream of Manaus the two rivers do mix. In our books they don't: the sum is what the exchange holds, and the split is written down before each trade.</p>
+
+      <p>The next post takes up the trading API layer that sits underneath both LiveSys and Compositor: the routing, auth, and data-query layer that Compositor inherited and did not rebuild.</p>
 
       <hr>
 
       <h2>Sources</h2>
 
       <ul>
+        <li>Wikipedia. "Meeting of Waters." <a href="https://en.wikipedia.org/wiki/Meeting_of_Waters">Link</a></li>
         <li>Vestmark. "Sleeves, Tagging, and the Pathway to Improved Accounting." Vestmark blog. <a href="https://www.vestmark.com/resources/blog/sleeves-tagging-and-the-pathway-to-improved-accounting">Link</a></li>
+        <li>QuantConnect. "Algorithm Framework: Overview." LEAN documentation. <a href="https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/overview">Link</a></li>
+        <li>NautilusTrader. "Execution." NautilusTrader documentation. <a href="https://nautilustrader.io/docs/latest/concepts/execution/">Link</a></li>
         <li>Young, T.W. (1991, October 1). "Calmar Ratio: A Smoother Tool." <em>Futures</em>, as cited in <a href="https://en.wikipedia.org/wiki/Calmar_ratio">Calmar ratio</a>, Wikipedia.</li>
+        <li>Sharpe, W. F. (1994). "The Sharpe Ratio." <em>The Journal of Portfolio Management</em> 21(1), 49-58. <a href="https://web.stanford.edu/~wfsharpe/art/sr/SR.htm">Link</a></li>
+        <li>Bitget. "What is the funding rate?" Bitget Help Center. <a href="https://www.bitget.com/support/articles/12560603817155">Link</a></li>
+        <li>Binance. "Change Position Mode," USDⓈ-M Futures API documentation. <a href="https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade#change-position-mode">Link</a></li>
+        <li>Bitget. "Change Position Mode" and "Place Order" (preset take-profit and stop-loss), Classic Contract API documentation. <a href="https://www.bitget.com/docs/catalog/classic-contract-account/classic-contract-account#change-position-mode">Link</a></li>
+        <li>"Volume-weighted average price." Wikipedia. <a href="https://en.wikipedia.org/wiki/Volume-weighted_average_price">Link</a></li>
+        <li>Lewis, J. and Fowler, M. (2014). "Microservices," section "Componentization via Services." martinfowler.com. <a href="https://martinfowler.com/articles/microservices.html#ComponentizationViaServices">Link</a></li>
+        <li>Binance. "Differences Between Isolated Margin and Cross Margin," Binance Support. <a href="https://www.binance.com/en/support/faq/differences-between-isolated-margin-and-cross-margin-b4e9e6ad70934bd082e8e09e33e69513">Link</a></li>
+        <li>TradingView. Lightweight Charts. GitHub. <a href="https://github.com/tradingview/lightweight-charts">Link</a></li>
       </ul>
     </div>
     <!-- ARTICLE CONTENT END -->

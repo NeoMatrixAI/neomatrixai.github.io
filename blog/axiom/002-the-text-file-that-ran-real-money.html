@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Real money moved through three OS processes talking over a text file. Here&#x27;s why we rebuilt it on Kubernetes." />
+  <meta name="description" content="Netflix built a tool to kill its own servers at random, so nothing could depend on one. Our old trading engine passed real orders through a text file." />
   <title>The Text File That Ran Real Money · NeoMatrix</title>
 
   <style>
@@ -317,29 +317,37 @@
       tag looks like — delete it and put the real article here.
     -->
     <div class="article-body">
-      <p><em>Real money moved through three OS processes talking over a text file. Here's why we rebuilt it on Kubernetes.</em></p>
+      <p><em>Netflix built a tool to kill its own servers at random, so nothing could depend on one. Our old trading engine passed real orders through a text file.</em></p>
 
-      <p>We're Axiom, <a href="https://neomatrixai.substack.com/p/nobody-approves-these-trades">the team that builds and runs this trading system</a>. The part that actually touches real money is <strong>LiveSys</strong>, our live automated trading engine. This post describes the engine as it ran production for most of its life, built around one exchange account running one strategy. A newer core, Compositor, has since taken over production, and the next post covers it.</p>
+      <p>In 2010, Netflix <a href="https://web.archive.org/web/20130105233831/http://techblog.netflix.com:80/2010/12/5-lessons-weve-learned-using-aws.html">wrote</a>, "The best way to avoid failure is to fail constantly," and built Chaos Monkey, a program that randomly kills its own servers.</p>
+
+      <p>Our old trading engine was the opposite. Three processes shared one Kubernetes Pod and handed orders to each other through a text file on its disk, so when the Pod died mid-cycle, the state of a real trading account died with it. This post is about rebuilding it so that killing any piece is boring, and about the one piece we made impossible to replace.</p>
+
+      <img src="002-the-text-file-that-ran-real-money/monkey-on-power-line.jpg" alt="A monkey hanging upside down from a thin cable against a pale sky.">
+
+      <p><em>A monkey hanging from an electrical cable in Shimla, India. Photo: <a href="https://commons.wikimedia.org/wiki/File:Monkey_on_Electrical_Cable_-_Shimla_-_Himachal_Pradesh_-_India_%2826500670216%29.jpg">Adam Jones from Kelowna, BC, Canada</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons.</em></p>
 
       <hr>
 
-      <h2>What LiveSys Does</h2>
+      <h2>What the Old Engine Did</h2>
 
-      <p>Strip away the infrastructure and LiveSys does something simple: a user uploads a trading strategy, LiveSys runs it on a schedule, compares the strategy's target portfolio weights against what's currently held on the exchange, and places the orders needed to close the gap. Then it watches the account, logs what happened, and does it again next cycle.</p>
+      <p>We're Axiom, <a href="https://neomatrixai.substack.com/p/nobody-approves-these-trades">the team that builds and runs this trading system</a>. The part that touches real money is <strong>LiveSys</strong>, our live automated trading engine. This post describes the engine as it ran production for most of its life, built around one exchange account running one strategy. A newer core, Compositor, has since taken over production, and the next post covers it.</p>
 
-      <p>Today that means Bitget, live. Binance integration is in progress. The routing layer already supports it, but some Binance futures endpoints are intentionally not yet switched on. None of that changes the story below. It's about how the engine that runs those cycles is built, not which exchange it's pointed at this week.</p>
+      <p>Strip away the infrastructure and the engine did something simple: a user uploaded a trading strategy, the engine ran it on a schedule, compared the strategy's target portfolio weights against what was held on the exchange, and placed the orders needed to close the gap. Then it watched the account, logged what happened, and did it again next cycle.</p>
 
-      <p>If you're reading this as an investor rather than an engineer, the part that should matter to you is less about Kubernetes and more about what Kubernetes buys us: a live trading engine where "what is my account doing right now" is always an answerable question, backed by a database row. The rest of this post covers how we got there and what we deliberately left unsolved for now.</p>
+      <p>That engine traded on Bitget. None of what follows depends on the exchange. It's about how the engine that ran those cycles was built, not which exchange it was pointed at.</p>
 
       <hr>
 
       <h2>Why the Old Model Had to Go</h2>
 
-      <p>The previous version of this system, internally called AIFAP-BT (AI Finance Agent Platform – Bitget), ran as a single Kubernetes Pod that spawned three separate OS processes with <code>subprocess.Popen</code>: one for the strategy, one for order execution ("Main"), one for monitoring ("Finwatcher"). The three talked to each other with <code>multiprocessing.Event</code> signals, and the handoff between the strategy process and the execution process went through a local file, <code>order_info.txt</code>.</p>
+      <p>Netflix learned this lesson in 2010. In its own data centers, <a href="https://web.archive.org/web/20130105233831/http://techblog.netflix.com:80/2010/12/5-lessons-weve-learned-using-aws.html">it said</a>, "session-based memory management was a fine approach, because any single hardware instance failure was rare." In the cloud, that stopped being safe, so Netflix made failure constant. Chaos Monkey randomly kills instances and services in its own architecture, and if anything still depended on one particular machine staying alive, the monkey would find out before a real failure did.</p>
 
-      <p>It worked, but it had the failure mode you'd expect from any system where state lives in a process's memory and a file on a Pod's local disk: if the Pod died mid-cycle, the state died with it. There was no clean way to ask "what is this account doing right now?" from outside the Pod, and no natural place to plug in a second kind of scheduled job (like a crash-scaling routine) without adding a fourth process to the same subprocess soup.</p>
+      <p>The previous version of this system, internally called AIFAP-BT (AI Finance Agent Platform – Bitget), ran as a single Kubernetes Pod that spawned three separate OS processes with <em><a href="https://docs.python.org/3/library/subprocess.html">subprocess.Popen</a></em>: one for the strategy, one for order execution ("Main"), one for monitoring ("Finwatcher"). The three talked to each other with <em><a href="https://docs.python.org/3/library/multiprocessing.html">multiprocessing.Event</a></em> signals, and the handoff between the strategy process and the execution process went through a local file, <code>order_info.txt</code>.</p>
 
-      <p>The rebuild replaces all of that with two ideas. First, every unit of work is either a Kubernetes Job (runs once, terminates) or a long-running Deployment (never terminates). Nothing is a bare subprocess anymore. Second, all state lives in the <code>finplatform</code> Postgres database, specifically three tables: <code>active_sessions</code>, <code>order_queue</code>, and <code>job_history</code>. A Pod can die and get rescheduled and the system still knows exactly which state a given user's trading cycle was in, because that state was never inside the Pod to begin with. This is a formalized industry principle: the Twelve-Factor App methodology's disposability principle holds that a process should be replaceable at any moment without anything depending on it staying alive. The old file-and-memory model never had that property. The Job-plus-database model does.</p>
+      <p>It worked, but it had the failure mode you'd expect from any system where state lives in a process's memory and a file on a Pod's local disk: if the Pod died mid-cycle, the state died with it. Kubernetes <a href="https://kubernetes.io/docs/concepts/workloads/pods/">designs Pods to be disposable</a>, so a Pod dying mid-cycle was never an edge case. There was no clean way to ask "what is this account doing right now?" from outside the Pod, and no natural place to plug in a second kind of scheduled job (like a crash-scaling routine) without adding a fourth process to the same subprocess soup.</p>
+
+      <p>The rebuild replaced all of that with two ideas. First, every unit of work was either a Kubernetes Job (runs once, terminates) or a long-running Deployment (never terminates). Nothing was a bare subprocess anymore. Second, all state lived in the <code>finplatform</code> Postgres database, specifically three tables: <code>active_sessions</code>, <code>order_queue</code>, and <code>job_history</code>. A Pod could die and be replaced by a new one, and the system still knew exactly which state a given user's trading cycle was in, because that state was never inside the Pod to begin with. This is a formalized industry principle: the Twelve-Factor App methodology says <a href="https://12factor.net/processes">processes are stateless and share nothing</a>, and its <a href="https://12factor.net/disposability">disposability principle</a> holds that a process should be replaceable at any moment without anything depending on it staying alive. The old file-and-memory model never had that property. The Job-plus-database model did.</p>
 
       <img src="002-the-text-file-that-ran-real-money/v01-vs-v02-architecture.png" alt="Previous single-Pod version versus the LiveSys Kubernetes Job pipeline">
 
@@ -347,17 +355,17 @@
 
       <h2>Five Components, One Postgres Database</h2>
 
-      <p>LiveSys is five pieces of Kubernetes working off the same three database tables:</p>
+      <p>The rebuilt engine was five pieces of Kubernetes working off the same three database tables:</p>
 
       <ul>
-        <li><strong>API Server</strong>: a Deployment, always running. Handles requests to start a trading session and creates Strategy-Main Jobs on demand.</li>
-        <li><strong>Scheduler</strong>: a Deployment, always running, looping every 60 seconds. It finds users whose state is <code>waiting</code> and due for their next cycle, and creates the Strategy-Main (or CrashGuard) Job for them.</li>
-        <li><strong>Strategy-Main</strong>: a Job, created dynamically, one per user per cycle. This is where the actual strategy runs and orders get placed. It exits when its work is done, and a TTL of 3600 seconds removes the finished Job object an hour later.</li>
-        <li><strong>Finwatcher</strong>: a Deployment, always running, looping every 60 seconds. It pulls each account's current state from the exchange and writes results into the separate <code>finwatcher</code> database.</li>
-        <li><strong>CrashGuard</strong>: a Job, created dynamically on a per-user interval, for accounts whose strategy opts into minute-scale position scaling.</li>
+        <li><strong>API Server</strong>: a Deployment, always running. It handled requests to start a trading session and created Strategy-Main Jobs on demand.</li>
+        <li><strong>Scheduler</strong>: a Deployment, always running, looping every 60 seconds. It found users whose state was <code>waiting</code> and due for their next cycle, and created the Strategy-Main (or CrashGuard) Job for them.</li>
+        <li><strong>Strategy-Main</strong>: a Job, created dynamically, one per user per cycle. This is where the actual strategy ran and orders got placed. It exited when its work was done, and a TTL of 3600 seconds removed the finished Job object an hour later.</li>
+        <li><strong>Finwatcher</strong>: a Deployment, always running, looping every 60 seconds. It pulled each account's current state from the exchange and wrote results into the separate <code>finwatcher</code> database.</li>
+        <li><strong>CrashGuard</strong>: a Job, created dynamically on a per-user interval, for accounts whose strategy opted into minute-scale position scaling.</li>
       </ul>
 
-      <p>Nothing here is a bare OS subprocess. Deployments stay up and loop; Jobs spin up, do one unit of work, and exit. That last part matters operationally: once a Strategy-Main Job finishes, successfully or not, its TTL clears the finished Job object out on its own. Nobody has to remember to go delete a stale one. The TTL is a cleanup timer for Jobs that have already ended. It does not stop a Job that is still running.</p>
+      <p>Nothing here was a bare OS subprocess. Deployments stayed up and looped; <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Jobs</a> spun up, did one unit of work, and exited. That last part mattered operationally: once a Strategy-Main Job finished, successfully or not, its TTL cleared the finished Job object out on its own. Nobody had to remember to go delete a stale one. The TTL was a cleanup timer for Jobs that had already ended. It did not stop a Job that was still running.</p>
 
       <img src="002-the-text-file-that-ran-real-money/five-components-table.png" alt="LiveSys five components comparison table">
 
@@ -365,26 +373,26 @@
 
       <h2>Inside a Rebalancing Cycle: The State Machine</h2>
 
-      <p>Here's what happens when a cycle runs, end to end.</p>
+      <p>Every session lived in a small <a href="https://weizmann.elsevierpure.com/en/publications/statecharts-a-visual-formalism-for-complex-systems/">state machine</a>, and one row in <code>active_sessions</code> said which state it was in. Here's what happened when a cycle ran, end to end.</p>
 
-      <p>A cycle starts when a run request comes in. The API Server checks auth, validates the uploaded config, checks a resume guard (reject the request if this user is already running), and then upserts a row in <code>active_sessions</code> with <code>state='waiting'</code>. Immediately after that, it issues a <code>kubectl create</code> for that user's Strategy-Main Job.</p>
+      <p>A cycle started when a run request came in. The API Server checked auth, validated the uploaded config, checked a resume guard (reject the request if this user was already running), and then upserted a row in <code>active_sessions</code> with <code>state='waiting'</code>. Immediately after that, it issued a <code>kubectl create</code> for that user's Strategy-Main Job.</p>
 
-      <p>From there, the Job itself drives the rest of the transitions. It sets <code>state='preparing'</code> first. From that moment the Scheduler, which only picks up sessions in <code>waiting</code>, skips this user on its next 60-second tick. It waits for any running CrashGuard Job to clear, then waits until the target rebalancing time arrives. Then:</p>
+      <p>From there, the Job itself drove the rest of the transitions. It set <code>state='preparing'</code> first. From that moment the Scheduler, which only picked up sessions in <code>waiting</code>, skipped this user on its next 60-second tick. It waited for any running CrashGuard Job to clear, then waited until the target rebalancing time arrived. Then:</p>
 
       <ul>
-        <li><code>state='strategy_running'</code>: the uploaded strategy executes and writes its target weights to <code>order_queue</code>.</li>
-        <li><code>state='strategy_done'</code>: the strategy's work is finished and its orders are waiting in <code>order_queue</code>.</li>
-        <li><code>state='trading'</code>: Main reads <code>order_queue</code> and executes the actual orders against the exchange.</li>
-        <li>On completion, <code>nextRebalancingTime</code> advances, <code>totalCycles</code> increments by one, and <code>state</code> returns to <code>waiting</code>. The Job then exits, its TTL removes the finished Job object an hour later, and the Scheduler creates the next Job when this user is next due.</li>
+        <li><code>state='strategy_running'</code>: the uploaded strategy executed and wrote its orders to <code>order_queue</code>.</li>
+        <li><code>state='strategy_done'</code>: the strategy's work was finished and its orders were waiting in <code>order_queue</code>.</li>
+        <li><code>state='trading'</code>: Main read <code>order_queue</code> and executed the actual orders against the exchange.</li>
+        <li>On completion, <code>nextRebalancingTime</code> advanced, <code>totalCycles</code> incremented by one, and <code>state</code> returned to <code>waiting</code>. The Job then exited, its <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/#ttl-mechanism-for-finished-jobs">TTL</a> removed the finished Job object an hour later, and the Scheduler created the next Job when this user was next due.</li>
       </ul>
 
-      <p>The delicate moment is the gap before <code>preparing</code>: the Job exists, but the row still says <code>waiting</code>. Three things cover it. Before creating a Job, the Scheduler looks for a Job record for the same user from the last few minutes. It also checks that a recorded Job's pod actually exists, so a record whose pod never appeared can't block a user forever. And a lock keeps the two Scheduler replicas from working the same tick at once. What isn't there is an atomic claim on the session row, so the protection is layered rather than absolute. The order logic is built so that a rare duplicate isn't catastrophic: every cycle computes its orders as the difference between the target and what the exchange reports holding right now, so running a cycle twice in a row doesn't stack a position. Two cycles running at the very same moment could still overlap, and that is a gap the design accepts rather than closes.</p>
+      <p>The delicate moment was the gap before <code>preparing</code>: the Job existed, but the row still said <code>waiting</code>. Three things covered it. Before creating a Job, the Scheduler looked for a Job record for the same user from the last few minutes. It also checked that a recorded Job's pod actually existed, so a record whose pod never appeared couldn't block a user forever. And a lock kept the two Scheduler replicas from working the same tick at once. What wasn't there was an atomic claim on the session row, so the protection was layered rather than absolute. The order logic was built so that a rare duplicate wasn't catastrophic: every cycle computed its orders as the difference between the target and what the exchange reported holding right now, so running a cycle twice in a row didn't stack a position. The operation was <a href="https://web.archive.org/web/2023/https://queue.acm.org/detail.cfm?id=2187821">idempotent</a> in effect. Two cycles running at the very same moment could still overlap, and that was a gap the design accepted rather than closed. The engine that replaced it closed the gap: the Scheduler takes an atomic claim on the session row before it creates the Job.</p>
 
-      <p>The full set of states a session can be in is: <code>waiting</code>, <code>preparing</code>, <code>strategy_running</code>, <code>strategy_done</code>, <code>trading</code>, <code>crashguard_running</code>, <code>completed</code>, <code>terminated</code>, <code>error</code>. That last three are the exit states, and the error policy is deliberately tiered: a user error on a brand-new session (first cycle) triggers liquidation and session termination, since there's no track record yet to preserve. A user error on a session that's already run several cycles keeps the session alive and just notifies the user. A bad cycle doesn't have to mean tearing down a working strategy. A system-level error (not the user's code) also keeps the session alive, but pages an admin instead.</p>
+      <p>The full set of states a session could be in was: <code>waiting</code>, <code>preparing</code>, <code>strategy_running</code>, <code>strategy_done</code>, <code>trading</code>, <code>crashguard_running</code>, <code>completed</code>, <code>terminated</code>, <code>error</code>. The last three were the exit states, and the error policy was deliberately tiered: a user error on a brand-new session (first cycle) triggered liquidation and session termination, since there was no track record yet to preserve. A user error on a session that had already run several cycles kept the session alive and just notified the user. A bad cycle didn't have to mean tearing down a working strategy. A system-level error (not the user's code) also kept the session alive, but paged an admin instead.</p>
 
-      <p>That asymmetry didn't ship this way on the first attempt. It went through three revisions. The earliest version terminated every unrecoverable error unconditionally, which meant a transient exchange hiccup and a genuinely broken strategy got the same treatment. A user had to manually resume a session that never should have stopped. The next pass narrowed automatic liquidation down to a short list of specific triggers (a user manually terminating, a session hitting its end time, one of the monitoring detectors firing) and left everything else to notify rather than kill, on the reasoning that users trust the system with real money specifically because it isn't supposed to just stop. That reasoning almost went too far the other way: if every user error just gets a notification, a strategy that's broken from cycle one would sit there retrying forever instead of ever getting cut off. The fix that stuck splits on one number: <code>totalCycles</code>. An unrecoverable error liquidates and terminates only when it hits a session that has never completed a single successful cycle. The same error on a session with a track record keeps it alive for the next attempt instead. Trust the money you've already run for. Don't let a strategy that never worked keep trying forever.</p>
+      <p>That asymmetry didn't ship this way on the first attempt. It went through three revisions. The earliest version terminated every unrecoverable error unconditionally, which meant a transient exchange hiccup and a genuinely broken strategy got the same treatment. A user had to manually resume a session that never should have stopped. The next pass narrowed automatic liquidation down to a short list of specific triggers (a user manually terminating, a session hitting its end time, one of the monitoring detectors firing) and left everything else to notify rather than kill, on the reasoning that users trust the system with real money specifically because it isn't supposed to just stop. That reasoning almost went too far the other way: if every user error just got a notification, a strategy that was broken from cycle one would sit there retrying forever instead of ever getting cut off. The fix that stuck split on one number: <code>totalCycles</code>. An unrecoverable error liquidated and terminated only when it hit a session that had never completed a single successful cycle. The same error on a session with a track record kept it alive for the next attempt instead. Trust the money you've already run for. Don't let a strategy that never worked keep trying forever. The engine that replaced this one went a step further and dropped liquidation on error entirely: a failed cycle is skipped, the session stays up, and the user is notified.</p>
 
-      <p>Concretely, a Strategy-Main Job looks roughly like this:</p>
+      <p>Concretely, a Strategy-Main Job looked roughly like this:</p>
 
       <pre><code>apiVersion: batch/v1
 kind: Job
@@ -401,7 +409,7 @@ spec:
           image: strategy-main:&lt;tag&gt;
       restartPolicy: Never</code></pre>
 
-      <p>The deadline is what stops a Job that runs long: it allows the wait until the target time, plus one rebalancing interval, plus a ten-minute margin. The important detail isn't the YAML itself. It's that nothing about this Job's identity depends on a process staying alive on a specific node. If the node disappears, the Job's outcome is already recorded as a state transition in Postgres, safely outside any variable that would vanish with it.</p>
+      <p>The <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup">deadline</a> is what stopped a Job that ran long: it allowed the wait until the target time, plus one rebalancing interval, plus a ten-minute margin. The important detail isn't the YAML itself. It's that nothing about this Job's identity depended on a process staying alive on a specific node. If the node disappeared, the Job's outcome was already recorded as a state transition in Postgres, safely outside any variable that would vanish with it.</p>
 
       <img src="002-the-text-file-that-ran-real-money/state-machine.png" alt="LiveSys active_sessions state machine diagram">
 
@@ -409,17 +417,17 @@ spec:
 
       <h2>Futures vs. Spot: One System, Two Execution Paths</h2>
 
-      <p>LiveSys treats futures and spot trading as genuinely different execution paths, not a thin wrapper over the same code: different order placement, different risk controls, different accounting. Five things diverge:</p>
+      <p>The old engine treated futures and spot trading as genuinely different execution paths, not a thin wrapper over the same code: different order placement, different risk controls, different accounting. Five things diverged:</p>
 
       <ul>
-        <li><strong>Order execution.</strong> Futures sends orders one at a time; spot can batch up to 50 into a single exchange call.</li>
-        <li><strong>Stop-loss / take-profit.</strong> A futures account carries exactly one stop-loss/take-profit for its whole position. Setting a new one replaces whatever was there before. Spot sets an independent stop per lot, so closing one doesn't touch the others.</li>
+        <li><strong>Order execution.</strong> The engine sent futures orders one at a time and batched spot orders, <a href="https://www.bitget.com/docs/catalog/classic-spot-trade/classic-spot-trade#batch-place-orders">up to 50 per exchange call</a>.</li>
+        <li><strong>Stop-loss / take-profit.</strong> A futures account carried exactly one stop-loss/take-profit for its whole position. Setting a new one replaced whatever was there before. Spot set an independent stop per lot, so closing one didn't touch the others.</li>
         <li><strong>Position weight.</strong> Measured against a different denominator on each side. See below.</li>
-        <li><strong>P&amp;L.</strong> Futures reads it straight from the exchange. Spot computes it itself, because the exchange doesn't hand it over.</li>
-        <li><strong>Funding rate.</strong> Applies to futures, has no equivalent on spot.</li>
+        <li><strong>P&amp;L.</strong> Futures read it straight from the exchange. Spot computed it itself, because the exchange doesn't hand it over.</li>
+        <li><strong><a href="https://www.bitget.com/support/articles/12560603817155">Funding rate</a>.</strong> Applied to futures, had no equivalent on spot.</li>
       </ul>
 
-      <p>The weight formulas look almost identical until you look at what "allocated balance" actually means on each side. It's not the same number:</p>
+      <p>The weight formulas looked almost identical until you looked at what "allocated balance" actually meant on each side. It wasn't the same number:</p>
 
       <p><strong>Spot</strong>: weight against the account's total value:</p>
 
@@ -435,9 +443,9 @@ spec:
 
       <p><em>weight = margin / allocated balance</em></p>
 
-      <p>Spot weight is a share of the account's total mark-to-market value. Futures weight is a share of exchange-reported available balance, and the numerator is margin: notional divided by leverage, never the position's face value. Two strategies each reporting "40% weight" aren't necessarily sized the same way relative to the account if one is spot and one is futures. The same word hides two different denominators.</p>
+      <p>Spot weight was a share of the account's total mark-to-market value. Futures weight was a share of exchange-reported available balance, and the numerator was margin: notional divided by leverage, never the position's face value. Two strategies each reporting "40% weight" weren't necessarily sized the same way relative to the account if one was spot and one was futures. The same word hid two different denominators.</p>
 
-      <p>The FIFO calculation behind spot's P&amp;L is a plain queue, kept in memory per symbol and rebuilt from trade history on cold start:</p>
+      <p>The FIFO calculation behind spot's P&amp;L was a plain queue, kept in memory per symbol and rebuilt from trade history on cold start:</p>
 
       <pre><code># Spot P&amp;L: FIFO over buy fills, replayed on each sell fill
 for fill in fills:
@@ -454,9 +462,9 @@ for fill in fills:
                 oldest["size"] -= matched
                 positions.appendleft(oldest)</code></pre>
 
-      <p>Futures skips all of this because Bitget hands back a <code>profit</code> field on every fill and LiveSys just sums it (<code>netprofit = profit + fee</code>). Spot gets no such field from the exchange, so the FIFO queue above is standing in for accounting the exchange itself won't do. That design has a real cost: it lives in process memory rather than the database, so a cold start means replaying trade history from scratch before the numbers are trustworthy again.</p>
+      <p>Futures skipped all of this because Bitget hands back a <code>profit</code> field on every fill and the engine just summed it (<code>netprofit = profit + fee</code>). Spot got no such field from the exchange, so the FIFO queue above stood in for accounting the exchange itself won't do. That design had a real cost: it lived in process memory rather than the database, so a cold start meant replaying trade history from scratch before the numbers were trustworthy again.</p>
 
-      <p>None of this is exposed to the strategy author. From the user's side, you write one <code>strategy(data, config_dict)</code> function. The futures/spot split lives entirely in the execution layer underneath it.</p>
+      <p>None of this was exposed to the strategy author. From the user's side, you wrote one <code>strategy(data, config_dict)</code> function. The futures/spot split lived entirely in the execution layer underneath it.</p>
 
       <img src="002-the-text-file-that-ran-real-money/futures-vs-spot-table.png" alt="Futures vs spot execution path comparison table">
 
@@ -464,7 +472,7 @@ for fill in fills:
 
       <h2>CrashGuard: The Emergency Brake</h2>
 
-      <p>CrashGuard is opt-in: a strategy gets it only if two conditions are both true: the uploaded strategy file defines a <code>crashguard(data, positions, config_dict)</code> function, and the uploaded config YAML has a <code>crashguard</code> section. If either is missing, the account simply never gets a CrashGuard Job.</p>
+      <p>CrashGuard was opt-in: a strategy got it only if two conditions were both true: the uploaded strategy file defined a <code>crashguard(data, positions, config_dict)</code> function, and the uploaded config YAML had a <code>crashguard</code> section. If either was missing, the account simply never got a CrashGuard Job.</p>
 
       <pre><code># A strategy opts into CrashGuard by defining this function.
 # LiveSys only calls it if the uploaded config also has a
@@ -475,29 +483,33 @@ def crashguard(data, positions, config_dict):
     # config_dict: the "crashguard" block of the uploaded YAML
     ...</code></pre>
 
-      <p>When it's running, CrashGuard is a Job created on a per-user interval that operates at minute-scale, much faster than a normal rebalancing cycle, and it places real scale-down orders against the account. It's mutually exclusive with the regular rebalancing Job for the same user: whichever one started first blocks the other from starting, which is exactly why <code>crashguard_running</code> sits alongside the rebalancing states in the state machine, never layered on top of them.</p>
+      <p>When it ran, CrashGuard was a Job created on a per-user interval that operated at minute-scale, much faster than a normal rebalancing cycle, and it placed real scale-down orders against the account. It was mutually exclusive with the regular rebalancing Job for the same user: whichever one started first blocked the other from starting, which is exactly why <code>crashguard_running</code> sat alongside the rebalancing states in the state machine, never layered on top of them.</p>
 
-      <p>The scheduling question underneath it (when, exactly, should the next CrashGuard interval fire) went through several rounds of redesign before landing here. The lesson that stuck: schedule the next interval off the target time, never off however late the last run finished. Anchor to "last actual run plus interval" and a slow cycle drags every following cycle later with it; anchor to "target time plus interval" and a single slow run doesn't compound. This distinction has a name in scheduling libraries generally: Java's own concurrency documentation draws exactly this line between scheduling at a fixed rate (anchored to the original schedule) and scheduling with a fixed delay (anchored to when the last run finished), and only the first one avoids drift.</p>
+      <p>The scheduling question underneath it (when, exactly, should the next CrashGuard interval fire) went through several rounds of redesign before landing there. The lesson that stuck: schedule the next interval off the target time, never off however late the last run finished. Anchor to "last actual run plus interval" and a slow cycle drags every following cycle later with it; anchor to "target time plus interval" and a single slow run doesn't compound. This distinction has a name in scheduling libraries generally: Java's own concurrency documentation draws exactly this line between <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html">scheduling at a fixed rate (anchored to the original schedule) and scheduling with a fixed delay</a> (anchored to when the last run finished), and only the first one avoids drift.</p>
 
-      <p>One honest note for readers who might see this component again later in the series: CrashGuard does not exist in Compositor, the newer base architecture. That's a deliberate consequence of its multi-strategy model. More on that in a later post.</p>
+      <p>One honest note for readers who might see this component again later in the series: CrashGuard does not exist in Compositor, which now carries production. That's a deliberate consequence of its multi-strategy model. The next post covers it.</p>
 
       <hr>
 
       <h2>Watching the Watchers: Monitoring and Alerts</h2>
 
-      <p>Finwatcher, the always-on Deployment that runs every 60 seconds, is the system's own monitoring layer. For every user currently trading it checks four things in a fixed order: sessions still marked as running after they've finished, losses past the limit that user set, deposits and withdrawals, and risk indicators like max drawdown crossing the alert thresholds the user configured. It then stacks the futures and spot results, per account and per portfolio, into the separate <code>finwatcher</code> Postgres database. A write skips anything already recorded for the same timestamp (<code>ON CONFLICT DO NOTHING</code>), so a re-run or a retry doesn't double-count.</p>
+      <p>Finwatcher, the always-on Deployment that ran every 60 seconds, was the engine's own monitoring layer. For every user currently trading it checked four things in a fixed order: sessions still marked as running after they had finished, losses past the limit that user set, deposits and withdrawals, and risk indicators like max drawdown crossing the alert thresholds the user configured. It then stacked the futures and spot results, per account and per portfolio, into the separate <code>finwatcher</code> Postgres database. A write skipped anything already recorded for the same timestamp (<em><a href="https://www.postgresql.org/docs/current/sql-insert.html">ON CONFLICT DO NOTHING</a></em>), so a re-run or a retry didn't double-count.</p>
 
-      <p>When something needs a human, alerts go out over two channels: Discord (an admin DM plus the relevant user's team channel or DM) and email. On the visualization side, LiveSys ran two dashboards side by side: Grafana JSON dashboards covering candles, trades, logs, and portfolio views, and a self-hosted HTML dashboard (a portfolio view and a per-strategy grid) served directly by the API pod. That HTML dashboard isn't a side project. It's the early groundwork for the dashboard approach that gets expanded significantly in that newer architecture, which a later post takes up.</p>
+      <p>When something needed a human, alerts went out over two channels: Discord (an admin DM plus the relevant user's team channel or DM) and email. On the visualization side, LiveSys ran two dashboards side by side: Grafana JSON dashboards covering candles, trades, logs, and portfolio views, and a self-hosted HTML dashboard (a portfolio view and a per-strategy grid) served directly by the API pod. That HTML dashboard isn't a side project. It's the early groundwork for the dashboard approach that gets expanded significantly in that newer architecture, which a later post takes up.</p>
 
       <hr>
 
       <h2>The Single Point of Failure We Chose on Purpose</h2>
 
-      <p>MainAdapter, the single routing service every order passes through on its way to an exchange, and Query API and Analytics API, which serve trade results and performance metrics back out to dashboards, all fall into the same bucket as LiveSys itself and the Bitget/Binance exchange adapters: every one of them re-verifies identity against a separate Auth API on essentially every request. Auth API is also the sole holder of exchange API keys: the exchange adapters resolve them from it right before they need to sign a request. Nothing downstream caches a long-lived credential. Everything asks Auth API, every time.</p>
+      <p>Everything above is built to be replaced. One thing is not.</p>
+
+      <p>MainAdapter, the single routing service every order passes through on its way to an exchange, the Bitget and Binance exchange adapters behind it, and LiveSys's own API all fall into the same bucket: every one of them re-verifies identity against a separate Auth API on essentially every request. Auth API is also the sole holder of exchange API keys: the exchange adapters resolve them from it right before they need to sign a request. Nothing downstream caches a long-lived credential. Everything asks Auth API, every time.</p>
 
       <p>That design has an obvious consequence worth stating plainly, without glossing over it: Auth API is a single point of failure by design. If it goes down, no trade can execute anywhere in the system, both within LiveSys and across every service that depends on it. We think that's a reasonable tradeoff for a system whose entire job is custody of exchange credentials: centralizing key custody in one auditable, re-verified-on-every-call service is a defensible security posture, and the alternative (caching credentials or trust decisions in multiple places) trades a clean outage for a much harder-to-reason-about failure mode. It is a tradeoff, still, and it's the kind of architectural honesty this series is trying to keep: know what you're centralizing, and know exactly what breaks if it's down.</p>
 
-      <p>This already happened once. <strong>Internal DNS resolution started failing intermittently in the cluster: Auth API's own requests started timing out, and every service downstream of it (the exchange execution layer, the monitoring stack, the alerting integration) went down with it in the same few minutes, in a chain.</strong> What made it a slower diagnosis than it should have been is where the failure showed up: the application logs just said a field was missing from a response, which reads like an API contract bug on the surface. The real cause was several layers further down, in how the cluster's network stack was sized for DNS traffic. Nobody had to guess whether the SPOF tradeoff was real after that. The blast radius matched the design on paper exactly.</p>
+      <p>We are not the first to find out what a central identity check costs. In December 2020, a quota system wrongly reported the usage of Google's user ID service as zero, automation cut the quota to match, and <a href="https://status.cloud.google.com/incident/zall/20013">for 47 minutes</a> services that needed Google sign-in were unavailable.</p>
+
+      <p>It happened to us once too. <strong>Internal DNS resolution started failing intermittently in the cluster: Auth API's own requests started timing out, and every service downstream of it (the exchange execution layer, the monitoring stack, the alerting integration) went down with it in the same few minutes, in a chain.</strong> What made it a slower diagnosis than it should have been is where the failure showed up: the application logs just said a field was missing from a response, which reads like an API contract bug on the surface. The real cause was several layers further down, in how the cluster's network stack was sized for DNS traffic. Meta's <a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/">postmortem of its 2021 outage</a> describes the same trap at a larger scale: losing DNS broke many of the internal tools it would normally use to investigate. Nobody had to guess whether the SPOF tradeoff was real after that. The blast radius matched the design on paper exactly.</p>
 
       <img src="002-the-text-file-that-ran-real-money/auth-api-spof.png" alt="Auth API single point of failure hub-and-spoke diagram">
 
@@ -505,11 +517,13 @@ def crashguard(data, positions, config_dict):
 
       <h2>Two Namespaces, One Database</h2>
 
-      <p>Operationally, LiveSys splits across two Kubernetes namespaces. One holds the long-running infrastructure: API Server, Auth API, Discord integration, the database, Scheduler, and Finwatcher. The other holds the per-user Job workloads (Strategy-Main, CrashGuard), which get TTL-cleaned automatically once they finish. A separate test namespace exists so that changes get exercised there before anything reaches the production branch.</p>
+      <p>Operationally, the engine was split across two Kubernetes namespaces. One held the long-running infrastructure: API Server, Auth API, Discord integration, the database, Scheduler, and Finwatcher. The other held the per-user Job workloads (Strategy-Main, CrashGuard), which got TTL-cleaned automatically once they finished. A separate test namespace existed so that changes got exercised there before anything reached the production branch.</p>
 
       <p>Every build is tagged with its version and the exact commit it was built from, and production builds and test builds are tagged distinctly. It's a small detail, but it's what makes "which exact build is running in prod right now" an answerable question instead of a guess.</p>
 
-      <p>That same instinct, making state legible, is really the throughline of this entire rewrite. The old model's biggest weakness wasn't that it was slow or that it crashed. It's that when it did crash, nobody could say with confidence what state a given account was left in without SSHing into a Pod that might not even exist anymore. The rebuild trades some infrastructure complexity (five components, a real state machine replacing the old event flag) for the ability to answer that question from a database query, every time.</p>
+      <p>That same instinct, making state legible, is really the throughline of this entire rewrite. The old model's biggest weakness wasn't that it was slow or that it crashed. It's that when it did crash, nobody could say with confidence what state a given account was left in without SSHing into a Pod that might not even exist anymore. The rebuild traded some infrastructure complexity (five components, a real state machine replacing the old event flag) for the ability to answer that question from a database query, every time.</p>
+
+      <p>If you're reading this as an investor rather than an engineer, this is the part that matters: a live trading engine where "what is my account doing right now" always has an answer, and the answer is a database row, not a guess about which machine is still alive. Netflix built a monkey to prove that nothing depends on any one server. We wrote the state down where losing a Pod can't take it.</p>
 
       <hr>
 
@@ -522,7 +536,19 @@ def crashguard(data, positions, config_dict):
       <h2>Sources</h2>
 
       <ul>
+        <li>Ciancutti, J. (2010). "5 Lessons We've Learned Using AWS." Netflix Tech Blog, via the Internet Archive. <a href="https://web.archive.org/web/20130105233831/http://techblog.netflix.com:80/2010/12/5-lessons-weve-learned-using-aws.html">Link</a></li>
+        <li>Kubernetes. "Pods." Kubernetes documentation. <a href="https://kubernetes.io/docs/concepts/workloads/pods/">Link</a></li>
+        <li>Kubernetes. "Jobs." Kubernetes documentation. <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Link</a></li>
+        <li>Wiggins, A. (2011). "Processes." <em>The Twelve-Factor App</em>. <a href="https://12factor.net/processes">Link</a></li>
         <li>Wiggins, A. (2011). "Disposability." <em>The Twelve-Factor App</em>. <a href="https://12factor.net/disposability">Link</a></li>
+        <li>Python Software Foundation. <code>subprocess</code> and <code>multiprocessing</code>, Python 3 documentation. <a href="https://docs.python.org/3/library/subprocess.html">Link</a></li>
+        <li>Harel, D. (1987). "Statecharts: A Visual Formalism for Complex Systems." <em>Science of Computer Programming</em> 8(3), 231-274. <a href="https://weizmann.elsevierpure.com/en/publications/statecharts-a-visual-formalism-for-complex-systems/">Link</a></li>
+        <li>Helland, P. (2012). "Idempotence Is Not a Medical Condition." <em>ACM Queue</em> 10(4), via the Internet Archive. <a href="https://web.archive.org/web/2023/https://queue.acm.org/detail.cfm?id=2187821">Link</a></li>
+        <li>Bitget. "What is the funding rate?" Bitget Help Center. <a href="https://www.bitget.com/support/articles/12560603817155">Link</a></li>
+        <li>Bitget. "Batch Place Orders" (<code>orderList</code>, maximum length 50), Classic Spot Trade API. <a href="https://www.bitget.com/docs/catalog/classic-spot-trade/classic-spot-trade#batch-place-orders">Link</a></li>
+        <li>PostgreSQL Global Development Group. "INSERT," PostgreSQL documentation. <a href="https://www.postgresql.org/docs/current/sql-insert.html">Link</a></li>
+        <li>Google Cloud. "Incident #20013," Google Cloud Service Health, December 2020. <a href="https://status.cloud.google.com/incident/zall/20013">Link</a></li>
+        <li>Janardhan, S. (2021). "More details about the October 4 outage." Engineering at Meta. <a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/">Link</a></li>
         <li>Oracle. "ScheduledExecutorService," Java SE 8 API documentation. <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html">Link</a></li>
       </ul>
     </div>
