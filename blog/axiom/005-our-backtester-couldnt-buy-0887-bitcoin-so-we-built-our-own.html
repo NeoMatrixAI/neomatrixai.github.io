@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Ariane 5 broke apart because reused code assumed a number would always fit. Our first backtester was reused too, and it assumed every trade was a whole share." />
+  <title>Our Backtester Couldn't Buy 0.887 Bitcoin, So We Built Our Own · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Axiom Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Axiom</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Our Backtester Couldn't Buy 0.887 Bitcoin, So We Built Our Own</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Ariane 5 broke apart because reused code assumed a number would always fit. Our first backtester was reused too, and it assumed every trade was a whole share.</em></p>
+
+      <p>On June 4, 1996, the first Ariane 5 <a href="https://www-users.cse.umn.edu/~arnold/disasters/ariane5rep.html">broke apart 37 seconds after liftoff</a>. Its guidance software had been reused from Ariane 4, where one velocity value always fit in a 16-bit integer. On the faster new rocket it didn't, and the conversion overflowed.</p>
+
+      <p>Our first backtester was reused code too, written for stock markets, where a share is a whole number. We ordered 0.887 BTC in it, and the portfolio didn't move a cent. Nothing raised an error. That backtester is why we built our own.</p>
+
+      <img src="005-our-backtester-couldnt-buy-0887-bitcoin-so-we-built-our-own/ariane-5-on-the-pad.jpg" alt="An Ariane 5 rocket standing on its launch pad at night, lit from below, between two lightning towers.">
+
+      <p><em>An Ariane 5 on the launch pad in 2021. The rocket's first flight, in 1996, ended 37 seconds after liftoff. Photo: Bill Ingalls, via <a href="https://commons.wikimedia.org/wiki/File:Ariane_5_with_James_Webb_Space_Telescope_Prelaunch_%28NHQ202112230015%29.jpg">Wikimedia Commons</a>, public domain.</em></p>
+
+      <hr>
+
+      <h2>The Engine We Started With</h2>
+
+      <p>Our first backtest engine was <a href="https://github.com/quantopian/zipline">zipline</a>, an open-source backtester Quantopian released for US stocks. <a href="https://en.wikipedia.org/wiki/Quantopian">Quantopian wound down in November 2020</a>, and the community keeps zipline going as <a href="https://github.com/stefan-jansen/zipline-reloaded">zipline-reloaded</a>. We took it and kept adapting it to a market it was never built for: crypto perpetual futures, trading every minute of every day, in fractional quantities.</p>
+
+      <p>We didn't build our own at the start for a simple reason: it takes a long time. Before you can test a single idea you need portfolio accounting, a simulation clock, a model of how orders fill, and a stack of performance metrics. Zipline had all of that, tested, with years of real use behind it.</p>
+
+      <p>The problem was that all of that use was in stocks.</p>
+
+      <hr>
+
+      <h2>Three Things a Stock Backtester Can't Do</h2>
+
+      <p>The first was the unit of trade. <strong>We ordered 0.887 BTC in a backtest and the portfolio stayed at exactly 100,000 dollars. The price feed was fine, Bitcoin came through at 112,709 dollars, and the order quantity arrived at the fill layer intact. Then it became zero, with no exception and nothing in the log.</strong> Stocks trade in whole shares, so <a href="https://zipline.ml4trading.io/api-reference.html#zipline.api.order">quantities are integers</a>, and that wasn't a setting we could turn off. It was baked into code that had already been compiled: the quantity was declared as an integer, a check rejected anything smaller than one unit, and a rounding function cut the order to an integer on its way out. Editing the Python changed nothing, because the part that mattered was compiled. Fixing it meant changing the quantity to a floating-point type in the compiled source and rebuilding it every time we built our container. Prices had the same problem: minute bars were stored as integers multiplied by a thousand, so any coin trading below a tenth of a cent was stored as zero.</p>
+
+      <p>Here is the path that one order took through the engine:</p>
+
+      <pre><code># The path that order took, simplified.
+order(BTC, 0.887)          # quantity requested
+  round_order(0.887)       -&gt; 0           # cut to an integer on the way out
+  create_transaction       -&gt; skipped     # amount below one unit, no fill
+portfolio value            -&gt; 100000.0    # unchanged, no exception anywhere</code></pre>
+
+      <p>The second was time. Zipline <a href="https://zipline.ml4trading.io/api-reference.html#zipline.run_algorithm">knows two intervals</a>, daily and minute. It has no concept of a 5- or 15-minute bar, and that's how a lot of our strategies rebalance. Feed it 319 five-minute bars and the engine, which had already worked out that the same period should hold 1,591 one-minute slots, filled the difference with blanks. Getting one bar-interval value to every place that needed it meant threading it through seven layers of the engine. Four of them build timestamps on their own, and unless all four formulas matched character for character, the bars drifted apart again. We made them identical and left a comment saying that's what keeps the data and the clock aligned.</p>
+
+      <p>The third is one <a href="https://neomatrixai.substack.com/p/you-think-placing-a-trade-is-one">our post on the trading API layer</a> covers from the metrics side: these libraries are built around a market that closes. Trading days per year, business days per month, weekends dropped out of a drawdown window. None of it fails visibly. It just produces a number.</p>
+
+      <p>All three come from the same place. The time went where nobody budgets for it: not the exchange API or the data format, but data types and default values, the things nobody writes down because in stocks they're too obvious to mention. Every fix also widened the gap from the original. Checks we had to switch off were commented out instead of deleted, so the next person could still see what we had changed. That's what "hard to customize" means in practice: not one wall you climb, but code that gets harder to touch every time you touch it.</p>
+
+      <p>Then we asked whether speed, at least, could be fixed on its own. We measured where the time went, and it wasn't the engine. A day of rebalancing, 1,440 events, took four to five seconds. Pulling four months of history for 67 symbols took four minutes and forty-two seconds. We compared other backtest libraries too, and the fast ones handled one symbol at a time, where we needed many symbols accounted for as a single portfolio. So we stayed on zipline and fixed the slow part instead: waking the engine once per rebalance rather than once a minute cut an eight-day backtest from one minute fifty to twenty-one seconds, with the final portfolio value moving less than a tenth of a percent.</p>
+
+      <p>That bought time. The problem itself didn't change. However far you adapt a stock backtester, it's still a stock backtester, and the parts we most wanted to change were the parts we had the least business touching. So we built our own: an event-driven backtest engine made for a market that never closes and for the live system it has to agree with. That engine is Latent.</p>
+
+      <img src="005-our-backtester-couldnt-buy-0887-bitcoin-so-we-built-our-own/stock-assumptions-vs-crypto.png" alt="Four crypto inputs and what the original zipline did with each of them">
+
+      <hr>
+
+      <h2>Running Code We Didn't Write</h2>
+
+      <p>Building our own engine raised a question zipline never asked us. Strategies in Latent are uploaded by the people who write them, which makes them code we didn't write, running on the same cluster as live trading. There's no way to fully check a strategy before it runs. If that code ran inside the long-lived API server, one person's infinite loop would take backtesting down for everyone.</p>
+
+      <p>So the rule came early: <strong>the Latent API server never executes a backtest.</strong> It checks that the request is valid, hands the work to something else, and returns <em><a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.3">202 Accepted</a></em> with a job ID right away.</p>
+
+      <pre><code># The dispatcher contract described above.
+# Not a literal source excerpt, just the flow: validate, dispatch, return.
+@app.post("/runs/backtest/{alphaName}", status_code=202)
+async def create_backtest(alphaName: str, payload: BacktestRequest):
+    validate(payload)                      # config, package and data-budget checks
+    job = dispatch(alphaName, payload)     # handed off; not run here
+    return {"status": "accepted", "job_id": job.id}</code></pre>
+
+      <p>At first, every backtest ran as its own <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Kubernetes Job</a>, a one-off container that runs to completion and stops. When the run finished, successfully or not, that container was never used again, and the next run started clean even for the same user.</p>
+
+      <p>That has changed, and we measured why. Starting a container and noticing that it had finished cost five to six seconds on every run, whatever the run itself did. Backtests now go to a pool of workers that are already up: four workers with nine slots each, so up to 36 run at once. In a side-by-side test the median backtest went from 15.2 seconds to 8.1, and the output files were byte-for-byte identical.</p>
+
+      <p>What we gave up for that is clear. A worker handles many users' backtests over its life, where a throwaway container only ever saw its own run, so users are less separated than before. If one run uses a lot of memory, the others on that worker feel it. The old model got that separation for free by throwing everything away. Now we enforce it in code: each run is watched against a memory ceiling of 8 GiB and stopped if it goes over, and an upload can't replace any file the engine itself ships.</p>
+
+      <p>Think of the old model as building and demolishing a kitchen for every dish. Slow to set up, but nothing from one dish could reach the next. The new one is several cooks sharing one kitchen: nobody waits for a kitchen to be built, and keeping the dishes apart is a matter of rules rather than walls.</p>
+
+      <hr>
+
+      <h2>What a Strategy Author Has to Change</h2>
+
+      <p>The other half of the design question was what someone has to change to move a strategy from zipline's single function into Latent. We wanted the answer to be a folder layout and nothing else. An alpha is a named folder with four layers of Python modules and one config file. <code>utilities</code>, <code>factor</code> and <code>signal</code> are required, and <code>core</code> is an optional place for the author's own helpers.</p>
+
+      <pre><code>alpha/MyStrategy/
+  core/            # optional: your own helpers
+  utilities/
+  factor/
+  signal/
+  MyStrategy.yaml  # the config that wires the layers together</code></pre>
+
+      <p>An author creates the alpha once, then uploads modules into each layer and the config. The tree they develop in locally is the tree that runs, with no conversion step in between. Inside the worker, the engine comes from the container image and the author's modules are laid on top of it, never the other way around, and any file named like one of the engine's own is rejected at upload.</p>
+
+      <p>Live trading takes the same package. <a href="https://neomatrixai.substack.com/p/one-number-dozens-of-strategies">Compositor</a>, the core that runs our live accounts, reads alphas from the same workspace Latent does, with the same four layers in the same order and the same reserved names.</p>
+
+      <img src="005-our-backtester-couldnt-buy-0887-bitcoin-so-we-built-our-own/four-layer-contract.png" alt="The four-layer strategy package an author uploads">
+
+      <hr>
+
+      <h2>The Data Rule and Its Two Limits</h2>
+
+      <p>The last inherited assumption we checked was the one a backtest hides best: which data it is allowed to see. When we wrote the data layer we set one rule: a backtest reads from the same Data API live trading reads from, the service that supplies OHLCV candles, funding rates and the rest of the system's market data. There's no trimmed-down backtest dataset, no request form to fill in first, and no approved list of symbols or dates. Twenty kinds of data come through that one door, including OHLCV, market cap, funding rates, order books, liquidations and DEX data.</p>
+
+      <p>The rule did need two conditions attached. The first is memory. A run's data budget is set by the memory its job gets, at 25 million row-equivalents per gigabyte, and data that packs many values into one row, an order book snapshot for instance, counts as forty ordinary rows, because it uses roughly that much more memory. A backtest that would blow the budget is refused at submission with the reason. The second is the highest-frequency data, which Latent serves only for a recent window: 30 days of tick-level order books, and 14 days of second bars, minute bars and liquidation records. Ask for an earlier start and the request is turned down with a reason rather than quietly returning less. Neither limit touches what most strategies use: OHLCV candles, funding rates and market cap have no window at all.</p>
+
+      <p>There's also one thing we deliberately don't do: drop symbols that stopped trading. Delisted symbols stay in the list a backtest sees. Taking them out is the oldest way to make a backtest look better than reality. <a href="https://doi.org/10.1093/rfs/5.4.553">Brown, Goetzmann, Ibbotson and Ross</a> showed in 1992 that a sample made up only of survivors can make past performance look like a predictor of future performance. <a href="https://doi.org/10.1093/rfs/15.5.1439">Carhart and his co-authors</a> later put the annual bias at about 1 percent for fund samples longer than 15 years. Crypto loses far more of its universe. In <a href="https://doi.org/10.2139/ssrn.4287573">one study of 3,904 cryptocurrencies</a> covering 2014 to 2021, an average of 14.65 percent of the coins listed at the start of a year were delisted during it, where the mutual funds in Carhart's sample disappeared at 3.6 percent a year. Leaving delisted coins out distorts a crypto backtest more. It is the data version of the whole-share problem: an assumption that makes the numbers look right.</p>
+
+      <hr>
+
+      <h2>The Order That Fills Now</h2>
+
+      <p>Back to the 0.887 BTC order. In Latent it fills as 0.887, because 0.887 is a whole number of the 0.0001 steps Bitget allows for BTC, and the portfolio moves.</p>
+
+      <p>Getting there took a second correction, and it was ours. When we removed the integer, we removed the step along with it. A live account can't hold any quantity the exchange won't accept, and for BTC on Bitget the smallest step is 0.0001. The engine already had a rounding step, but it is skipped when it isn't handed a table of each symbol's minimum order and step size, and our backtests weren't being handed one. So a target of 0.88712345 BTC was held to all eight decimals in the backtest and as 0.8871 in the live account. Multiplied across dozens of symbols and every rebalance, the same strategy took slightly different positions in the two places. In August we started fetching that table from the exchange and rounding every fill to it, the way the live system does, and the results shifted slightly.</p>
+
+      <img src="005-our-backtester-couldnt-buy-0887-bitcoin-so-we-built-our-own/same-target-two-positions.png" alt="The same target held as 0.88712345 BTC in our backtest and as 0.8871 BTC in the live account.">
+
+      <p>Ariane 4's software wasn't wrong either. It was right for Ariane 4, and it carried that rocket's assumptions onto a faster one where nobody had checked them. Zipline was right for stocks. Latent, for a while, was right for a market with no lot sizes. In each case the assumption stayed invisible until something that trades for real disagreed with it.</p>
+
+      <p>How we stopped depending on a written description of the engine and started sharing the engine itself is the subject of the next post.</p>
+
+      <hr>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>"Ariane flight V88." Wikipedia. <a href="https://en.wikipedia.org/wiki/Ariane_flight_V88">Link</a></li>
+        <li>Lions, J.L. et al. (1996). "Ariane 5 Flight 501 Failure: Report by the Inquiry Board." <a href="https://www-users.cse.umn.edu/~arnold/disasters/ariane5rep.html">Link</a></li>
+        <li>"Quantopian." Wikipedia. <a href="https://en.wikipedia.org/wiki/Quantopian">Link</a></li>
+        <li>Fawcett, J. (2020). "Quantopian's community services are closing." Quantopian community forum, archived copy. <a href="https://quantopian-archive.netlify.app/forum/threads/quantopians-community-services-are-closing.html">Link</a></li>
+        <li>zipline-reloaded documentation. "API Reference" (<code>order</code>, <code>run_algorithm</code>). <a href="https://zipline.ml4trading.io/api-reference.html">Link</a></li>
+        <li>Fielding, R., Nottingham, M. and Reschke, J. (eds.) (2022). "HTTP Semantics," section 15.3.3, 202 (Accepted). RFC 9110 (STD 97), IETF. <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.3">Link</a></li>
+        <li>Kubernetes. "Jobs." Kubernetes documentation. <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Link</a></li>
+        <li>Brown, S.J., Goetzmann, W., Ibbotson, R.G. and Ross, S.A. (1992). "Survivorship Bias in Performance Studies." <em>The Review of Financial Studies</em> 5(4), 553-580. <a href="https://doi.org/10.1093/rfs/5.4.553">Link</a></li>
+        <li>Carhart, M.M., Carpenter, J.N., Lynch, A.W. and Musto, D.K. (2002). "Mutual Fund Survivorship." <em>The Review of Financial Studies</em> 15(5), 1439-1463. <a href="https://doi.org/10.1093/rfs/15.5.1439">Link</a></li>
+        <li>Ammann, M., Burdorf, T., Liebi, L. and Stöckl, S. (2022). "Survivorship and Delisting Bias in Cryptocurrency Markets." SSRN working paper 4287573. <a href="https://doi.org/10.2139/ssrn.4287573">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Axiom</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>

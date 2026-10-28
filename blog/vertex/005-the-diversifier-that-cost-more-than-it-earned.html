@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Zero correlation helps only when a leg survives its costs." />
+  <title>The Diversifier That Cost More Than It Earned · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">The Diversifier That Cost More Than It Earned</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Zero correlation helps only when a leg survives its costs.</em></p>
+
+      <p>The momentum composite in the previous post had a companion built from a different family of ideas. Where Concord reads price formation, the second composite, called Ballast here, prices risk: the premium that leveraged traders pay to hold volatility and tail exposure. The daily correlation between the two over 2022 to 2025 was 0.01.</p>
+
+      <p>Portfolio theory says two uncorrelated return streams combine into a better one. Before costs, these two would have: the best blend reaches a Sharpe ratio of 1.53, against 1.43 for Concord alone. After costs, Ballast earned nothing, and every unit of risk given to it lowered the blend. A third, independent source of return later lifted a re-tuned, signal-level blend of the two, though not past Concord alone, and not past a plain blend of their return streams.</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/cover.jpg" alt="A surveying level on a yellow tripod in a dry grass field under a blue sky">
+
+      <p><em>Photo: Cvstr, <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>, cropped</em></p>
+
+      <h2>Ballast: Pricing Risk, Not Trend</h2>
+
+      <p>A trader who pays funding on a perpetual future is paying to hold a leveraged position. Part of what that buys is exposure to volatility and to the tails: lottery-like upside for some, crash protection for others. Two literatures say such exposures carry a price. <a href="https://doi.org/10.1093/rfs/hhp008">Bollerslev, Tauchen and Zhou (2009)</a> showed that the variance risk premium, the gap between option-implied and realized variance, predicts aggregate stock returns, most strongly at a quarterly horizon. <a href="https://doi.org/10.1111/0022-1082.00247">Harvey and Siddique (2000)</a> showed that systematic skewness commands a risk premium in the cross-section of stocks.</p>
+
+      <p>Ballast builds two probes of those premia that need no option prices, since most perpetuals have no listed options.</p>
+
+      <p><strong>Volatility surprise.</strong> <a href="https://doi.org/10.1093/jjfinec/nbp001">Corsi (2009)</a> modelled realized variance as an additive cascade of daily, weekly and monthly components, the HAR model:</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/equation-1.png" alt="RV_t = \beta_0 + \beta_d\,RV_{t-1} + \beta_w\,RV^{(w)}_{t-1} + \beta_m\,RV^{(m)}_{t-1} + \varepsilon_t">
+
+      <p>Each asset gets its own HAR fit on a trailing window of daily realized variance, built from intraday returns. The probe is the latest day's surprise: realized variance minus the model's forecast. It is a stand-in for the variance risk premium rather than the premium itself, which needs implied variance.</p>
+
+      <p><strong>Tail skew.</strong> The second probe is the sample skewness of each asset's recent returns. Its first version borrowed <a href="https://doi.org/10.1103/PhysRevLett.78.2690">Jarzynski's (1997)</a> equality from non-equilibrium statistical mechanics, but the only part of that construction with financial content was tail asymmetry, so plain skewness replaced it.</p>
+
+      <p><strong>Funding as the trigger.</strong> Both probes are multiplied by the sign of each asset's trailing funding rate. Funding identifies which side of the market is paying to be there, and each probe is read relative to that side. The orientation of each probe against funding was settled on the sample, not assumed.</p>
+
+      <h2>Agreement and the Weaker Witness</h2>
+
+      <p>The two probes measure the same latent quantity through different channels: one through variance, one through the shape of the tails. Ballast trades an asset only when both probes point the same way. When they agree, the position takes the size of the weaker probe:</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/equation-2.png" alt="s_i = \mathbf{1}\!\left[\operatorname{sign} p^{\text{vol}}_i = \operatorname{sign} p^{\text{skew}}_i\right] \cdot \operatorname{sign}\!\left(p^{\text{vol}}_i\right) \cdot \min\!\left(|p^{\text{vol}}_i|,\,|p^{\text{skew}}_i|\right) \cdot \phi_i">
+
+      <p>Concord pooled its readings with a geometric mean, so a weak reading shrinks the score in proportion. Ballast takes the minimum, which is stricter: the position can be no larger than the weaker of its two witnesses. The last term, φ, comes from the shape of the market's correlation network.</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/ballast-construction.png" alt="Diagram: two risk-premium probes signed by funding, an agreement rule, the smaller magnitude, and a curvature weight">
+
+      <p><em>Order of operations from probes to score. Schematic, no parameter values. Diagram: Vertex.</em></p>
+
+      <h2>Curvature of the Correlation Network</h2>
+
+      <p><a href="https://doi.org/10.1126/sciadv.1501495">Sandhu, Georgiou and Tannenbaum (2016)</a> measured the Ricci curvature of S&amp;P 500 correlation networks and found that changes in curvature acted as a "crash hallmark". Ballast uses the closed-form combinatorial curvature of <a href="https://doi.org/10.1007/s00454-002-0743-x">Forman (2003)</a> instead of their optimal-transport measure, in a simplified unweighted-degree form. Two assets are linked when their recent return correlation exceeds a threshold, the link is weighted by that correlation, and each link scores</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/equation-3.png" alt="F(u,v) = w_{uv}\,\big(2 - \deg u - \deg v\big)">
+
+      <p>An asset's curvature is the mean over its links, and the reading is how much that curvature changed over a recent interval. Falling curvature means the asset's neighbourhood is becoming more entangled, which is the fragile direction. The weight φ tilts each position by that change.</p>
+
+      <p>The original construction also scaled every position by the aggregate fragility of the whole network. It did nothing: a multiplier applied equally to every position disappears when the book is rescaled to a volatility target.</p>
+
+      <h2>What Ballast Earned</h2>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/ballast-gross-net.png" alt="Line chart: the composite gains 28 percent before costs and loses 3 percent after costs">
+
+      <p><em>Backtest, in-sample, 2022–2025, before and after trading costs and funding. Top-50 crypto perpetuals. Chart: Vertex.</em></p>
+
+      <p>Before costs, Ballast compounded to 28 percent over the four years, a Sharpe ratio of 0.57. After costs and funding, it lost 3 percent and its Sharpe ratio was 0.00. Trading costs absorbed almost exactly the whole premium. Compounded, 28 percent over four years is about 6.5 percent a year. Ballast turned over about 63 times its capital a year, counted as total traded notional and charged 11 basis points per unit traded (6 of commission, 5 of slippage), which comes to roughly 6.9 percent a year. The two are close, so the after-cost Sharpe ratio is zero and the breakeven cost is about 10 basis points per unit traded. Funding added roughly nothing, about 0.1 percent over the four years. The book rebalances on a cycle measured in days, and the agreement rule moves assets in and out of the traded set whenever either probe crosses zero, which accounts for part of the churn. That turnover is more than two and a half times Concord's rate.</p>
+
+      <p>The premium itself was not stable either. Before costs it was strongest in 2023, at a Sharpe ratio of 1.89, and close to zero in 2024 and 2025. The deepest drawdown after costs was 24.6 percent, and a single day, 28 February 2024, cost 8.5 percent.</p>
+
+      <p>When the pair was first measured, Ballast and Concord looked complementary year by year. On an hourly funding record, with funding windows measured in calendar time, Ballast's after-cost premium did not survive.</p>
+
+      <h2>Why Zero Correlation Was Not Enough</h2>
+
+      <p>For two uncorrelated return streams, each scaled to the same volatility, mean-variance analysis in the line of <a href="https://doi.org/10.1111/j.1540-6261.1952.tb01525.x">Markowitz (1952)</a> gives a simple answer. The best blend weights each leg in proportion to its Sharpe ratio, and the blend's Sharpe ratio is</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/equation-4.png" alt="S^{*} = \sqrt{S_1^{2} + S_2^{2}}">
+
+      <p>Before costs, that is the square root of 1.43² plus 0.57², about 1.54. The backtest blend peaks at 1.53, with Ballast carrying 28 percent of the risk. After costs, the second Sharpe ratio is zero, so its optimal weight is zero and the best blend is Concord alone at 1.30. An equal-risk blend of the two return streams falls to 0.92.</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/blend-curve.png" alt="Line chart of blend Sharpe ratio against the second composite&#x27;s risk share, before and after costs">
+
+      <p><em>Sharpe ratio of a two-composite blend by risk share, each leg scaled to unit volatility. Backtest, in-sample, 2022–2025. Chart: Vertex.</em></p>
+
+      <p>Correlation decides how much a second leg can add. Its own return after costs decides whether it adds anything at all. A leg with zero correlation and zero return is not a diversifier. It is dilution with a low correlation coefficient.</p>
+
+      <p>The research record had shown the same tension from the other side. Adding probes for order-flow imbalance, illiquidity and co-jumps made Ballast stronger on its own and a worse partner for Concord, most likely because two of those probes carry trend content and so raised the correlation between the two. Pushing past five probes broke it, most likely because probes for negatively priced features flipped too many of the agreement votes.</p>
+
+      <h2>Tripod: A Third Source</h2>
+
+      <p>A signal-level blend of the two composites, re-tuned as a unit, earned a Sharpe ratio of 0.50 after costs. It is a different object from the equal-risk blend of returns above, which earned 0.92. Its realized volatility was about 30 percent, twice that of either composite, and its worst single days, down 22.5 and 14.4 percent, were far larger than the worst day of either composite (4.2 and 8.5 percent). Together they produce its 48.9 percent maximum drawdown, worse than both legs even at a correlation of 0.01. At the same volatility, the equal-risk return blend draws down 27 percent. In the original research, five reweighting schemes, four of them conditioned on a market state, had left the signal-level blend flat. What moved it was a third source of return.</p>
+
+      <p><a href="https://doi.org/10.1016/j.jempfin.2011.01.003">Blitz, Huij and Martens (2011)</a> showed that ranking stocks on residual returns, after removing their exposure to common factors, earns risk-adjusted profits about twice as large as momentum on total returns, and more consistently over time. The crypto version regresses each asset's daily returns on the equal-weighted market over an estimation window, then sums the residuals over a formation window that skips the most recent days and divides by their standard deviation. The geometry follows the paper's months, scaled to days. Across rebalance dates its rank correlation with plain trailing momentum averaged −0.07, so it is close to independent of the momentum inside Concord.</p>
+
+      <p>Added as a third leg at equal weight, residual momentum lifted the blend to a Sharpe ratio of 0.64 after costs and 0.90 before. That blend is Tripod.</p>
+
+      <img src="005-the-diversifier-that-cost-more-than-it-earned/comparison-table.png" alt="Table comparing five composites by Sharpe before and after costs, maximum drawdown and turnover">
+
+      <p><em>Backtest statistics, in-sample, 2022–2025. The equal-risk return blend scales both composites to the two-leg blend's volatility. Table: Vertex.</em></p>
+
+      <p>Tripod's 0.64 sits above the re-tuned two-leg blend (0.50) and below both the equal-risk return blend (0.92) and Concord alone (1.30). Its return per unit of drawdown is about a fifth of Concord's: 14 percent a year against a 36 percent drawdown, where Concord earned 20 percent against 10. The two-leg blend's inner settings were tuned for the blend rather than for each composite standing alone, so its legs are not identical to the composites above, and the blend inherited Ballast's cost problem. What Tripod confirms is narrower than a win. Against the re-tuned two-leg blend it is a genuinely new source of return moving a stalled blend, where reweighting the existing sources had not. Against the simple alternatives it does not clear the bar.</p>
+
+      <p>The backtests above were run under these settings:</p>
+
+      <ul>
+        <li><strong>Sample.</strong> 1 January 2022 to 31 December 2025, in-sample: each composite's settings were selected over this window, and every statistic is scored over it. Input history from before 1 January 2022 was used for warm-up only. Tripod's residual-momentum leg follows the published method, and its settings were fixed before it was run, not selected. An earlier version of the three-leg composite, with settings chosen by search, scored 1.52 in-sample, and the next post returns to it.</li>
+        <li><strong>Universe.</strong> The 50 largest USDT-margined crypto perpetual futures by market capitalisation, re-ranked daily.</li>
+        <li><strong>Costs.</strong> 6 basis points of commission and 5 basis points of slippage on all traded notional, with funding charged or credited at each contract's historical rate.</li>
+        <li><strong>Rebalance.</strong> Ballast on a cycle measured in days, and the blends on a cycle of one to two weeks.</li>
+        <li><strong>Look-ahead controls.</strong> Every input is computed from bars and funding prints strictly before the rebalance time, and universe ranks lag by one day.</li>
+        <li><strong>Status.</strong> Never deployed.</li>
+      </ul>
+
+      <h2>What This Does Not Establish</h2>
+
+      <p>Ballast's verdict depends on the cost model. Below a cost of about 10 basis points per unit traded its after-cost return turns positive, but not by much: at the 6 basis points of commission alone, its after-cost Sharpe ratio would be 0.26, against Concord's 1.30. The blend curve would then peak away from zero. The four years are one sample, the correlation was estimated on that sample, and a correlation of 0.01 over four years does not guarantee near-zero correlation in the next drawdown.</p>
+
+      <p>The volatility and skew probes are proxies for premia that the cited papers measured with options and market-wide factors. Neither paper tested a crypto cross-section conditioned on funding, and the backtest does not show that either premium exists there as defined in the literature.</p>
+
+      <p>Tripod's improvement over the two-leg blend is a single comparison on one sample, with a third leg whose settings were fixed in advance. Switching the curvature weight φ off, with nothing else changed, raised Ballast's Sharpe ratio from 0.57 to 0.84 before costs and from 0.00 to 0.26 after costs. On this sample the weight detracted, though the difference is within noise, and a Ballast without it would still earn too little after costs to change the conclusion.</p>
+
+      <h2>Where It Stands</h2>
+
+      <p>Neither Ballast nor Tripod was deployed. The result says less about the probes than about the hurdle that any diversifier has to clear first.</p>
+
+      <h2>What Generalizes From This</h2>
+
+      <p>Check a candidate diversifier's after-cost Sharpe ratio before its correlation. For uncorrelated legs, the optimal weight is proportional to that Sharpe ratio, so a leg that earns nothing after costs deserves no weight however low its correlation.</p>
+
+      <p>When a blend stalls, add a source, not a gate. Reweighting what is already there cannot create return that is not there.</p>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Bollerslev, T., Tauchen, G. and Zhou, H. (2009). "Expected Stock Returns and Variance Risk Premia." <em>Review of Financial Studies</em> 22(11), 4463–4492. <a href="https://doi.org/10.1093/rfs/hhp008">Link</a></li>
+        <li>Harvey, C.R. and Siddique, A. (2000). "Conditional Skewness in Asset Pricing Tests." <em>Journal of Finance</em> 55(3), 1263–1295. <a href="https://doi.org/10.1111/0022-1082.00247">Link</a></li>
+        <li>Corsi, F. (2009). "A Simple Approximate Long-Memory Model of Realized Volatility." <em>Journal of Financial Econometrics</em> 7(2), 174–196. <a href="https://doi.org/10.1093/jjfinec/nbp001">Link</a></li>
+        <li>Jarzynski, C. (1997). "Nonequilibrium Equality for Free Energy Differences." <em>Physical Review Letters</em> 78(14), 2690–2693. <a href="https://doi.org/10.1103/PhysRevLett.78.2690">Link</a></li>
+        <li>Sandhu, R.S., Georgiou, T.T. and Tannenbaum, A.R. (2016). "Ricci Curvature: An Economic Indicator for Market Fragility and Systemic Risk." <em>Science Advances</em> 2(5), e1501495. <a href="https://doi.org/10.1126/sciadv.1501495">Link</a></li>
+        <li>Forman, R. (2003). "Bochner's Method for Cell Complexes and Combinatorial Ricci Curvature." <em>Discrete and Computational Geometry</em> 29(3), 323–374. <a href="https://doi.org/10.1007/s00454-002-0743-x">Link</a></li>
+        <li>Markowitz, H. (1952). "Portfolio Selection." <em>Journal of Finance</em> 7(1), 77–91. <a href="https://doi.org/10.1111/j.1540-6261.1952.tb01525.x">Link</a></li>
+        <li>Blitz, D., Huij, J. and Martens, M. (2011). "Residual Momentum." <em>Journal of Empirical Finance</em> 18(3), 506–521. <a href="https://doi.org/10.1016/j.jempfin.2011.01.003">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
