@@ -3,8 +3,8 @@
 // Axiom and Vertex side by side. Every list is newest-first, title only, no
 // date shown. Add one entry here each time a real post goes live (Substack
 // article or X post); no cap on how many entries can exist per team in this
-// array, but index.html's renderTeam() only shows the latest 5 per team as
-// large image cards (see its .slice(0, 5)) so the homepage doesn't grow
+// array, but index.html's renderTeam() only shows the latest 3 per team as
+// large image cards (see its .slice(0, 3)) so the homepage doesn't grow
 // unbounded — older ones still exist here, just not shown there.
 //
 // Schema per entry:
