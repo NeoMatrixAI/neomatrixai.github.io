@@ -56,14 +56,15 @@
 
     main{ padding-top:76px; }
 
-    .list-head{ padding:40px 0 0; }
+    .list-head{ position:relative; padding:40px 0 0; }
     .list-kicker{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#6b6b6b; }
     .list-title{ margin-top:8px; font-size:clamp(26px,3.4vw,36px); line-height:1.1; letter-spacing:-.03em; font-weight:620; }
     .list-tagline{ margin-top:8px; font-size:14px; color:var(--muted); }
-    .list-switch{ display:inline-block; margin-top:10px; font-size:13px; color:var(--muted); transition:color .25s ease; }
-    .list-switch:hover{ color:#000; }
+    .list-switch{ display:inline-block; margin-top:14px; padding:10px 18px; border:1px solid #000; border-radius:999px; font-size:14px; font-weight:500; line-height:1; color:#000; transition:background .25s ease, color .25s ease; }
+    .list-switch:hover{ background:#000; color:#fff; }
+    @media (min-width:640px){ .list-head .list-switch{ position:absolute; right:0; top:60px; margin-top:0; } }
 
-    .list-posts{ margin-top:28px; padding-top:20px; padding-bottom:80px; border-top:1px solid var(--line); }
+    .list-posts{ margin-top:28px; padding-top:20px; padding-bottom:40px; border-top:1px solid var(--line); }
 
     .blog-post{
       display:flex;
@@ -100,7 +101,7 @@
     .blog-post-placeholder .blog-post-thumb{ border-style:dashed; font-size:16px; letter-spacing:.1em; }
 
     .list-empty{ color:var(--muted); font-size:14px; padding:16px 0 80px; }
-    .list-foot{ padding:40px 0 80px; }
+    .list-foot{ padding:0 0 80px; }
 
     footer{ padding:44px 0 56px; }
     .footer-inner{
@@ -150,6 +151,10 @@
       </div>
 
       <div class="list-posts" id="axiom-posts"></div>
+
+      <div class="list-foot">
+        <a class="list-switch" href="../vertex/index.html">View Vertex →</a>
+      </div>
     </div>
   </main>
 
