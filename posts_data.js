@@ -98,4 +98,9 @@ const LATEST_POSTS = [
       platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/005-the-diversifier-that-cost-more-than-it-earned.html',
       thumb: 'blog/vertex/005-the-diversifier-that-cost-more-than-it-earned/thumb.jpg',
       url: 'https://neomatrixai.substack.com/p/the-diversifier-that-cost-more-than?r=8y6w3o', date: '2026-10-28' },
+    { title: 'The Most Expensive Number in a Backtest',
+      subtitle: 'A research program is a search, and searches find luck.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/006-the-most-expensive-number-in-a-backtest.html',
+      thumb: 'blog/vertex/006-the-most-expensive-number-in-a-backtest/thumb.jpg',
+      url: 'https://neomatrixai.substack.com/p/the-most-expensive-number-in-a-backtest?r=8y6w3o&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true', date: '2026-11-06' },
 ];

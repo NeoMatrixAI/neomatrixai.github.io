@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A research program is a search, and searches find luck." />
+  <title>The Most Expensive Number in a Backtest · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">The Most Expensive Number in a Backtest</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>A research program is a search, and searches find luck.</em></p>
+
+      <p>The strongest in-sample result in the research behind the previous two posts belonged to the first version of the three-leg composite: a Sharpe ratio of 1.52 over 2022 to 2025. In the first quarter of 2026 it ran at −2.30. A version of the same construction at literature-default settings had scored 0.00 in-sample and ran at −2.48 over the same quarter.</p>
+
+      <p>One quarter is too short to judge a strategy: the standard error of an annualised Sharpe ratio over one quarter is about 2.0 even when there is no skill, so −2.30 sits about 1.1 standard errors below zero, and the gap to 1.52 is under two (about 1.8, taking 0.5 as the error on the in-sample figure). With a true Sharpe ratio near 1.5 the quarterly error is larger still. It is long enough to ask what the 1.52 measured. The answer changed how candidates are scored, how validation windows are cut, how input windows are defined, and what counts as a result at all.</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/cover.jpg" alt="A pyramid of identical white six-sided dice on a dark background">
+
+      <p><em>Photo: Dietmar Rabich, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, cropped</em></p>
+
+      <h2>How Many Strategies Were Tried</h2>
+
+      <p>A Sharpe ratio estimated on four years of daily returns has a standard error of about 0.5 when the true value is zero. That is the noise around a single strategy. A research program does not test a single strategy. It searches, and the search reports its best result.</p>
+
+      <p><a href="https://doi.org/10.3905/jpm.2014.40.5.094">Bailey and López de Prado (2014)</a> gave a closed form for the expected best of <em>N</em> independent estimates when none of them has skill:</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/equation-1.png" alt="E[ max over n ≤ N of SR̂_n ] ≈ σ_SR̂ × [ (1−γ)·Φ⁻¹(1 − 1/N) + γ·Φ⁻¹(1 − 1/(N·e)) ]">
+
+      <p>Here γ is the Euler–Mascheroni constant, about 0.5772, and Φ⁻¹ is the inverse of the standard normal distribution. The chart compares the formula with a simulation of strategies whose daily returns are pure noise.</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/emax-chart.png" alt="Line chart: expected best Sharpe ratio rising with the number of skill-less strategies tried">
+
+      <p><em>Expected best annualised Sharpe ratio of N zero-skill strategies, four years of daily returns: formula and simulation. Chart: Vertex.</em></p>
+
+      <p>With four years of daily data, the best of 100 skill-less strategies averages a Sharpe ratio of 1.26. The best of 500 averages 1.53, almost exactly the number that collapsed. Optimisation studies in this research typically ran a thousand trials or more. On this scale, 1,000 independent trials with no skill average a best Sharpe ratio of 1.63.</p>
+
+      <p>The trials in a study are not independent. Neighbouring parameter sets produce correlated return streams, so the effective number of trials is smaller than the count, and the bar is lower than the chart suggests. It is not low enough to make 1.52 remarkable. Bailey and López de Prado's deflated Sharpe ratio turns this into a probability: the chance that the true Sharpe ratio exceeds zero, given the best-of-<em>N</em> benchmark and the skewness and kurtosis of the returns. <a href="https://doi.org/10.3905/jpm.2015.42.1.013">Harvey and Liu (2015)</a> reach the same conclusion through multiple-testing corrections, which apply a haircut to every Sharpe ratio that was found by searching.</p>
+
+      <h2>When Years Share a Memory</h2>
+
+      <p>The first optimisation objective took one long backtest over the four years, cut it into calendar years, and averaged the yearly Sharpe ratios. It looked like a guard against a strategy that earns everything in one year. A review flagged what it missed. The slice for 2024 was produced by a strategy that had been running since 2022, and an optimiser could favour settings that only work with that much history behind them.</p>
+
+      <p>The fix was walk-forward folds that each start cold: a warm-up period drawn from before the scored sample, then one test year, with nothing carried in from earlier folds. The warm-up supplies input history only. It is never scored and never used for selection. Adding 2022 as a test year made the criterion stricter, because the 2022 crash is the year in which most candidates did worst.</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/validation-diagram.png" alt="Diagram: four walk-forward folds beside a grid of fifteen cross-validation splits">
+
+      <p><em>Walk-forward folds and combinatorial purged cross-validation splits. Schematic. Diagram: Vertex.</em></p>
+
+      <p>The cold start turned out to treat a symptom. For a strategy whose parameters are fixed, and which carries no state beyond its input windows, the return on a given bar does not depend on which split is being scored. What leaks across a boundary is the lookback of its inputs: the first bars of a test block are computed from data that belongs to the block before it. The cross-validation framework of <a href="https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086">López de Prado (2018)</a> handles overlap of this kind with purging and an embargo. Applied here, the opening bars of each test block, whose inputs reach into the previous block, are dropped, along with a stretch after each block. That removes the leak without restarting anything.</p>
+
+      <h2>A Lookback That Shrank by Itself</h2>
+
+      <p>Funding on perpetual futures is paid at fixed intervals, and the intervals differ by contract and change over time. The funding record used for the earlier backtests held one row per payment. Several inputs defined their lookbacks as a number of rows, on the reasonable assumption that a row is a fixed slice of time.</p>
+
+      <p>It was not. As contracts moved to shorter funding intervals, the union of payment times got denser, and a window defined as 18 rows covered less and less calendar time.</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/cadence-chart.png" alt="Step chart: the time covered by an 18-row funding window falls from six days to 18 hours">
+
+      <p><em>Median span of 18 consecutive rows of a settlement-only funding record, by month. Chart: Vertex.</em></p>
+
+      <p>Through 2023 the window spanned six days. From late 2023 it spanned three, and in parts of 2025 it covered 18 hours. Nothing in the code changed. The data underneath it did. The repair was a dense hourly funding record, with zero in every hour without a payment, and every lookback defined in calendar time. On the repaired data, the risk-premium composite's Sharpe ratio after costs moved from 0.34 to 0.00.</p>
+
+      <h2>Many Paths, Not One</h2>
+
+      <p>A walk-forward test produces one out-of-sample path. Combinatorial purged cross-validation, also from López de Prado (2018), produces many. The sample is split into six contiguous blocks, and every pair of blocks is held out in turn: fifteen test sets, each purged and embargoed at its boundaries. Stitched together, they reconstruct five complete backtest paths. A candidate is then judged on a distribution of Sharpe ratios instead of a single number.</p>
+
+      <p>The optimiser built after this episode selects on the median Sharpe ratio across the fifteen test sets. Every study also reports its probability of backtest overfitting. <a href="https://www.risk.net/journal-of-computational-finance/2471206/the-probability-of-backtest-overfitting">Bailey, Borwein, López de Prado and Zhu (2017)</a> define it through combinatorially symmetric cross-validation: split the sample in half many ways, pick the in-sample winner each time, and count how often it lands below the median out-of-sample. Above one half, the act of selecting is itself overfit.</p>
+
+      <p>The deflated Sharpe ratio was considered as the objective and rejected. Its penalty grows with the number of trials searched. Inside a study of hundreds of trials, it pushes every candidate toward the same floor and ends up reporting the size of the search rather than the quality of the candidate. The probability of backtest overfitting asks the more useful question: whether the winner of the search holds up out-of-sample.</p>
+
+      <h2>What the Search Added</h2>
+
+      <p>The same three-leg construction exists in three versions. The first took its settings from the optimisation search and scored 1.52. The second used literature-default settings throughout and scored 0.00. The third is Tripod from the previous post, run on the repaired funding record, which earned 0.64 after costs.</p>
+
+      <img src="006-the-most-expensive-number-in-a-backtest/version-table.png" alt="Table of three versions of the three-leg composite with in-sample Sharpe, first-quarter 2026 Sharpe and funding record">
+
+      <p><em>Three versions of one construction. In-sample is 2022–2025. Table: Vertex.</em></p>
+
+      <p>In the first quarter of 2026, Tripod ran at −0.65: negative, but far from −2.30. The 1.52 and the 0.64 are not like for like. The first version's settings were the winner of a search, and it ran on the earlier funding record, with windows counted in funding rows. Tripod ran on the repaired record, with its third leg fixed in advance. The gap between them mixes selection and the funding repair.</p>
+
+      <p>A Sharpe ratio is only as informative as the process that produced it. Chosen by search on a flawed input, the construction showed 1.52. On the repaired input, the same construction showed 0.64 in-sample and −0.65 in its first quarter out of sample.</p>
+
+      <h2>What This Does Not Establish</h2>
+
+      <p>The best-of-<em>N</em> curve assumes independent strategies with normal returns. Real trials are correlated, and crypto returns have heavy tails, which widens the noise around every Sharpe ratio. The curve is a scale for intuition, not a test of any particular result.</p>
+
+      <p>A quarter of out-of-sample data cannot show that the three-leg composite had no edge. It shows that its in-sample number was not evidence of one. Cross-validated paths and overfitting probabilities reduce the cost of searching. They do not remove it, and a candidate selected on fifteen paths is still selected.</p>
+
+      <h2>Where It Stands</h2>
+
+      <p>The three-leg composite was never deployed. The hourly funding record, calendar-time lookbacks, purged cross-validated test sets and an overfitting probability for every study are what the later optimisation studies were built on.</p>
+
+      <h2>What Generalizes From This</h2>
+
+      <p>Report the number of trials next to the best result, and read the result against the best that luck would produce at that count.</p>
+
+      <p>Define every lookback in calendar time, not in rows, whenever the data's sampling frequency can change.</p>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Bailey, D.H. and López de Prado, M. (2014). "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality." <em>Journal of Portfolio Management</em> 40(5), 94–107. <a href="https://doi.org/10.3905/jpm.2014.40.5.094">Link</a></li>
+        <li>Harvey, C.R. and Liu, Y. (2015). "Backtesting." <em>Journal of Portfolio Management</em> 42(1), 13–28. <a href="https://doi.org/10.3905/jpm.2015.42.1.013">Link</a></li>
+        <li>López de Prado, M. (2018). <em>Advances in Financial Machine Learning</em>. Wiley. <a href="https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086">Link</a></li>
+        <li>Bailey, D.H., Borwein, J.M., López de Prado, M. and Zhu, Q.J. (2017). "The Probability of Backtest Overfitting." <em>Journal of Computational Finance</em> 20(4). <a href="https://www.risk.net/journal-of-computational-finance/2471206/the-probability-of-backtest-overfitting">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
