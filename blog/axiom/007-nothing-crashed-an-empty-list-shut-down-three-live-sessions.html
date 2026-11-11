@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A quiet alarm screen hid a failing grid in 2003. An empty list told our cleanup process that nothing was running. It shut down three live sessions." />
+  <title>Nothing Crashed. An Empty List Shut Down Three Live Sessions. · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Axiom Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Axiom</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Nothing Crashed. An Empty List Shut Down Three Live Sessions.</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>A quiet alarm screen hid a failing grid in 2003. An empty list told our cleanup process that nothing was running. It shut down three live sessions.</em></p>
+
+      <p>On August 14, 2003, the alarm software in FirstEnergy's Ohio control room <a href="https://www.energy.gov/oe/articles/blackout-2003-final-report-august-14-2003-blackout-united-states-and-canada-causes-and">stalled</a>, and for over an hour no one in the room knew. With no alarms on their screens, an operator <a href="https://www.energy.gov/oe/articles/blackout-2003-final-report-august-14-2003-blackout-united-states-and-canada-causes-and">dismissed a call</a> warning of a tripped line. By late afternoon, the blackout covered an area with an estimated 50 million people.</p>
+
+      <p>Our version of that afternoon was smaller and stranger. A cleanup process asked our cluster which trading jobs were running, got back an empty list, and took it to mean nothing was running. It shut down three sessions minutes before they traded. Nothing had crashed.</p>
+
+      <img src="007-nothing-crashed-an-empty-list-shut-down-three-live-sessions/blackout-from-orbit.jpg" alt="The northeastern United States and southern Ontario from orbit at night, with large areas dark.">
+
+      <p><em>The northeastern United States and southern Ontario from orbit on the night of the blackout. Photo: imagery from NOAA and the Defense Meteorological Satellite Program, via <a href="https://commons.wikimedia.org/wiki/File:2003_North_American_Blackout_After.jpg">Wikimedia Commons</a>, public domain.</em></p>
+
+      <hr>
+
+      <h2>Three Sessions, Thirty Orders</h2>
+
+      <p>We run a system that trades crypto with real money and no human approving individual orders. A user uploads a strategy, the system runs it on a schedule, works out what the account should hold, and places the orders that close the gap.</p>
+
+      <p>One morning this spring, three of those sessions had finished computing their target positions and were waiting to execute: strategy done, orders about to go out. A background process that watches for abandoned work looked at them, decided all three had been orphaned, and shut them down. The database recorded the same reason for each: terminated, no job found.</p>
+
+      <p>Thirty orders across the three sessions never left. No exception was raised anywhere, and every component involved reported success.</p>
+
+      <hr>
+
+      <h2>What "Orphaned" Means</h2>
+
+      <p>Each trading cycle runs as a short-lived <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Kubernetes Job</a>. It starts, does one rebalancing cycle, and exits. That model is good for isolation and bad at one specific failure: if a Job dies unexpectedly, the database still says its session is in the middle of a cycle. Nothing on the cluster is running it, and nothing has told the database.</p>
+
+      <p>So there's a detector. It runs inside Finwatcher, the loop that records every account's results once a minute. On each pass it asks the cluster which Jobs exist, compares that with the sessions the database believes are mid-cycle, and any session without a Job gets marked orphaned. It exists to clean up after failures. That morning, the cleanup was the failure.</p>
+
+      <hr>
+
+      <h2>The Single Line</h2>
+
+      <p>The detector's guard against a bad answer from the cluster was one condition: if the lookup came back as <code>None</code>, stop and do nothing.</p>
+
+      <pre><code># the guard as it was: an API exception came back as None and was skipped
+if existing_job_labels is None:
+    return result
+
+for session in running_sessions:
+    if job_label(session) not in existing_job_labels:   # true for every session when the set is empty
+        deactivate(session)</code></pre>
+
+      <p>The cluster API can fail in two ways. It can raise (connection refused, timeout, unauthorized), and that path returned <code>None</code> and was handled. Or it can answer successfully with nothing in it.</p>
+
+      <p>An empty set is not <code>None</code>. It went straight through the guard, and then, for every running session, the code asked whether that session's Job was in the set. Against an empty set the answer is always no, so every session looked abandoned. Logicians call this <a href="https://en.wikipedia.org/wiki/Vacuous_truth">vacuous truth</a>: any statement about every member of an empty set is true, because there is no member to contradict it. Tony Hoare, who introduced the null reference in 1965, later <a href="https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/">called it his billion-dollar mistake</a>. Our bug was its quieter cousin: the code checked for the absence it expected and walked past the one it didn't.</p>
+
+      <p>The logic was correct. It had been handed an empty answer and had no way to tell <em>there is nothing running</em> from <em>I failed to see what's running</em>.</p>
+
+      <img src="007-nothing-crashed-an-empty-list-shut-down-three-live-sessions/orphan-timeline.png" alt="Timeline of the minutes before the sessions were shut down">
+
+      <hr>
+
+      <h2>The Second Thing in the Logs</h2>
+
+      <p>Fixing the guard was straightforward. Reading those minutes of logs turned up a separate bug, and its first sign was something that didn't add up. From a few minutes before the sessions were shut down, our background loops kept reporting that a lock they need was held by another instance. There was exactly one instance of each, and none had restarted.</p>
+
+      <p>We couldn't explain that from what we had, so we added logging: whenever a lock was refused, print who held it, straight from the database's own view of its locks and connections. After the next deployment, the logs named the holder. It was a connection that had started before the current process existed, left over from the previous deployment. Its state was <em><a href="https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW">idle in transaction</a></em>, and the last thing it had run was the lock request itself.</p>
+
+      <p>Here's the mechanism. The lock was a session-level advisory lock, which PostgreSQL <a href="https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS">holds until it is explicitly released or the session ends</a>. It was taken through a pooled database connection, and the database library had quietly <a href="https://www.psycopg.org/docs/usage.html#transactions-control">opened a transaction</a> on it. When the code returned the connection to the pool, it went back with that transaction still open. When the process that owned it went away, the database side of the connection stayed, idle in its open transaction and still holding the lock. The process was dead. Its lock was not.</p>
+
+      <p><strong>A lock scoped to a database session, sitting on top of a connection pool, can outlive the process that took it.</strong> Everything we reasoned about when we wrote <code>acquire, do work, release</code> assumed that if the process dies, its grip dies with it. On a pooled connection, it doesn't.</p>
+
+      <p>Whether this leaked lock and the empty list were connected, we never proved. They showed up within the same few minutes, and we fixed both. Only one of them ended the sessions: the empty list.</p>
+
+      <hr>
+
+      <h2>What We Changed in April</h2>
+
+      <p>Two fixes, the same day.</p>
+
+      <p>The detector stopped treating an empty answer as the truth. If the cluster API succeeded but returned zero Jobs <em>while the database said sessions were running</em>, we read that combination as a failed observation and skipped the check. We also gave every running state a ten-minute grace period, so one ambiguous reading couldn't end a session in the middle of a cycle.</p>
+
+      <p>The lock moved off the pool. Each process now holds one dedicated connection in <a href="https://www.psycopg.org/docs/usage.html#transactions-control">autocommit mode</a>, so the connection can never sit idle inside a forgotten transaction, and the lock is released explicitly when the work is done.</p>
+
+      <p>The April fix rested on an inference: an empty job list and three active sessions can't both be true, so when they appear together, trust the database and distrust the cluster. It was a reasonable inference, and for five months it held.</p>
+
+      <hr>
+
+      <h2>Five Months Later, the Guard Did It Again</h2>
+
+      <p>In September, a trading Job ended partway through a cycle without moving its session out of the running state. Every other session was between cycles, waiting for its next turn, so the cluster had no Jobs at all. That was the truth.</p>
+
+      <p>Zero Jobs and one running session: exactly the combination our April fix had decided was impossible. <strong>So every sixty seconds the detector logged "K8s returned 0 Jobs but 1 running sessions exist, skipping orphan check" and did nothing. The session sat for about seven hours without rebalancing. The guard we added to stop the detector from acting on a false emptiness kept it from acting on a real one.</strong></p>
+
+      <p>Nothing was lost: the positions stayed exactly as they were, and because that account rebalances every six hours, the stall cost it one rebalance. But the lesson from April had been half right. An empty answer can be a failed look. It can also be the truth, and the April fix had bet on one reading the same way the original code had bet on the other.</p>
+
+      <hr>
+
+      <h2>The Detector in Four Versions</h2>
+
+      <img src="007-nothing-crashed-an-empty-list-shut-down-three-live-sessions/detector-versions.png" alt="The orphan detector in four versions: what the cluster said, what the detector did, and what it cost">
+
+      <hr>
+
+      <h2>What Held</h2>
+
+      <p>The fix that held changed what the detector <em>does</em>, not what it guesses.</p>
+
+      <p>A stuck session is no longer shut down, and its positions are never touched. When a session has sat in a cycle state for 30 minutes without a database update, the detector asks the cluster about both Jobs and Pods. If either lookup fails, it decides nothing and waits for the next pass. If both succeed and neither shows anything alive for that session, it sends the session back to waiting, with its next rebalance placed on its normal schedule, and raises an alert saying the positions were not touched.</p>
+
+      <pre><code>Jobs lookup   Pods lookup   Anything alive?    Action
+fails         -             -                  do nothing, retry next pass
+succeeds      fails         -                  do nothing, retry next pass
+succeeds      succeeds      yes                leave it running
+succeeds      succeeds      no, 30+ minutes    back to waiting, positions untouched</code></pre>
+
+      <p>If that judgment is right, trading resumes on time. If it's wrong, the cost is one extra wait. The empty-list guard is gone, because a cheap action doesn't need a guard against guessing wrong. This follows a rule we now apply everywhere: no failure of a server, a Job or the cluster is ever a reason to close a position.</p>
+
+      <p>The ten-minute grace from April is gone from this path. A session now has to sit 30 minutes before the detector does anything, and what it does is resume instead of shut down. A ten-minute window still exists for sessions past their end time, which is a different case.</p>
+
+      <p>The rule reached production at the end of September. Since then the session table holds no row that was ended as an orphan, and no job in the job history carries a failure message that mentions an orphan or a stuck session. That is the extent of what we can show, and it is thin: the session table keeps one row per account, so a later session overwrites an earlier one. The recovery path itself leaves no record in the database, only a log line and an alert, so we can't tell you how many times it has fired. That is a gap in our own records.</p>
+
+      <hr>
+
+      <h2>What We Don't Know</h2>
+
+      <p>We identified the leftover connection by when it started, which points strongly at the previous deployment but doesn't prove it. The lock problem and the empty list showed up within the same few minutes, and we never traced exactly how one led to the other.</p>
+
+      <p>We also can't tell you what the thirty unsent orders cost. The sessions ended before execution, so there's no fill data to compare against. The loss is real but unmeasured, and we'd rather say that than invent a number.</p>
+
+      <hr>
+
+      <h2>The Part Worth Stealing</h2>
+
+      <p>Almost every system has a cleanup process: something that lists what exists, compares it with what should exist, and removes the difference. Garbage collection, cache invalidation, session reaping, stale-file cleanup. Every one of them receives an empty result as the same value whether it means "there is nothing" or "I failed to look."</p>
+
+      <p>FirstEnergy's operators had a screen that said there were no alarms and nothing that said the alarm system itself had stopped. Our detector had a list that said there were no Jobs and nothing that said whether anyone had looked.</p>
+
+      <p><strong>When "nothing is there" can't be told from "I couldn't see", better guessing is not the fix. Making the action cheap to get wrong is.</strong></p>
+
+      <p>The question that settled our design was what the process would cost if the listing were wrong in either direction, and whether it could do something we could take back. Returning a session to waiting can be taken back. Closing a position can't.</p>
+
+      <p>Nothing crashed that morning. A list came back empty, and the code around it had no way to say whether anyone had looked.</p>
+
+      <hr>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>U.S.-Canada Power System Outage Task Force (2004). "Final Report on the August 14, 2003 Blackout in the United States and Canada: Causes and Recommendations" (alarm failure, pp. 51-56; the 14:32 call, p. 56; the affected area, p. 1). <a href="https://www.energy.gov/oe/articles/blackout-2003-final-report-august-14-2003-blackout-united-states-and-canada-causes-and">Link</a></li>
+        <li>North American Electric Reliability Council (2004). "Technical Analysis of the August 14, 2003, Blackout: What Happened, Why, and What Did We Learn?" Report to the NERC Board of Trustees by the NERC Steering Group, archived copy. <a href="https://web.archive.org/web/20121202144551/http://www.nerc.com/docs/docs/blackout/NERC_Final_Blackout_Report_07_13_04.pdf">Link</a></li>
+        <li>Kubernetes. "Jobs." Kubernetes documentation. <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Link</a></li>
+        <li>PostgreSQL Global Development Group. "pg_stat_activity" (the <code>state</code> column), PostgreSQL documentation. <a href="https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW">Link</a></li>
+        <li>PostgreSQL Global Development Group. "Explicit Locking: Advisory Locks," PostgreSQL documentation. <a href="https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS">Link</a></li>
+        <li>Psycopg. "Basic module usage: Transactions control," Psycopg 2 documentation. <a href="https://www.psycopg.org/docs/usage.html#transactions-control">Link</a></li>
+        <li>Hoare, C.A.R. (2009). "Null References: The Billion Dollar Mistake." QCon London. <a href="https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/">Link</a></li>
+        <li>"Vacuous truth." Wikipedia. <a href="https://en.wikipedia.org/wiki/Vacuous_truth">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Axiom</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
