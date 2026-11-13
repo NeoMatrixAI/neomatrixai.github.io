@@ -108,4 +108,9 @@ const LATEST_POSTS = [
       platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/006-the-most-expensive-number-in-a-backtest.html',
       thumb: 'blog/vertex/006-the-most-expensive-number-in-a-backtest/thumb.jpg',
       url: 'https://neomatrixai.substack.com/p/the-most-expensive-number-in-a-backtest?r=8y6w3o&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true', date: '2026-11-06' },
+    { title: 'Rookie mistake no. 1: the oracle backtester problem',
+      subtitle: 'At 06:00 it knew the price from 23:45. We traced why.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/007-oracle-backtester.html',
+      thumb: 'blog/vertex/007-oracle-backtester/thumb.png',
+      url: 'https://neomatrixai.substack.com/p/rookie-mistake-no-1-the-oracle-backtester?r=8y6w3o', date: '2026-11-13' },
 ];

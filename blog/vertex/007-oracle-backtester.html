@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="At 06:00 it knew the price from 23:45. We traced why." />
+  <title>Rookie mistake no. 1: the oracle backtester problem · NeoMatrix</title>
+
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-size:17px;
+      line-height:1.75;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:650; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Rookie mistake no. 1: the oracle backtester problem</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>At 06:00 it knew the price from 23:45. We traced why.</em></p>
+
+      <p>This is the first post in Rookie Mistakes, a short series on mistakes we made early in our alpha research. The first one is looking at the future: a backtest that used information it couldn't have had at the time.</p>
+
+      <p>None of these mistakes were exotic. They got through our own tests, in real work, and one of them got through a hyperparameter search and a forward test. Each post follows one mistake from the way it hid to the fix.</p>
+
+      <img src="007-oracle-backtester/v2-wrap.png" alt="At 06:00 UTC on 12 May 2022, with Terra collapsing, a risk filter in one of our backtests read a Bitcoin close of 29,026. The last close the market had printed by 06:00 was 27,084. The 29,026 didn&#x27;t exist until midnight. For that filter, the backtester was an oracle. In live trading the same filter only ever sees data that ends at the decision time, so the backtest was scoring a strategy nobody could run. I&#x27;ve hit this class of bug three times in six months, in three different forms. Each time, the check I trusted had passed.">
+
+      <p>I call this the oracle backtester problem: a backtest that knows things the live system never will.</p>
+
+      <h2>The first time: a line that was right somewhere else</h2>
+
+      <p>In March I ported a daily-frequency signal from our live code into the research framework. The port kept the original's read of the daily series, <code>asof(t)</code>. The backtest looked spectacular. When the leak was fixed, the result fell to roughly zero.</p>
+
+      <p>The line was correct in the system it came from, where a daily signal runs at the day boundary and <code>asof(t)</code> returns the last complete bar. In the port, decisions happen at other times of day. By default pandas labels a daily bin with its start, so today's bin is stamped midnight and holds the whole day. <code>Series.asof</code> returns the last row at or before <code>t</code>, so at a morning decision it returned today's bar, evening included. The same line leaks at every hour except the one it was written for.</p>
+
+      <p>The first fix, <code>asof(t - 1 day)</code>, stopped the leak and threw away up to a day of data that was legitimately known. The better one was to rebuild the signal so it never touches raw data: every input is read through a window that ends one bar before the decision. Something else surfaced once the leak was gone. A signal designed for completed daily bars was now being fed partial days at an intraday cadence, and it only worked at the daily cadence it was built for. Removing the leak showed me what the signal had been built for.</p>
+
+      <p>That month I also wrote the test I still trust most. It replaces everything after <code>t</code> with random noise, recomputes the signal at <code>t</code>, and fails if the output moves.</p>
+
+      <h2>The second time: a cache built for speed</h2>
+
+      <p>In June a different strategy leaked through a daily statistic that was precomputed once from the whole dataset. Resampling the full history at every decision tick had been the slowest part of the backtest, so the cache was a reasonable optimisation. Precomputing is fine when each value uses only the inputs available at its own time. This one didn't, so the evening was already inside the series before any per-decision check ran.</p>
+
+      <p>The standard guard is to slice with <code>index &lt; t</code>, and the code did. That day's bin is stamped 00:00, so it passed. Our 15-minute bars are stamped at their start as well: the bar stamped 05:45 closes at 06:00, and its 27,084 was the last price anyone had at the decision. The label said past and the value included the evening. The March test lived in another strategy's repo and had never run on this one.</p>
+
+      <img src="007-oracle-backtester/v2-chart.png" alt="Editorial chart of Bitcoin 15-minute closes on 12 May 2022 with the 06:00 decision time and the later 23:45 close marked">
+
+      <p><em>The 06:00 decision, and the 23:45 close the daily bar already held.</em></p>
+
+      <p>The backtest couldn't show it. It ran forward over a complete file and never contradicted itself. What gave it away was the strategy's first days of live trading in June, when I compared the backtest's exposure with the live system's at intraday ticks. Live data ends at <code>t</code>, so live can't peek. Over the same two days the backtest read calm and let exposure recover, while live stayed cautious. The backtest carried more than twice the live system's gross exposure on the same book.</p>
+
+      <p>To find which side was wrong, I ran the live code on the same data file. It reproduced the live logs to within a fraction of a percent on every cycle, which put the fault in the backtest. As a control, I flipped only the slice operator on one identical series, and the filter's output went from cautious to fully on.</p>
+
+      <h2>The over-correction</h2>
+
+      <p>The obvious fix drops the in-progress day with <code>index &lt; t.normalize()</code>. The live port already did that; the fix had been made there first and never mirrored into the backtest. It is safe, and it also throws away the hours that have already happened. The alternative is a partial-day aggregate built from bars up to <code>t</code>, but a partial day has partial volume, so anything built on volume reads differently from a complete day. I tried it. It performed worse and made the signal depend on a half-finished day, so I took the plain cut that matches live. I also rejected giving the live system the leak so the two would agree.</p>
+
+      <img src="007-oracle-backtester/v2-blueprint.png" alt="Blueprint-style diagram of three ways to cut the day: whole day, today dropped, today up to the decision time">
+
+      <p><em>Three ways to cut the day at decision time t.</em></p>
+
+      <h2>Which side was wrong everywhere else</h2>
+
+      <p>I then swept every strategy repo for the same pattern. Only that one backtest leaked. In four others the divergence ran the other way. The live code had lost the end-of-day guard because the live entry point isn't given the decision time, so it trusts the platform to deliver only complete bars. Nothing in the code enforces that. Changing those backtests would have introduced a leak.</p>
+
+      <h2>The third time: two correct options</h2>
+
+      <p>In September I found a daily strategy whose backtest had an engine option switched on that delays the price series by one day, to mimic the delay of a live data fetch. The engine also computed profit and loss from that delayed series. The funding feed stayed on its original clock. For the position labelled day D, that meant:</p>
+
+      <ul>
+        <li><strong>Decided with:</strong> funding through the end of day D-1, including the settlements that printed during D-1.</li>
+        <li><strong>Credited with:</strong> the return of day D-1, midnight to midnight, the same day those settlements printed in.</li>
+        <li><strong>Should have earned:</strong> the return from the start of day D, after the order filled.</li>
+      </ul>
+
+      <p>Every number was real and already published. The pairing was wrong.</p>
+
+      <img src="007-oracle-backtester/v2-receipt.png" alt="Receipt-style illustration: the position for day D is decided with funding from the end of the period it earns">
+
+      <p><em>How the funding pairing reaches the position for day D.</em></p>
+
+      <p>The fix was not to shift the funding by a day too. The framework already leaves out the bar that hasn't closed, so the right setting was no delay at all. With only that changed, the in-sample Sharpe fell from 2.51 to 0.31, in a backtest of a strategy we never deployed.</p>
+
+      <p>It survived the hyperparameter search and the forward test, because the in-sample and out-of-sample windows carry the same pairing. A comparison between two windows can't see a flaw both of them share.</p>
+
+      <h2>What we do now</h2>
+
+      <p>The check that would have caught the first two is truncate-and-compare on the whole signal. Compute the output at <code>t</code> from data up to <code>t</code>, compute it again with arbitrary bars appended after <code>t</code>, and fail on any difference, including anything built before the loop starts. I proposed it as a gate for every alpha, not one repo. Passing it is evidence, not proof. Every cache has to be rebuilt on each run, and the check should compare intermediate values such as the risk filter's output, not only the trades, because a leak can move a value without crossing a trading threshold.</p>
+
+      <p>The third case needs a different check, because the signal there never read the future. A backtest has to answer two questions separately: could we have known this at the time, and could that position have earned that return? For the second, we test the order of the timestamps: when each input became available, then the decision, the order and the fill, and only then the start of the return it earns. The rule underneath all three cases is the same. What matters is when a value became available, not the time printed on it. A daily bar stamped midnight isn't available until the day ends.</p>
+
+      <p>Windowing now lives in the base class, so the safe read is the default. I also proposed handing signals only the data up to <code>t</code>, so they can't see later bars at all. For anything a backtest can't check against itself, the live system is a cross-check, not the answer. The reference is when each piece of data became available, compared with the order and fill times.</p>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
