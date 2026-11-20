@@ -118,4 +118,9 @@ const LATEST_POSTS = [
       platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/007-oracle-backtester.html',
       thumb: 'blog/vertex/007-oracle-backtester/thumb.png',
       url: 'https://neomatrixai.substack.com/p/rookie-mistake-no-1-the-oracle-backtester?r=8y6w3o', date: '2026-11-13' },
+    { title: 'Rookie mistake no. 2: the zombie feed problem',
+      subtitle: 'One column sat at 98.28 for 203 days. Nothing complained.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/008-zombie-feed.html',
+      thumb: 'blog/vertex/008-zombie-feed/thumb.png',
+      url: 'https://neomatrixai.substack.com/p/rookie-mistake-no-2-the-zombie-feed?r=8y6w3o', date: '2026-11-20' },
 ];
