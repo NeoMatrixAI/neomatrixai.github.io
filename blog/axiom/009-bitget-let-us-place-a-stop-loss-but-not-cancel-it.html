@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Hawaii&#x27;s alert system could send a missile warning but had no procedure to retract one. Our Bitget spot stops had the same shape: placed in one call, then neither listed nor canceled." />
+  <title>Bitget Let Us Place a Stop-Loss But Not Cancel It · NeoMatrix</title>
+
+  <style>
+    @font-face{font-family:"Spectral";font-style:normal;font-weight:400;font-display:swap;src:url("../../fonts/spectral-400.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:italic;font-weight:400;font-display:swap;src:url("../../fonts/spectral-400-italic.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:normal;font-weight:700;font-display:swap;src:url("../../fonts/spectral-700.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:italic;font-weight:700;font-display:swap;src:url("../../fonts/spectral-700-italic.woff2") format("woff2")}
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-family:Spectral, Georgia, "Times New Roman", serif;
+      font-size:20px;
+      line-height:1.65;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:700; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Axiom Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Axiom</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Bitget Let Us Place a Stop-Loss But Not Cancel It</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>Hawaii's alert system could send a missile warning but had no procedure to retract one. Our Bitget spot stops had the same shape: placed in one call, then neither listed nor canceled.</em></p>
+
+      <p>On January 13, 2018, Hawaii sent a ballistic missile alert to phones across the state. The FCC found that the agency's checklist <a href="https://docs.fcc.gov/public/attachments/DOC-350119A1.pdf">lacked any protocol for correcting a false alert</a>, and the correction took 38 minutes.</p>
+
+      <p>Ours was smaller: the spot orders of our previous engine, on Bitget. One call could attach a stop-loss to an order. We ran it again on a demo account for this post, and the stop never showed up in any order list, every cancel call was refused, and the coins it held stayed frozen.</p>
+
+      <img src="009-bitget-let-us-place-a-stop-loss-but-not-cancel-it/hawaii-attack-warning-siren.jpg" alt="An attack warning siren on a Waikiki beach under a cloudy sky">
+
+      <p><em>A Hawaii attack warning siren on Oahu. The alerting side of the system existed. The retracting side did not. Photo: <a href="https://commons.wikimedia.org/wiki/File:Hawaii_Attack_Warning_Siren_%2826980497279%29.jpg">Anthony Quintano from Honolulu, HI, United States</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons.</em></p>
+
+      <p>Before an order API goes live there is a four-step test: place an order with its stop, list it, cancel it, and check that the balance comes back. We learned those four steps one failure at a time, and this post follows them in order.</p>
+
+      <h2>1. Place</h2>
+
+      <p>On Bitget, a stop was too easy to place. Its order call takes two optional fields, a preset take-profit price and a preset stop-loss price, so a stop can ride along with the order in a single request. It is one call and it is convenient. On spot, our engine used it for every order that needed protection.</p>
+
+      <p>The side effect showed up in the balance. When a stop was attached, the quantity it protected moved from available, free to sell, to frozen, held back for the stop. That mattered because our engine rebalances on a schedule, resetting its holdings to target weights, and needs those coins free. Before it computes the next orders it cancels whatever is still standing, and a frozen coin can't be sold.</p>
+
+      <img src="009-bitget-let-us-place-a-stop-loss-but-not-cancel-it/coins-frozen.png" alt="The same buy with and without a preset stop: without it the coins sit in the available column, with it they sit in the frozen column">
+
+      <h2>2. List</h2>
+
+      <p>The engine's first attempt went through the ordinary order API. To find the stop it asked for the unfilled orders, and Bitget refused with code 40913, because that call required an order id we did not have. The coins stayed frozen.</p>
+
+      <p>For this post we ran the old call again on Bitget's demo account: a market buy of about 6 USDT of BTC with a preset stop-loss at 80% of the price. The response returned one order id, the buy's, and none for the stop. Three seconds later the whole purchase, 0.000076923 BTC after the fee, sat in the frozen column and none of it in the available one.</p>
+
+      <p>Both order lists were empty. The plan-order list returned no orders, and so did the list of open orders, with or without the stop-and-take-profit filter.</p>
+
+      <h2>3. Cancel</h2>
+
+      <p>Every way out we tried on the demo account was refused:</p>
+
+      <ul>
+        <li>Cancel as a plan order, by order id: code 43025, plan order does not exist.</li>
+        <li>Cancel by our own client id: code 43065, order does not exist.</li>
+        <li>The ordinary cancel call: code 43001, the same.</li>
+        <li>A market sell of the frozen quantity: code 43012, insufficient balance.</li>
+      </ul>
+
+      <img src="009-bitget-let-us-place-a-stop-loss-but-not-cancel-it/four-refused-keys.png" alt="Four attempts to get the frozen coins back, each refused with its error code, against a locked box holding 0.000076923 BTC">
+
+      <p>We had a theory. Bitget keeps conditional orders, the ones that wait for a trigger price, in a separate system called plan orders, and we understood that a stop attached to a filled order becomes one of them. If that held, the plan-order endpoints should list it and cancel it.</p>
+
+      <p>Our fix was to move the cancel to the plan-order system. Seven minutes after that change went into the engine, we added the matching endpoints to the adapter: list the active plan orders, cancel one. The theory was cheap to act on, and it was written into code before anyone had tested the case that mattered.</p>
+
+      <p>Seven days later the theory had changed. The commit message that adds the next endpoint says it plainly: orders created with the preset fields cannot be queried or canceled through the API, so the frozen balance cannot be released, and a plan order can be.</p>
+
+      <img src="009-bitget-let-us-place-a-stop-loss-but-not-cancel-it/theory-notes.png" alt="Three sticky notes: the plan-order theory crossed out and coded before it was tested, then preset stops cannot be listed or canceled, then place the stop ourselves as a plan order">
+
+      <p>The control behaved as described. A plan order we placed ourselves was accepted, showed up in the list as live, and canceled with a success response. Placing it did not change the frozen balance, and neither did canceling it.</p>
+
+      <p>One more variation, a stop closer to the price. We found no mention of this limit in Bitget's documentation, so what follows is what the API actually returned, not a documented rule. A stop placed above the order price is refused outright, with code 40808. With the stop as little as 0.005 percent below the market (69,014.5 against 69,017.94), the coins stayed frozen through two five-minute watches, and none of the calls we tried could see or cancel it. In those two watches the price never came down to the stop. A later run closed that gap: with a stop 0.1 below the fill price, BTC dipped through two of the stops we had left standing, two market sells with source SYS filled in the same second, and the frozen balance came back. The hidden stop was live and it fired. We just had no way to see or cancel it, so the only way out we found for coins frozen by a preset stop was the price reaching it. All of these runs were on a demo account, and we have not repeated them on a live one. That settled the rule the engine followed for as long as it placed stops: it only trusts a stop it can list and cancel.</p>
+
+      <h2>4. Check</h2>
+
+      <p>That sliver of BTC was still frozen on the demo account nine days later, the same trap the engine was in. Checking the balance after a cancel is the step that tells you whether the first three worked.</p>
+
+      <p><strong>The one-call version could place a stop that none of the calls we tried could list or cancel, so the fix was to give up the one call.</strong> We stopped using the preset fields. Five days later, twelve days after the first failed attempt, the engine switched. That was the day we added the endpoint that changes a plan order's trigger price and size without canceling it. From then on the engine placed the stop as a plan order in a second request, so that it existed as something the API could list, change and cancel, and every protected order became two calls: the order, then its stop.</p>
+
+      <p>Two calls meant two phases. The engine first sent every order of the cycle, then set stops only for the symbols that had filled. After a buy it checked up to six times, half a second apart, for the exchange to show the coins as held, because a stop's size is the held quantity, and only then placed the stop. A position had no stop between its fill and its stop going in, by design, and that stretch included the wait. If a stop failed to go in, the engine logged the error and the position stayed without one. Nothing retried it on its own. We ran that on the demo account with a stop too small for the exchange's 1 USDT minimum: one placement call, error 43027, the symbol marked failed, and nothing on the exchange. If changing an existing stop failed, the engine fell back to placing a new one. We handed the change an id the exchange did not know (error 40054), the engine placed a new stop, and two stops stood on the exchange, the old one still live, until a sweep cancelled both in 1.9 seconds.</p>
+
+      <p>We measured that stretch for this post. On the demo account we ran the adapter's real code: a market buy of 6 USDT of BTC, then the stop placed as a plan order sized to the coins that had shown up as available. Over ten runs, the exchange's own timestamps put the stop between 204 and 1,391 milliseconds after the fill, 243 at the median. The coins showed as available after 218 to 1,304 milliseconds, 232 at the median, so in all ten runs the engine's six checks would have been enough. We polled every 50 milliseconds. The engine's checks were half a second apart, so its own stretch ran longer than ours by up to half a second.</p>
+
+      <p>The ids were what made the difference. Placing a plan order returns an order id, and the engine stored it so it could change or cancel that stop at the next rebalance, until the sweep described below took over that job in May. A preset stop gave us no id to keep: when we re-ran it, the response held only the buy's id.</p>
+
+      <p>Our own cleanup needed the same check against a real response, and for a while it had never had one. The cancel path became a helper. On account termination and in the cleanup of orphaned sessions, the ones left behind when their engine job is gone, it lists every active plan order and cancels them one at a time. If one cancel fails it logs the failure and moves on. That was deliberate: one stuck order should not block a rebalance.</p>
+
+      <p>In late May we found plan orders still standing on the exchange after accounts had been terminated, and traced it to a helper that had been canceling nothing. The API returns an object with paging cursors and a list of orders inside it. The helper read the order id from a flat structure, got an empty string for every order, and skipped all of them. Plan orders stayed on the exchange after the account was shut down. We did not record how many orders it left standing or for how long. That bug is the reason every sweep now starts from a real response.</p>
+
+      <pre><code>what the helper expected:   [ {"orderId": ...}, {"orderId": ...} ]
+what the API returned:      {"nextFlag": false, "idLessThan": "", "orderList": [ {"orderId": ...} ]}</code></pre>
+
+      <img src="009-bitget-let-us-place-a-stop-loss-but-not-cancel-it/response-shape.png" alt="What the sweep expected, a flat list of orders, against what the API returned, an object with paging cursors and the list inside it">
+
+      <p>Nothing complained, because the helper was built not to. The tests had passed for the same reason: they fed the helper the flat shape we had assumed, so they agreed with the bug. The fix was checked against a real call to the demo API, which answered with the cursor fields and an empty list of orders: it confirmed the shape but held no order to read an id from. For this post we ran the sweep against orders that existed: on the demo account we placed three plan orders, listed all three, and one sweep cancelled 3 of 3 in 0.89 seconds, left none listed, and changed neither the available nor the frozen balance. The tests were rewritten around that shape, with cases for paging, a repeated id, an empty list and a missing id, and every mocked call was bound to the real function signature.</p>
+
+      <p>The sweep now reads the real response shape, pages through up to fifty pages of plan orders, skips ids it has already seen, and waits a tenth of a second between cancels to stay inside the exchange's rate limit. We also made it run at the start of every rebalance, which we did the day we fixed it.</p>
+
+      <h2>Where It Stands</h2>
+
+      <p>The stop code itself is gone from spot. In August we deleted it, because the multi-alpha engine from <a href="https://neomatrixai.substack.com/p/one-number-dozens-of-strategies?r=8y6w3o">the post on one number and dozens of strategies</a>, which runs many strategies together, has no per-alpha stop-loss to attach. Loss is limited another way now. Each portfolio and each alpha can carry a drawdown stop that drops its allocation to zero when its drawdown passes the threshold we set, so the protection lives in our books instead of in an order on the exchange. A stop order per alpha is still on our backlog. What stayed from the old code is more useful than the code. The sweep still runs at the start of every rebalance as a guard against leftovers from outside the engine or from the older one. And the shape this episode gave us, place, list, modify and cancel, lives on in our unified trigger API, the one interface for conditional orders that both Bitget and Binance sit behind. The adapter in front of Binance translates that shape into Binance stop orders. We ran the four steps through it on Binance's demo spot account: the stop came back with an id and showed in the list, a change replaced it and the old id disappeared, and canceling it moved 0.00032 BTC from locked back to free.</p>
+
+      <p>What an API lets you place is half the feature. The other half is whether it lets you list and cancel what you placed, and whether the balance comes back when you do. Hawaii's alert had no way back, and our stops had none until we built that second half, twice: once to cancel the stops, and once to make the canceling work.</p>
+
+      <hr>
+
+      <h2>Sources</h2>
+
+      <ul>
+        <li>Federal Communications Commission, Public Safety and Homeland Security Bureau (2018). "Report and Recommendations: Hawaii Emergency Management Agency, January 13, 2018 False Alert" (no protocol for correcting a false alert, p. 16; 38 minutes to correct, pp. 3-4). <a href="https://docs.fcc.gov/public/attachments/DOC-350119A1.pdf">Link</a></li>
+        <li>Bitget. "Place Plan Order," Spot Trigger API documentation, classic account (the separate plan order our engine places; the Spot Trigger category covers placing, modifying, canceling and querying trigger orders). <a href="https://www.bitget.com/api-doc/classic/spot/plan/Place-Plan-Order">Link</a></li>
+      </ul>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Axiom</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
