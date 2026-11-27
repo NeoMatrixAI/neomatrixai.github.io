@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="We discarded it for losing money. The fees did that." />
+  <title>Rookie mistake no. 3: the leaky bucket problem · NeoMatrix</title>
+
+  <style>
+    @font-face{font-family:"Spectral";font-style:normal;font-weight:400;font-display:swap;src:url("../../fonts/spectral-400.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:italic;font-weight:400;font-display:swap;src:url("../../fonts/spectral-400-italic.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:normal;font-weight:700;font-display:swap;src:url("../../fonts/spectral-700.woff2") format("woff2")}
+    @font-face{font-family:"Spectral";font-style:italic;font-weight:700;font-display:swap;src:url("../../fonts/spectral-700-italic.woff2") format("woff2")}
+    :root{
+      --bg:#fff;
+      --fg:#000;
+      --muted:#5f5f5f;
+      --line:#dedede;
+      --line-strong:#bdbdbd;
+      --max:1280px;
+      --pad:clamp(24px,5vw,72px);
+      --article-max:760px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      overflow-x:hidden;
+    }
+
+    ::selection{background:#000;color:#fff}
+
+    a{color:inherit;text-decoration:none}
+
+    .shell{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+    }
+
+    /* Nav: same fixed 76px bar as the main site, simplified to logo + back link */
+    .nav{
+      position:fixed;
+      z-index:40;
+      top:0;
+      left:0;
+      right:0;
+      height:76px;
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+
+    .nav-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:32px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:48px; vertical-align:middle; }
+    .brand-text{ font-size:16px; font-weight:600; letter-spacing:-.01em; color:#111; white-space:nowrap; }
+    .brand-text .accent{ font-weight:500; color:var(--muted); }
+    @media (max-width:520px){ .brand-text{ display:none; } }
+
+    .back-link{
+      font-size:12px;
+      color:#4f4f4f;
+      letter-spacing:.04em;
+      transition:color .25s ease;
+    }
+    .back-link:hover{ color:#000; }
+    .nav-links{ display:flex; gap:20px; }
+
+    /* Article header + body */
+    main{ padding-top:76px; }
+
+    .article-head{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:clamp(64px,10vw,120px) var(--pad) 32px;
+    }
+
+    .article-kicker{
+      font-size:11px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+    }
+
+    .article-title{
+      margin-top:14px;
+      font-size:clamp(34px,5.2vw,58px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+      font-weight:620;
+    }
+
+    .article-meta{
+      margin-top:18px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .article-meta a{ text-decoration:underline; text-underline-offset:2px; }
+    .article-meta a:hover{ color:#000; }
+
+    .article-body{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:48px var(--pad) 140px;
+      border-top:1px solid var(--line);
+      margin-top:40px;
+      font-family:Spectral, Georgia, "Times New Roman", serif;
+      font-size:20px;
+      line-height:1.65;
+      color:#222;
+    }
+
+    .article-body > *:first-child{ margin-top:0; }
+
+    .article-body h2{
+      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin-top:56px;
+      font-size:clamp(24px,3.4vw,32px);
+      line-height:1.25;
+      letter-spacing:-.02em;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body h3{
+      font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin-top:40px;
+      font-size:20px;
+      line-height:1.3;
+      font-weight:620;
+      color:var(--fg);
+    }
+
+    .article-body p{ margin-top:22px; }
+
+    .article-body ul,
+    .article-body ol{
+      margin-top:22px;
+      padding-left:1.3em;
+    }
+    .article-body li + li{ margin-top:10px; }
+
+    .article-body a{
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    .article-body a:hover{ color:var(--muted); }
+
+    .article-body strong{ font-weight:700; }
+
+    .article-body blockquote{
+      margin:32px 0;
+      padding-left:20px;
+      border-left:2px solid var(--fg);
+      color:#444;
+      font-style:italic;
+    }
+
+    .article-body code{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:.88em;
+      background:#f4f4f4;
+      padding:.15em .4em;
+      border-radius:4px;
+    }
+
+    .article-body pre{
+      margin-top:22px;
+      padding:20px;
+      background:#0a0a0a;
+      color:#f4f4f4;
+      border-radius:10px;
+      overflow-x:auto;
+      font-size:13.5px;
+      line-height:1.6;
+    }
+    .article-body pre code{ background:none; padding:0; color:inherit; }
+
+    .article-body img{
+      display:block;
+      width:100%;
+      height:auto;
+      margin:32px 0;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+
+    .article-body hr{
+      margin:48px 0;
+      border:none;
+      border-top:1px solid var(--line);
+    }
+
+    /* Fixed per-team sign-off, appended by the script below after the
+       real article content — see the CREDITS map near the bottom. */
+    .article-body .credits{ text-align:center; }
+
+    .article-foot{
+      width:min(100%, var(--article-max) + var(--pad) * 2);
+      margin:0 auto;
+      padding:0 var(--pad) 80px;
+      display:flex;
+      gap:20px;
+    }
+
+    /* Side nav to the team's other posts: hidden until there's room beside the reading column */
+    .article-side{ display:none; }
+
+    @media (min-width:1280px){
+      main{
+        display:grid;
+        grid-template-columns: 1fr calc(var(--article-max) + var(--pad) * 2) 220px 1fr;
+        column-gap:48px;
+        align-items:start;
+      }
+      main > .article-head,
+      main > .article-body,
+      main > .article-foot{ grid-column:2; width:100%; margin:0; }
+      main > .article-side{
+        display:block;
+        grid-column:3;
+        grid-row:1 / -1;
+        position:sticky;
+        top:110px;
+      }
+    }
+
+    .article-side-title{
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#6b6b6b;
+      margin-bottom:16px;
+    }
+    .article-side-list{ display:flex; flex-direction:column; gap:14px; }
+    .article-side-list a{ display:block; font-size:14px; line-height:1.4; color:#333; }
+    .article-side-list a:hover{ color:#000; text-decoration:underline; }
+    .article-side-empty{ font-size:13px; color:var(--muted); }
+    .article-side-current{ display:block; font-weight:650; color:#000; }
+
+    /* Footer: identical to the main site */
+    footer{ padding:44px 0 56px; }
+    .footer-inner{
+      width:min(100%, var(--max));
+      margin:0 auto;
+      padding-inline:var(--pad);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+    }
+    .footer-brand{ font-size:26px; letter-spacing:-.03em; font-weight:600; }
+    .footer-note{ max-width:520px; color:#777; font-size:12px; line-height:1.6; text-align:right; }
+
+    .footer-bottom{
+      width:min(100%, var(--max));
+      margin:36px auto 0;
+      padding:22px var(--pad) 0;
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      font-size:12px;
+      color:#777;
+    }
+    .footer-contact{ font-size:15px; font-weight:600; color:#000; }
+
+    @media (max-width:720px){
+      .footer-inner{ align-items:flex-start; flex-direction:column; }
+      .footer-note{ text-align:left; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="../../index.html#top">
+        <img src="../../250711_logo_neomatrix_NM_BK_transparent@2x.png" alt="NeoMatrix">
+        <span class="brand-text">NeoMatrix<span class="accent"> AI</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="back-link" href="index.html">← Vertex Posts</a>
+        <a class="back-link" href="../../index.html#blog">← Back to Blog</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="article-head">
+      <div class="article-kicker">Vertex</div>
+      <!-- Replace with the post's real title, verbatim -->
+      <h1 class="article-title">Rookie mistake no. 3: the leaky bucket problem</h1>
+      <!-- Optional: publish date, reading time, etc. Keep it short, one line. -->
+      <div class="article-meta">ARTICLE_META_HERE</div>
+    </div>
+
+    <!--
+      ARTICLE CONTENT START
+      Replace everything below (through ARTICLE CONTENT END) with the
+      converted article body. Use plain h2/h3/p/ul/ol/li/blockquote/code/
+      pre/img/a/strong/em tags — do not add new classes or inline styles,
+      the .article-body rules above already style all of these. The
+      content below this point is SAMPLE content only, showing what each
+      tag looks like — delete it and put the real article here.
+    -->
+    <div class="article-body">
+      <p><em>We discarded it for losing money. The fees did that.</em></p>
+
+      <p>This is the third and last post in Rookie Mistakes, the series on mistakes we made early in our alpha research. The first covered a backtest that could see the future, the second a data feed that froze without an error. This one is about judging a strategy by a single number.</p>
+
+      <p>The number was the result after costs, and it was real. It was also two things added together that I should have looked at separately: what the idea earns and what trading it costs.</p>
+
+      <img src="009-leaky-bucket/v3-wrap.png" alt="Our first pass over one cross-sectional strategy ended in a discard. Its result after costs was deeply negative, the backtest lost almost all of its capital, and the write-up called the mechanism falsified at the book level. A second look showed the number had measured the cost of trading, not the idea. With fees and slippage switched off, the same strategy made money. Changing how often it rebalanced, one line in the config, turned the loss into a profit in the backtest.">
+
+      <p>I call this the leaky bucket problem: a net result mixes what the idea poured in with what leaked out, and I had only read the total.</p>
+
+      <h2>The verdict I wrote</h2>
+
+      <p>Round one measured the effect the strategy trades on, carefully, and found it small: about 0.06 standard deviations, an estimate with its own error. The write-up concluded it barely existed. The measurement was right and the conclusion wasn't. A small effect can still matter when it is traded across 49 coins and about a thousand rebalances a year. That holds only if those bets are close to independent, and they rarely are, because coins move together and overlapping holds repeat the same bet. Round one never asked how much a small effect adds up to at the portfolio level, and the pre-cost result of the real portfolio was the way to find out.</p>
+
+      <p>It also read the net result as evidence about prediction. That needed a second check that round one skipped, which was to split the result into what the signal earned before costs and what trading it cost.</p>
+
+      <h2>The prediction I wrote down first</h2>
+
+      <p>Round two started from the decomposition, and I wrote the hypothesis down before running anything: the headline number would turn out to be mostly cost. I also wrote the bar. If the pre-cost result came back near zero, round one's claim would be narrowed. If it came back clearly positive, the claim was refuted.</p>
+
+      <img src="009-leaky-bucket/v3-card.png" alt="A pre-registration card: the hypothesis that the number would turn out to be cost, the bar that would narrow round one&#x27;s claim, and the result that refuted it">
+
+      <p><em>The pre-registered hypothesis, the bar and the result.</em></p>
+
+      <p>It came back clearly positive. That is evidence of raw return in this implementation, not proof that it can be traded at a profit. A back-of-envelope check agrees with the cost story. The strategy turned over its book about 676 times a year, at roughly 0.11% per round trip, fees and slippage together. That is about 74% of capital a year in fees, against 17.1% annual volatility. Divided out, that is 4.35 units of Sharpe lost to cost, and the simulation measured 4.357. The two agree to two tenths of a percent. The division works because gross and net share one annualisation and one volatility in the denominator, which is the case here.</p>
+
+      <img src="009-leaky-bucket/v3-waterfall.png" alt="A flat bar graphic of the edge before costs, the fees that were about five times larger, and the result after costs">
+
+      <p><em>The edge before costs, the fees, and the result after costs.</em></p>
+
+      <h2>A gap that wasn't drift</h2>
+
+      <p>My re-run disagreed with round one's report by about 5%, more than my threshold for suspecting that data or the engine had drifted. Return and drawdown matched to the digit, so the profit-and-loss series was identical. The whole gap was a volatility convention. The report annualises 15-minute bars. My runner resamples to daily, and when a strategy trades several times a day, its intraday returns can offset each other, which makes daily volatility lower. In this sample the ratio of the two volatilities was 1.051, and so was the ratio of the two Sharpe ratios.</p>
+
+      <p>I kept one convention inside every comparison and flagged the cross-round number, so nobody would read the gap as a bug.</p>
+
+      <h2>One line in the config</h2>
+
+      <p>I then slowed the rebalancing down in steps. The result rose from deeply negative, through zero, to a peak, and fell again at the slowest setting. At the cadence I chose, the net result beat the original cadence's gross result. The change was one line: the rebalancing interval. I tried eight intervals. The best was two weeks, but I kept one week, the length of the weekly cycle the signal trades, because it rebalances twice as often. That choice cost about 0.16 of Sharpe. I chose after seeing all eight, so the result is a search result, not a forecast. The prediction I wrote down covered the cost story, not the choice of cadence, and I have not yet tested that cadence on a window it was not picked on.</p>
+
+      <p>The question was whether that was a real holding horizon or just trading less. Two slower settings with almost the same turnover differed by far more than their cost difference could explain, and the result fell at the slowest setting. That is consistent with a holding horizon. I have not ruled out differences in rebalance timing, exposure or volatility between those settings, so I read it as consistent with a horizon, not as proof of one.</p>
+
+      <img src="009-leaky-bucket/v3-ladder.png" alt="The shape of the net result as the rebalancing interval gets longer: negative, then positive, a peak, and a decline">
+
+      <p><em>Net result as the time between rebalances grows.</em></p>
+
+      <h2>Where my own predictions failed</h2>
+
+      <p>I had predicted that the edge sat in one of the strategy's two components and that the other was flat. I wrote down the opposite of what happened. The component I called flat held nearly all of the gross edge, and the one I backed held very little. Pre-registering made that visible, because I had a written prediction to be wrong against.</p>
+
+      <p>I also tried the obvious follow-up: keep only the winning component at the new cadence. It lost to the blend by a wide margin. An attribution measured at one cadence did not transfer to another.</p>
+
+      <h2>What we do now</h2>
+
+      <p>Every discard verdict carries the split between pre-cost and post-cost result next to the net number, and a gate: when cost is large relative to gross, the net number is dominated by friction, so decompose first. A small effect is tested at the portfolio level, before costs, before anyone calls it nothing. The hypothesis and its bar are written down before the run. A comparison uses one volatility convention.</p>
+
+      <p>The runs themselves needed a guard too. A modified module wasn't picked up because an older copy was already installed, so a comparison would have re-measured the parent and printed a clean, wrong "no difference". Each arm now starts from a clean install.</p>
+
+      <p>Other strategies that round one discarded, with fast rebalancing and no volatility rescaling, are on the re-check list.</p>
+    </div>
+    <!-- ARTICLE CONTENT END -->
+
+
+    <aside class="article-side">
+      <div class="article-side-title">More from Vertex</div>
+      <div class="article-side-list" id="article-side-list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">NeoMatrix</div>
+      <div class="footer-note">
+        Modeling the Alpha Manifold.<br>
+        AI-native systematic investing built on nonlinear modeling, latent representations, and machine-scale alpha discovery.
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 NeoMatrix Inc.</div>
+      <div class="footer-contact">info@neomatrix.ai</div>
+    </div>
+  </footer>
+
+  <script src="../../posts_data.js"></script>
+  <script>
+    (function () {
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const all = typeof LATEST_POSTS !== 'undefined' ? LATEST_POSTS : [];
+      const team = document.querySelector('.article-kicker').textContent.trim().toLowerCase();
+      const here = location.pathname.split('/').pop();
+      // Within a team, posts_data.js lists posts in publish order (001, 002,
+      // 003, ...). Keep that order so the list number is the post number.
+      const ranked = all.filter(p => p.team === team && p.localUrl)
+        .map((p, i) => Object.assign({}, p, { rank: i + 1 }));
+
+      const panel = document.getElementById('article-side-list');
+      if (panel) {
+        panel.innerHTML = ranked.length
+          ? ranked.map(p => {
+              const file = p.localUrl.split('/').pop();
+              const label = p.rank + '. ' + esc(p.title);
+              return file === here
+                ? '<span class="article-side-current">' + label + '</span>'
+                : '<a href="' + esc(file) + '">' + label + '</a>';
+            }).join('')
+          : '<span class="article-side-empty">No posts yet.</span>';
+      }
+
+      const self = ranked.find(p => p.localUrl.split('/').pop() === here);
+      const meta = document.querySelector('.article-meta');
+      if (self && meta) {
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dateParts = self.date.split('-').map(Number);
+        const dateStr = months[dateParts[1] - 1] + ' ' + dateParts[2] + ', ' + dateParts[0];
+        meta.innerHTML = self.url
+          ? dateStr + ' &nbsp;·&nbsp; <a href="' + esc(self.url) + '" target="_blank" rel="noopener">Read on Substack ↗</a>'
+          : dateStr;
+      }
+
+      // Fixed per-team sign-off. Same text on every post for that team,
+      // so it lives here once instead of being pasted into each page.
+      const CREDITS = {
+        axiom: '<p><strong>Team Axiom</strong> — Financial AI Infrastructure</p>' +
+          '<p>Led by <strong>Hyunho Lee</strong></p>' +
+          '<p>with <strong>Sehee Jang</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+        vertex: '<p><strong>Team Vertex</strong> — AI Alpha Research</p>' +
+          '<p>Led by <strong>Sehee Jang</strong></p>' +
+          '<p>with <strong>Hyunho Lee</strong>, <strong>Keehong Rhee</strong>, <strong>Junho Song</strong></p>' +
+          '<p><a href="https://neomatrix.ai" target="_blank" rel="noopener">www.NeoMatrix.ai</a></p>' +
+          '<p><a href="https://x.com/NeoMatrixAI" target="_blank" rel="noopener">X: @NeoMatrixAI</a></p>',
+      };
+      const body = document.querySelector('.article-body');
+      if (body && CREDITS[team]) {
+        body.insertAdjacentHTML('beforeend', '<hr><div class="credits">' + CREDITS[team] + '</div>');
+      }
+    })();
+  </script>
+
+
+</body>
+</html>

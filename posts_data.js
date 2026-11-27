@@ -128,4 +128,9 @@ const LATEST_POSTS = [
       platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/008-zombie-feed.html',
       thumb: 'blog/vertex/008-zombie-feed/thumb.png',
       url: 'https://neomatrixai.substack.com/p/rookie-mistake-no-2-the-zombie-feed?r=8y6w3o', date: '2026-11-20' },
+    { title: 'Rookie mistake no. 3: the leaky bucket problem',
+      subtitle: 'We discarded it for losing money. The fees did that.',
+      platform: 'substack', team: 'vertex', localUrl: 'blog/vertex/009-leaky-bucket.html',
+      thumb: 'blog/vertex/009-leaky-bucket/thumb.png',
+      url: 'https://neomatrixai.substack.com/p/rookie-mistake-no-3-the-leaky-bucket', date: '2026-11-27' },
 ];
